@@ -16,8 +16,9 @@ SBT plugin that generates resource files for extracting version information.
 In your SBT project's `project' directory, add a file named 'version-injector.sbt'
 with the following contents:
 
-    // TODO: add the resolver required to access allenai Nexus repository
-    // resolvers += ...
+    credentials += Credentials("Sonatype Nexus Repository Manager", "utility.allenai.org", [username], [password])
+
+    resolvers += "allenai nexus repository" at "http://utility.allenai.org:8081/nexus/content/repositories/releases"
 
     addSbtPlugin("org.allenai.plugins" % "sbt-version-injector" % "0.2")
 
