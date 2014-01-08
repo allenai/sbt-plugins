@@ -15,7 +15,9 @@ with the following contents:
     // TODO: add the resolver required to access allenai Nexus repository
     // resolvers += ...
 
-    addSbtPlugin("org.allenai.plugins" % "sbt-version-injector" % "0.1.0")
+    addSbtPlugin("org.allenai.plugins" % "sbt-version-injector" % [VERSION])
+
+Replace `[VERSION]` with the current plugin release [VERSION](https://github.com/allenai/tools/tree/master/sbt-plugins#VERSION)
 
 Usage
 -----
