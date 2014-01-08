@@ -3,10 +3,11 @@ import Keys._
 import com.typesafe.sbt.SbtScalariform.scalariformSettings
 import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
+import sbtrelease.ReleasePlugin._
 
 object BuildSettings {
 
-  lazy val basicSettings = scalariformSettings ++ Seq(
+  lazy val basicSettings = releaseSettings ++ scalariformSettings ++ Seq(
     isSnapshot := version.value.trim.endsWith("SNAPSHOT"),
     organization := "org.allenai.plugins",
     scalacOptions := Seq(
@@ -14,7 +15,7 @@ object BuildSettings {
       "-feature",
       "-unchecked",
       "-deprecation",
-      //"-target:jvm-1.6",
+      //"-target:jvm-1.7",
       "-language:_",
       "-Xlog-reflective-calls"),
     scalaVersion := "2.10.3",
