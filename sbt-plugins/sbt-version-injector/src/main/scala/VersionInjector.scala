@@ -30,7 +30,7 @@ object VersionInjector {
       "name: \"" + name + "\"\n" +
         "version: \"" + version + "\""
 
-    s.log.info(s"Generating artifact.conf managed resource... (name|version: $name|$version")
+    s.log.info(s"Generating artifact.conf managed resource... (name|version: $name|$version)")
 
     IO.write(artifactConfFile, artifactContents)
     artifactConfFile
@@ -53,7 +53,7 @@ object VersionInjector {
     /** The SHA1 on the HEAD revision. */
     def sha1() = (cmd("rev-parse", "HEAD").!!).trim
 
-    s.log.info(s"Generating git.conf managed resource... (describe: ${describe}")
+    s.log.info(s"Generating git.conf managed resource... (describe: ${describe})")
 
     val gitContents =
       "describe: \"" + describe + "\"\n" +
