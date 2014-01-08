@@ -1,4 +1,5 @@
 import BuildSettings._
+import sbtrelease.ReleasePlugin._
 
 // Do NOT aggregate the various subprojects to prevent accidental
 // publishing of all plugins at the same time.
@@ -7,15 +8,18 @@ import BuildSettings._
 
 lazy val root =
   project.in(file ("."))
-    .settings(noPublishing: _*)
+    .settings(publishSettings: _*)
+    .settings(releaseSettings: _*)
+    .settings(
+      name := "sbt-plugins")
+    .aggregate(sbtVersionInjector)
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
     .settings(sbtPluginSettings: _*)
     .settings(publishSettings: _*)
     .settings(
-      name := "sbt-version-injector",
-      version := "0.1.0-SNAPSHOT"
+      name := "sbt-version-injector"
     )
 
 
