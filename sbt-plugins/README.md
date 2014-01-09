@@ -1,13 +1,12 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 0.2
+Current release [VERSION](#version): 0.2.0
 
 [Usage](#usage)
 -----
 
-Best practice: for each plugin from this project you want to use in your project, add a file named '[plugin-id].sbt'
-in your project's 'project' directory with the following contents:
+Within a `plugins.sbt` file in your project's 'project' directory, put the following:
 
     credentials += Credentials("Sonatype Nexus Repository Manager", "utility.allenai.org", [username], [password])
 
