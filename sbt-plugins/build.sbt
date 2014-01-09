@@ -12,14 +12,19 @@ lazy val root =
     .settings(releaseSettings: _*)
     .settings(
       name := "sbt-plugins")
-    .aggregate(sbtVersionInjector)
+    .aggregate(sbtVersionInjector, sbtTravisPublisher)
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
     .settings(sbtPluginSettings: _*)
-    .settings(publishSettings: _*)
     .settings(
       name := "sbt-version-injector"
     )
 
+lazy val sbtTravisPublisher =
+  project.in(file("sbt-travis-publisher"))
+    .settings(sbtPluginSettings: _*)
+    .settings(
+      name := "sbt-travis-publisher"
+    )
 

@@ -24,7 +24,7 @@ object BuildSettings {
       .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)
       .setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true))
 
-  lazy val sbtPluginSettings = basicSettings ++ Seq(
+  lazy val sbtPluginSettings = basicSettings ++ publishSettings ++ Seq(
     sbtPlugin := true
   )
 
