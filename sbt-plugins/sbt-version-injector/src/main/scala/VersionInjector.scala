@@ -13,13 +13,34 @@ object VersionInjector {
     injectVersionTask,
     injectArtifactTask,
     injectGitTask,
+    gitDescribeTask,
+    gitCommitDateTask,
+    gitSha1Task,
     resourceGenerators in Compile <+= injectVersion)
 
+  val injectVersion = TaskKey[Seq[File]]("injectVersion", "Generates both the artifact.conf and git.conf version files")
   val injectArtifact = TaskKey[File]("injectArtifact", "Generate the artifact.conf resource")
   val injectGit = TaskKey[File]("injectGit", "Generate the git.conf resource")
+  val gitCommitDate = TaskKey[Long]("gitCommitDate", "The date in milliseconds of the current git commit")
+  val gitSha1 = TaskKey[String]("gitSha1", "The sha1 hash of the current git commit")
+  val gitDescribe = TaskKey[String]("gitDescribe", "The description of the current git commit")
 
-  /** injectVersion Aggregates the two resource generating tasks */
-  val injectVersion = TaskKey[Seq[File]]("injectVersion")
+  private def executableName(command: String) = {
+    val maybeOsName = sys.props.get("os.name").map(_.toLowerCase)
+    val maybeIsWindows = maybeOsName.filter(_.contains("windows"))
+    maybeIsWindows.map(_ => command + ".exe").getOrElse(command)
+  }
+
+  private def gitCommand(args: Any*) = Process(executableName("git") +: args.map(_.toString))
+
+  // Git tasks
+  val gitDescribeTask = gitDescribe := {
+    (gitCommand("describe").!!).trim
+  }
+
+  val gitCommitDateTask = gitCommitDate := (gitCommand("log", "-1", "--format=%ct", "HEAD").!!).trim.toLong * 1000
+  val gitSha1Task = gitSha1 := (gitCommand("rev-parse", "HEAD").!!).trim
+
   val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile) map { (artifactFile, gitFile) =>
     Seq(artifactFile, gitFile)
   }
@@ -36,36 +57,18 @@ object VersionInjector {
     artifactConfFile
   }
 
-  val injectGitTask = injectGit <<= (resourceManaged in Compile, organization, name, version, streams) map { (resourceManaged, org, name, version, s) =>
-    val gitConfFile = resourceManaged / org / cleanArtifactName(name) / "git.conf"
+  val injectGitTask = injectGit <<= (resourceManaged in Compile, organization, name, version, streams, gitDescribe, gitSha1, gitCommitDate) map {
+    (resourceManaged, org, name, version, s, describe, sha1, date) =>
+      val gitConfFile = resourceManaged / org / cleanArtifactName(name) / "git.conf"
 
-    val commandName = "git"
-    val exec = executableName(commandName)
+      s.log.info(s"Generating git.conf managed resource... (describe: ${describe})")
 
-    def cmd(args: Any*): ProcessBuilder = Process(exec +: args.map(_.toString))
-
-    /** Run `git describe`
-      *
-      * This will fail if there are no annotated tags.
-      */
-    lazy val describe = (cmd("describe").!!).trim
-
-    /** The SHA1 on the HEAD revision. */
-    def sha1() = (cmd("rev-parse", "HEAD").!!).trim
-
-    s.log.info(s"Generating git.conf managed resource... (describe: ${describe})")
-
-    val gitContents =
-      "describe: \"" + describe + "\"\n" +
-        "sha1: \"" + sha1() + "\""
-    IO.write(gitConfFile, gitContents)
-    gitConfFile
-  }
-
-  private def executableName(command: String) = {
-    val maybeOsName = sys.props.get("os.name").map(_.toLowerCase)
-    val maybeIsWindows = maybeOsName.filter(_.contains("windows"))
-    maybeIsWindows.map(_ => command + ".exe").getOrElse(command)
+      val gitContents =
+        "describe: \"" + describe + "\"\n" +
+          "sha1: \"" + sha1 + "\"\n" +
+          "date: " + date.toString
+      IO.write(gitConfFile, gitContents)
+      gitConfFile
   }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")

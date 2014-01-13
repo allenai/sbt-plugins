@@ -1,7 +1,7 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 0.2.0
+Current release [VERSION](#version): 0.2.1
 
 [Usage](#usage)
 -----
@@ -14,4 +14,13 @@ Within a `plugins.sbt` file in your project's 'project' directory, put the follo
 
     addSbtPlugin("org.allenai.plugins" % [plugin-id] % VERSION)
 
+Release Notes
+-------------
 
+### 0.2.1 ###
+
+- Added commit date to sbt-version-injector plugin
+
+### 0.2.0 ###
+
+- Added sbt-travis-publisher plugin
