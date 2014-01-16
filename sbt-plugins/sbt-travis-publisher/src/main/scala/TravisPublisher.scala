@@ -16,7 +16,18 @@ object TravisPublisher {
 
     val branch = Try(sys.env("TRAVIS_BRANCH")).getOrElse("??")
 
+    val commit = Try(sys.env("TRAVIS_COMMIT")).getOrElse("??")
+
     val snapshot = version.value.trim.endsWith("SNAPSHOT")
+
+    println {
+      "Travis Environment:\n\t" +
+        s"On Travis: $travis\n\t" +
+        s"Is pull request: $pr\n\t" +
+        s"Branch: $branch\n\t" +
+        s"Snapshot: $snapshot\n\t" +
+        s"Commit: $commit"
+    }
 
     if (travis && !pr && branch == "master" && snapshot) {
       println("Publishing master on travis: " + name.value)
