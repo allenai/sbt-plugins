@@ -12,7 +12,7 @@ object TravisPublisher {
 
     val travis = Try(sys.env("TRAVIS")).getOrElse("false") == "true"
 
-    val pr = Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("false") == "true"
+    val pr = Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("") != "false"
 
     val branch = Try(sys.env("TRAVIS_BRANCH")).getOrElse("??")
 
