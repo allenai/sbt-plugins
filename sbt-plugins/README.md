@@ -1,7 +1,7 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 0.2.1
+Current release [VERSION](#version): 0.2.2
 
 [Usage](#usage)
 -----
@@ -16,6 +16,10 @@ Within a `plugins.sbt` file in your project's 'project' directory, put the follo
 
 Release Notes
 -------------
+
+### 0.2.2 ###
+
+- Fixed sbt-travis-publisher plugin's detection of pull requests so it no longer publishes pull request artifacts.
 
 ### 0.2.1 ###
 
