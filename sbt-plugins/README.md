@@ -19,7 +19,7 @@ Release Notes
 
 ### 0.2.3 ###
 
-- Added sbt-common-ui plugin
+- Added sbt-shared-ui plugin
 
 ### 0.2.2 ###
 

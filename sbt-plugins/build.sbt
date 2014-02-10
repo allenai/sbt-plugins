@@ -9,7 +9,7 @@ lazy val root =
     .settings(releaseSettings: _*)
     .settings(
       name := "sbt-plugins")
-    .aggregate(sbtVersionInjector, sbtTravisPublisher, sbtCommonUi)
+    .aggregate(sbtVersionInjector, sbtTravisPublisher, sbtSharedUi)
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
@@ -25,9 +25,9 @@ lazy val sbtTravisPublisher =
       name := "sbt-travis-publisher"
     )
 
-lazy val sbtCommonUi =
-  project.in(file("sbt-common-ui"))
+lazy val sbtSharedUi =
+  project.in(file("sbt-shared-ui"))
     .settings(sbtPluginSettings: _*)
     .settings(
-      name := "sbt-common-ui"
+      name := "sbt-shared-ui"
     )

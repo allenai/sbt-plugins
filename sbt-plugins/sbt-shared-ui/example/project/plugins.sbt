@@ -10,4 +10,4 @@ credentials += Credentials(
 
 resolvers += "AllenAI Snapshots" at nexus
 
-addSbtPlugin("org.allenai.plugins" % "sbt-common-ui" % "0.2.3-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-shared-ui" % "0.2.3-SNAPSHOT")
