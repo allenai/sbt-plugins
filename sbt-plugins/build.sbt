@@ -1,10 +1,7 @@
 import BuildSettings._
 import sbtrelease.ReleasePlugin._
 
-// Do NOT aggregate the various subprojects to prevent accidental
-// publishing of all plugins at the same time.
-// By keeping the subprojects isolated, we force plugins to be
-// published manually and individually.
+// Subprojects are aggregated to enforce publishing all to the same version.
 
 lazy val root =
   project.in(file ("."))
@@ -12,7 +9,7 @@ lazy val root =
     .settings(releaseSettings: _*)
     .settings(
       name := "sbt-plugins")
-    .aggregate(sbtVersionInjector, sbtTravisPublisher)
+    .aggregate(sbtVersionInjector, sbtTravisPublisher, sbtSharedUi)
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
@@ -28,3 +25,9 @@ lazy val sbtTravisPublisher =
       name := "sbt-travis-publisher"
     )
 
+lazy val sbtSharedUi =
+  project.in(file("sbt-shared-ui"))
+    .settings(sbtPluginSettings: _*)
+    .settings(
+      name := "sbt-shared-ui"
+    )
