@@ -23,7 +23,7 @@ In `[project root]/project/plugins.sbt`, add the following:
 
     addSbtPlugin("org.allenai.plugins" % "sbt-common-ui" % <VERSION>)
 
-Now you can use the plugin in your build file (either `build.sbt` or `project/Build.scala`). You will need to define subprojects - one for the common UI subproject, and one for each UI subroject that will depend on the common UI project.
+Now you can use the plugin in your build file (either `build.sbt` or `project/Build.scala`). You will need to define a subproject containing the UI resources you wish to share. See the "UI Project Directory Structure" section for details.
 
 ```scala
 // In build.sbt
