@@ -51,6 +51,7 @@ The `sbt-shared-ui` plugin leverages Typesafe's [sbt-jshint-plugin](https://gith
 src/main/assets         # managed sources (will be run through sbt-web plugins)
                /js      # javascript sources
                /css     # CSS sources
+               /less    # LESS CSS sources
                /html    # HTML sources
                /images  # image files
 
@@ -121,3 +122,60 @@ You would add a `script` tag in your dependent project HTML file:
   ...
 </html>
 ```
+
+## Web Asset  ##
+
+The `shared-ui-plugin` provides jshint and LESS CSS compile-time processing of web assets (javascript and LESS files, respectively).
+
+### LESS CSS ###
+
+LESS CSS is a superset of CSS that adds nice features such as:
+
+- Variables
+- Mixins
+- Functions
+
+See http://lesscss.org/ to learn more about LESS CSS.
+
+A nice feature that LESS CSS provides is the ability to generate a single CSS file from multiple
+LESS source files. By default, all LESS source files are converted into a corresponding CSS
+file by the LESS compiler. The `shared-ui-plugin` provides a setting that can be used to specify
+a single (or multiple) main LESS source files to process into CSS. This is easier to explain with
+an example:
+
+Say you have the following LESS source files:
+
+```
+src/main/assets/less
+                    /main.less
+                    /colors.less
+                    /directives
+                               /ari-details.less
+                               /ari-logo.less
+```
+
+and you want to end up with a single `main.css` file that combines all of the LESS files for use in the UI.
+
+To do so, you need to use `import` in `main.less` as follows:
+
+```less
+// in main.less
+import "colors.less";
+import "directives/ari-details.less";
+import "directives/ari-logo.less";
+```
+
+And then let the `sbt-shared-ui` plugin know it should only process the `main.less` file:
+
+```scala
+// in build.sbt
+
+lazy val sharedUi = project.in(file("shared-ui"))
+  .settings(SharedUiPlugin.sharedProjectSettings: _*)
+  .settings(
+    SharedUiPlugin.SharedUiKeys.lessFilter := Some("main.less")
+  )
+```
+
+This will tell the LESS compiler to only process the `main.less` root file and generate a `main.css`
+that will combine all of the imported LESS sources (outputted as CSS).

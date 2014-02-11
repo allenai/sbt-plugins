@@ -11,3 +11,5 @@ credentials += Credentials(
 resolvers += "AllenAI Releases" at nexus
 
 addSbtPlugin("com.typesafe" % "sbt-jshint-plugin" % "1.0.0-ai2")
+
+addSbtPlugin("com.typesafe" % "sbt-less-plugin" % "1.0.0-ai2")

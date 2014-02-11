@@ -4,24 +4,38 @@ import Keys._
 import com.typesafe.web.sbt.WebPlugin
 import com.typesafe.web.sbt.WebPlugin.WebKeys
 import com.typesafe.jse.sbt.JsEnginePlugin
-import com.typesafe.jse.sbt.JsEnginePlugin.JsEngineKeys
 import com.typesafe.jshint.sbt.JSHintPlugin
-import com.typesafe.jshint.sbt.JSHintPlugin.JshintKeys
+import com.typesafe.less.sbt.LessPlugin
 
 object SharedUiPlugin extends Plugin {
 
   object SharedUiKeys {
+    // public
+    val lessFilter = SettingKey[Option[FileFilter]]("shared-less-filter")
+
+    // internal
     val generateWebResources = TaskKey[Seq[File]]("generate-web-resources")
     val copySharedWebResources = TaskKey[Seq[File]]("copy-shared-web-resources")
   }
 
   import SharedUiKeys._
 
+  val defaults = Seq(
+    SharedUiKeys.lessFilter := None,
+    (LessPlugin.LessKeys.lessFilter in WebKeys.Assets) := {
+      SharedUiKeys.lessFilter.value match {
+        case Some(filter) => filter
+        case None         => (LessPlugin.LessKeys.lessFilter in WebKeys.Assets).value
+      }
+    }
+  )
+
   /** Settings for any project that creates web assets */
   val webSettings =
     WebPlugin.webSettings ++
       JsEnginePlugin.jsEngineSettings ++
-      JSHintPlugin.jshintSettings
+      JSHintPlugin.jshintSettings ++
+      LessPlugin.lessSettings ++ defaults
 
   /** Settings for shared UI project that will be depended upon by other UI projects */
   val sharedProjectSettings = webSettings ++ Seq(

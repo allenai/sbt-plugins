@@ -1,5 +1,6 @@
 import com.typesafe.jse.sbt.JsEnginePlugin.JsEngineKeys
 import spray.revolver.RevolverPlugin._
+import SharedUiPlugin.SharedUiKeys
 
 // Spray server settings
 val serverSettings = Revolver.settings ++ Seq(
@@ -17,6 +18,12 @@ val serverSettings = Revolver.settings ++ Seq(
 // other subprojects can depend.
 lazy val shared = project.in(file("shared"))
   .settings(SharedUiPlugin.sharedProjectSettings: _*)
+  .settings(
+    // Force LESS processing of a single main file.
+    // The single main file can import other files, but we
+    // only want to generate a single CSS file for this example.
+    SharedUiKeys.lessFilter := Some("shared.less")
+  )
 
 // A UI project that depends on the `shared` project.
 // To hook into the shared UI project, you must add the

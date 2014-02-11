@@ -1,6 +1,6 @@
 val nexusHost = "utility.allenai.org"
 
-val nexus = s"http://${nexusHost}:8081/nexus/content/repositories/snapshots"
+def nexus(releaseSnap: String) = s"http://${nexusHost}:8081/nexus/content/repositories/$releaseSnap"
 
 credentials += Credentials(
   "Sonatype Nexus Repository Manager",
@@ -8,6 +8,8 @@ credentials += Credentials(
   "deployment",
   "answermyquery")
 
-resolvers += "AllenAI Snapshots" at nexus
+resolvers += "AllenAI Snapshots" at nexus("snapshots")
+
+resolvers += "AllenAI Releases" at nexus("releases")
 
 addSbtPlugin("org.allenai.plugins" % "sbt-shared-ui" % "0.2.3-SNAPSHOT")
