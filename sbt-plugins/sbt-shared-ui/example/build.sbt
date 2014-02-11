@@ -26,7 +26,7 @@ lazy val shared = project.in(file("shared"))
 // build.
 lazy val ui1 = project.in(file("ui1"))
   .dependsOn(shared) // required to enable watching assets in `shared`
-  .settings(SharedUiPlugin.dependentProjectSettings(shared): _*)
+  .settings(SharedUiPlugin.dependentProjectSettings(shared, namespace = "foo"): _*)
   .settings(serverSettings: _*)
 
 // A second UI project that depends on the `shared` project
