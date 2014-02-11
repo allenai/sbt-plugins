@@ -6,7 +6,7 @@ To run the example, start `sbt` and perform the following tasks:
     > project ui1
     > ~re-start
 
-Navigate your browser to `http://localhost:8090/assets/shared/js/main.js`
+Navigate your browser to `http://localhost:8090/assets/foo/js/main.js`
 
 Your browser should display a javascript file contents. This file is sourced in the `shared` subproject at:
 

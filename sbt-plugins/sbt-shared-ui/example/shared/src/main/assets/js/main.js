@@ -6,9 +6,10 @@ var baz = function() { return foo + bar; };
 
 var fiz = function() { return bar + "1"; };
 
+// Try removing the semicolon and see that jshint fails compile
 baz();
 
-// Hi there you buddy boy asdflkjsdf
+// Change this comment
 fiz();
 
 
