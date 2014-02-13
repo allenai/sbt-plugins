@@ -22,6 +22,7 @@ object SharedUiPlugin extends Plugin {
 
   val defaults = Seq(
     SharedUiKeys.lessFilter := None,
+    (copyResources in WebKeys.Assets) <<= (copyResources in WebKeys.Assets).dependsOn(LessPlugin.LessKeys.less in WebKeys.Assets),
     (LessPlugin.LessKeys.lessFilter in WebKeys.Assets) := {
       SharedUiKeys.lessFilter.value match {
         case Some(filter) => filter

@@ -1,8 +1,7 @@
-
 var h = "hi";
 
 var f = function() {
-	return h;
+  return h;
 };
 
 f();
