@@ -1,7 +1,7 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 0.2.3
+Current release [VERSION](#version): 0.2.4
 
 [Usage](#usage)
 -----
@@ -16,6 +16,10 @@ Within a `plugins.sbt` file in your project's 'project' directory, put the follo
 
 Release Notes
 -------------
+
+### 0.2.4 ###
+
+- Fixed sbt-shared-ui to compile LESS sources prior to copying resources.
 
 ### 0.2.3 ###
 
