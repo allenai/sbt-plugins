@@ -1,7 +1,7 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 0.2.4
+Current release [VERSION](#version): 0.2.5
 
 [Usage](#usage)
 -----
@@ -16,6 +16,14 @@ Within a `plugins.sbt` file in your project's 'project' directory, put the follo
 
 Release Notes
 -------------
+
+### 0.2.5 ###
+
+- Fixed sbt-shared-ui to enable dependency on multiple shared projects.
+- Changed the sbt-shared-ui settings method names:
+  - `SharedUiPlugin.sharedProjectSettings` is replaced by `SharedUiPlugin.uiSettings`
+  - `SharedUiPlugin.dependentProjectSettings(project, namespace)` is now `SharedUiPlugin.uses(project, namespace)`
+- It is now required for all ui projects (shared or not) to add the `SharedUiPlugin.uiSettings`
 
 ### 0.2.4 ###
 

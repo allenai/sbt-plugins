@@ -30,17 +30,19 @@ Now you can use the plugin in your build file (either `build.sbt` or `project/Bu
 
 // The shared project (name is arbitrary)
 lazy val sharedUi = project.in(file("shared-ui"))
-  .settings(SharedUiPlugin.sharedProjectSettings: _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
 
 // A UI project that depends on shared
 lazy val frontend = project.in(file("frontend"))
   .dependsOn(sharedUi)
-  .settings(SharedUiPlugin.dependentProjectSettings(sharedUi): _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
+  .settings(SharedUiPlugin.uses(sharedUi): _*)
 
 // Another UI project that depends on shared
 lazy val anotherFrontend = project.in(file("another-frontend"))
   .dependsOn(sharedUi)
-  .settings(SharedUiPlugin.dependentProjectSettings(sharedUi): _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
+  .settings(SharedUiPlugin.uses(sharedUi): _*)
 ```
 
 ### UI Project Directory Structure ###
@@ -79,8 +81,8 @@ You can specify a different namespace than `shared` when adding the dependent pr
 lazy val frontend = project.in(file("frontend"))
   .dependsOn(sharedUi)
   .dependsOn(anotherSharedUi)
-  .settings(SharedUiPlugin.dependentProjectSettings(sharedUi, namespace = "foo"): _*)
-  .settings(SharedUiPlugin.dependentProjectSettings(anotherSharedUi, namespace = "bar"): _*)
+  .settings(SharedUiPlugin.uses(sharedUi, namespace = "foo"): _*)
+  .settings(SharedUiPlugin.uses(anotherSharedUi, namespace = "bar"): _*)
 ```
 
 In this example, the shared resources from `sharedUi` will be placed in the `foo` namespace,
@@ -171,7 +173,7 @@ And then let the `sbt-shared-ui` plugin know it should only process the `main.le
 // in build.sbt
 
 lazy val sharedUi = project.in(file("shared-ui"))
-  .settings(SharedUiPlugin.sharedProjectSettings: _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
   .settings(
     SharedUiPlugin.SharedUiKeys.lessFilter := Some("main.less")
   )

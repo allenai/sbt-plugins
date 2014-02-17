@@ -13,11 +13,10 @@ val serverSettings = Revolver.settings ++ Seq(
 
 // The `shared` sub-project that will generate web asset resources
 // that can be used by dependent projects.
-// You must add the SharedUiPlugin.sharedProjectSettings to
-// a project to enable it as a shared UI project upon which
-// other subprojects can depend.
+// You must add the SharedUiPlugin.uiSettings to a project
+// to enable web asset management (javascript linting, LESS processing, etc.)
 lazy val shared = project.in(file("shared"))
-  .settings(SharedUiPlugin.sharedProjectSettings: _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
   .settings(
     // Force LESS processing of a single main file.
     // The single main file can import other files, but we
@@ -25,21 +24,22 @@ lazy val shared = project.in(file("shared"))
     SharedUiKeys.lessFilter := Some("shared.less")
   )
 
-// A UI project that depends on the `shared` project.
-// To hook into the shared UI project, you must add the
-// SharedUiPlugin.dependentProjectSettings parameterized
-// by the shared project. These settings force building of
-// shared web assets as a dependency for the dependent project's
-// build.
+// A UI project that uses the `shared` project's assets.
+// Simply add the SharedUiPlugin.uses settings parameterized by
+// the shared project and optionally a namespace for the shared project's assets.
+// These settings force building of shared web assets as
+// a dependency for the dependent project's build.
 lazy val ui1 = project.in(file("ui1"))
   .dependsOn(shared) // required to enable watching assets in `shared`
-  .settings(SharedUiPlugin.dependentProjectSettings(shared, namespace = "foo"): _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
+  .settings(SharedUiPlugin.uses(shared, namespace = "foo"): _*)
   .settings(serverSettings: _*)
 
-// A second UI project that depends on the `shared` project
+// A second UI project that uses the `shared` project's assets
 lazy val ui2 = project.in(file("ui2"))
   .dependsOn(shared) // required to enable watching assets in `shared`
-  .settings(SharedUiPlugin.dependentProjectSettings(shared): _*)
+  .settings(SharedUiPlugin.uiSettings: _*)
+  .settings(SharedUiPlugin.uses(shared): _*)
   .settings(serverSettings: _*)
 
 lazy val root = project.in(file(".")).aggregate(ui1, ui2).settings(
