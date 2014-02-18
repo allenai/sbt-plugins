@@ -51,15 +51,12 @@ object SharedUiPlugin extends Plugin {
     copySharedWebResources ++= {
       val baseDirectories = (resourceManaged in sharedProject in WebKeys.Assets).value :: Nil
       val newBase = (resourceManaged in WebKeys.Assets).value / namespace
-      newBase.mkdirs()
       copyWebResources(baseDirectories, newBase)
     },
     generateWebResources ++= {
       val public = (resourceManaged in WebKeys.Assets).value
-      public.mkdirs()
       val baseDirectories = public :: Nil
       val newBase = (resourceManaged in Compile).value / "public"
-      newBase.mkdirs()
       copyWebResources(baseDirectories, newBase)
     },
     resourceGenerators in Compile <+= generateWebResources,
@@ -75,6 +72,8 @@ object SharedUiPlugin extends Plugin {
 
   /** Helper for copying web resource files */
   private def copyWebResources(baseDirectories: Seq[File], newBase: File) = {
+    baseDirectories filterNot { _.exists } foreach { _.mkdir() }
+    if (!newBase.exists) newBase.mkdir()
     val sourceFiles = baseDirectories flatMap filesOnly
     val mappings = sourceFiles pair rebase(baseDirectories, newBase)
     IO.copy(mappings, true).toSeq
