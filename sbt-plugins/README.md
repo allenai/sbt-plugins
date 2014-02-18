@@ -1,7 +1,7 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 0.2.5
+Current release [VERSION](#version): 2014.02.18-1
 
 [Usage](#usage)
 -----
@@ -16,6 +16,11 @@ Within a `plugins.sbt` file in your project's 'project' directory, put the follo
 
 Release Notes
 -------------
+
+### 2014.02.18-1 ###
+
+- Fixed build-breaking bug where a target directory was not available to LESS compiler
+- Changed versioning strategy to yyyy.MM.dd-[i]
 
 ### 0.2.5 ###
 
