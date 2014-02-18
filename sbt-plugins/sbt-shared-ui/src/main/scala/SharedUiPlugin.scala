@@ -72,8 +72,8 @@ object SharedUiPlugin extends Plugin {
 
   /** Helper for copying web resource files */
   private def copyWebResources(baseDirectories: Seq[File], newBase: File) = {
-    baseDirectories filterNot { _.exists } foreach { _.mkdir() }
-    if (!newBase.exists) newBase.mkdir()
+    baseDirectories foreach { _.mkdirs() }
+    newBase.mkdirs()
     val sourceFiles = baseDirectories flatMap filesOnly
     val mappings = sourceFiles pair rebase(baseDirectories, newBase)
     IO.copy(mappings, true).toSeq
