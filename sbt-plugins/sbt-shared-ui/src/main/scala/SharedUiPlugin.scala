@@ -44,7 +44,7 @@ object SharedUiPlugin extends Plugin {
       resourceGenerators in Compile <+= generateWebResources,
       // We don't want Less files compiled in test
       LessKeys.less in Test := Nil,
-      LessKeys.less in WebKeys.Assets := Nil,
+      LessKeys.less in WebKeys.TestAssets := Nil,
       (compile in Compile) <<= (compile in Compile).dependsOn(copyResources in WebKeys.Assets))
 
   /** Settings for dependent UI projects
