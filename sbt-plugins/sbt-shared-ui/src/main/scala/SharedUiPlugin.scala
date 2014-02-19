@@ -66,7 +66,8 @@ object SharedUiPlugin extends Plugin {
       copyWebResources(baseDirectories, newBase)
     },
     resourceGenerators in Compile <+= generateWebResources,
-    (compile in Compile) <<= (compile in Compile).dependsOn(compile in Compile in sharedProject))
+    (compile in Compile) <<= (compile in Compile).dependsOn(compile in Compile in sharedProject),
+    (test in Test) <<= (test in Test).dependsOn(compile in Compile in sharedProject))
 
   /** Helper that walks the directory tree and returs list of files only */
   private def filesOnly(source: File): Seq[File] =

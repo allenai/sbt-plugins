@@ -42,7 +42,7 @@ lazy val ui2 = project.in(file("ui2"))
   .settings(SharedUiPlugin.uses(shared): _*)
   .settings(serverSettings: _*)
 
-lazy val root = project.in(file(".")).aggregate(ui1, ui2).settings(
+lazy val root = project.in(file(".")).aggregate(ui1, ui2, shared).settings(
   name := "sbt-shared-ui-tester",
   description := "Proof of technology project for the sbt-shared-ui plugin"
 )
