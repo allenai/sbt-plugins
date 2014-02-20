@@ -32,7 +32,7 @@ object SharedUiPlugin extends Plugin {
   /** bases Less CSS settings to be applied to all UI projects */
   private val lessBaseSettings = LessPlugin.lessSettings ++ Seq(
     SharedUiKeys.lessFilter := None,
-    copyResources in WebKeys.Assets <<= (copyResources in WebKeys.Assets).dependsOn(LessKeys.less in Compile),
+    copyResources in WebKeys.Assets <<= (copyResources in WebKeys.Assets).dependsOn(LessKeys.less in WebKeys.Assets),
     LessKeys.lessFilter := {
       SharedUiKeys.lessFilter.value match {
         case Some(filter) => filter
@@ -50,7 +50,6 @@ object SharedUiPlugin extends Plugin {
       copySharedWebResources := Nil,
       generateWebResourcesTask,
       generateWebResources <<= generateWebResources.dependsOn(copyResources in WebKeys.Assets),
-      generateWebResources <<= generateWebResources.dependsOn(copySharedWebResources),
       resourceGenerators in Compile <+= generateWebResources,
       compile in Compile <<= (compile in Compile).dependsOn(generateWebResources)
     )
@@ -69,6 +68,7 @@ object SharedUiPlugin extends Plugin {
         val newBase = (resourceManaged in WebKeys.Assets).value / namespace
         copyWebResources(baseDirectories, newBase)
       },
+      generateWebResources <<= generateWebResources.dependsOn(copySharedWebResources),
       copySharedWebResources <<= copySharedWebResources.dependsOn(compile in Compile in sharedProject)
     )
 
