@@ -32,6 +32,7 @@ object SharedUiPlugin extends Plugin {
   /** bases Less CSS settings to be applied to all UI projects */
   private val lessBaseSettings = LessPlugin.lessSettings ++ Seq(
     SharedUiKeys.lessFilter := None,
+    copyResources in WebKeys.Assets <<= (copyResources in WebKeys.Assets).dependsOn(LessKeys.less in Compile),
     LessKeys.lessFilter := {
       SharedUiKeys.lessFilter.value match {
         case Some(filter) => filter
