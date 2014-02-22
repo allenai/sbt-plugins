@@ -2,12 +2,17 @@ import spray.routing.SimpleRoutingApp
 
 import akka.actor._
 
-object UI1 extends App with SimpleRoutingApp {
+object UI3 extends App with SimpleRoutingApp {
 
-  implicit val system = ActorSystem("ui1")
+  implicit val system = ActorSystem("ui3")
 
-  startServer(interface = "localhost", port = 8090) {
+  startServer(interface = "localhost", port = 8093) {
     pathEndOrSingleSlash {
+      get {
+        getFromResource(s"public/ui3/html/index.html")
+      }
+    } ~
+    path("ui1") {
       get {
         getFromResource(s"public/ui1/html/index.html")
       }
