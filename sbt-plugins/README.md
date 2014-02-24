@@ -1,7 +1,7 @@
 SBT Plugins
 ===========
 
-Current release [VERSION](#version): 2014.02.18-1
+Current release [VERSION](#version): 2014.2.24-1
 
 [Usage](#usage)
 -----
@@ -17,7 +17,15 @@ Within a `plugins.sbt` file in your project's 'project' directory, put the follo
 Release Notes
 -------------
 
-### 2014.02.18-1 ###
+### 2014.2.24-1 ###
+
+`sbt-shared-ui`
+
+- Removed confusing namespacing feature in preference to packaging convention
+
+### 2014.2.18-1 ###
+
+`sbt-shared-ui`
 
 - Fixed build-breaking bug where a target directory was not available to LESS compiler
 - Changed versioning strategy to yyyy.MM.dd-[i]

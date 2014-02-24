@@ -12,4 +12,4 @@ resolvers += "AllenAI Snapshots" at nexus("snapshots")
 
 resolvers += "AllenAI Releases" at nexus("releases")
 
-addSbtPlugin("org.allenai.plugins" % "sbt-shared-ui" % "2014.2.20-2-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-shared-ui" % "2014.2.20-3local-SNAPSHOT")

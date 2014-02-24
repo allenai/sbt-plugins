@@ -1,4 +1,3 @@
-import com.typesafe.jse.sbt.JsEnginePlugin.JsEngineKeys
 import spray.revolver.RevolverPlugin._
 import SharedUiPlugin.SharedUiKeys
 
@@ -25,14 +24,21 @@ lazy val shared = project.in(file("shared"))
   )
 
 // A UI project that uses the `shared` project's assets.
-// Simply add the SharedUiPlugin.uses settings parameterized by
-// the shared project and optionally a namespace for the shared project's assets.
+// Simply add the SharedUiPlugin.uses settings
 // These settings force building of shared web assets as
 // a dependency for the dependent project's build.
 lazy val ui1 = project.in(file("ui1"))
   .dependsOn(shared) // required to enable watching assets in `shared`
   .settings(SharedUiPlugin.uiSettings: _*)
-  .settings(SharedUiPlugin.uses(shared, namespace = "foo"): _*)
+  .settings(SharedUiPlugin.uses(shared): _*)
+  .settings(serverSettings: _*)
+
+// A UI project that uses another project with a dependency.
+// Illustrates transitive dependecny.
+lazy val ui3 = project.in(file("ui3"))
+  .dependsOn(ui1)
+  .settings(SharedUiPlugin.uiSettings: _*)
+  .settings(SharedUiPlugin.uses(ui1): _*)
   .settings(serverSettings: _*)
 
 // A second UI project that uses the `shared` project's assets
@@ -42,7 +48,7 @@ lazy val ui2 = project.in(file("ui2"))
   .settings(SharedUiPlugin.uses(shared): _*)
   .settings(serverSettings: _*)
 
-lazy val root = project.in(file(".")).aggregate(ui1, ui2, shared).settings(
+lazy val root = project.in(file(".")).aggregate(ui1, ui2, ui3, shared).settings(
   name := "sbt-shared-ui-tester",
   description := "Proof of technology project for the sbt-shared-ui plugin"
 )
