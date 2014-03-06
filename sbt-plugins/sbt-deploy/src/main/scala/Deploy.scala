@@ -125,13 +125,14 @@ object Deploy {
         // Copy via commandline, because it's annoying to do filewise in Scala /
         // Java.
         Process(Seq("cp", envConfFile.getPath, destConfFile.getPath)).!
+        IO.copyFile(envConfFile, destConfFile)
       } else {
         println()
         println(s"WARNING: Could not find config file ${deployEnv}.conf!")
         println()
         println("Press ENTER to continue with no environment configuration, CTRL-C to abort.")
         println()
-        Process(Seq("read")).!<
+        System.console.readLine()
       }
 
       // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
@@ -169,9 +170,28 @@ object Deploy {
     // TODO(jkinkead): Run an automated "up" check here. This requires that all
     // of our servers have a valid "up" path of some sort.
 
+    resourceGenerators in Compile <+= Def.task {
+      val file = (resourceManaged in Compile).value / "run-class.sh"
+      // Read the plugin's resource file.
+      val contents = {
+        val source = io.Source.fromInputStream(this.getClass.getResourceAsStream("run-class.sh"))
+        try {
+          source.getLines.mkString("\n")
+        } finally {
+          source.close()
+        }
+      }
+
+      // Copy the contents to the clients managed resources.
+      IO.write(file, contents)
+      println(s"Wrote ${contents.size} characters to ${file.getPath}.")
+
+      Seq(file)
+    },
+
     // Add root run script.
     mappings in Universal += {
-      sourceDirectory.value / "main" / "resources" / "run-class.sh" -> "bin/run-class.sh"
+      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
     },
 
     // Map src/main/resources => conf and src/main/bin => bin.
@@ -234,11 +254,7 @@ object Deploy {
       ConfigFactory.parseFile(configFile).resolve
     } catch {
       case configError: ConfigException =>
-        println("Error loading config file:")
-        println("  " + configError.getMessage)
-        System.exit(1)
-        // Required for type check.
-        throw new RuntimeException("Unreachable code")
+        throw new IllegalArgumentException("Error loading config file:" + configError.getMessage)
     }
 
     // Validate that the user provided a target that exists.
@@ -249,7 +265,7 @@ object Deploy {
         key <- JavaConversions.iterableAsScalaIterable(deployConfig.root.keySet)
       } yield key
       println(s"    ${keys.mkString(" ")}")
-      System.exit(1)
+      throw new IllegalArgumentException(s"Error: No configuration found for target '$deployKey'.")
     }
     val targetConfig = deployConfig.getConfig(deployKey)
 
@@ -286,13 +302,10 @@ object Deploy {
         case configError: ConfigException =>
           configError match {
             case _: ConfigException.Missing =>
-              println(s"Error: ${targetName} missing key ${key}.")
+              throw new IllegalArgumentException(s"Error: ${targetName} missing key ${key}.")
             case _: ConfigException.WrongType =>
-              println(s"Error: ${targetName}.${key} must be a string.")
+              throw new IllegalArgumentException(s"Error: ${targetName}.${key} must be a string.")
           }
-          System.exit(1)
-          // Required for type check.
-          throw new RuntimeException("Unreachable code")
       }
     }
     // Coerce optional keys into strings.
