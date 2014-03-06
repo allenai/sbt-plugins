@@ -23,7 +23,7 @@ import scala.util.Try
   * a target within that configuration file to deploy. See global_deploy.conf
   * for the list of required configuration values, and what they do.
   *
-  * This will deploy from the current working directory.
+  * This will deploy from the current project in sbt.
   *
   * This builds from the currently active git branch unless a version is
   * specified, in which case it will check out that tag/branch/commit before
