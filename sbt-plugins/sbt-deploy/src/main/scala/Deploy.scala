@@ -15,7 +15,7 @@ import scala.sys.process.Process
 import scala.sys.process.ProcessLogger
 import scala.util.Try
 
-/** Script to deploy a project to an ec2 instance. Handles copying binaries and
+/** Plugin to deploy a project to an ec2 instance. Handles copying binaries and
   * config files, including setting up the correct per-environment override
   * file, but does not handle restarting the remote application.
   *
@@ -80,6 +80,7 @@ object Deploy {
       // commands.
 
       // Validate that we are, in fact, in a git repository.
+      // TODO(schmmd): Use JGit instead (http://www.eclipse.org/jgit/)
       if (Process(Seq("git", "status")).!(ProcessLogger(line => ())) != 0) {
         throw new IllegalArgumentException("Not in git repository, exiting.")
       }
@@ -167,8 +168,7 @@ object Deploy {
       println("Deploy complete. Validate your server!")
     },
 
-    // TODO(jkinkead): Run an automated "up" check here. This requires that all
-    // of our servers have a valid "up" path of some sort.
+    // TODO(jkinkead): Run an automated "/info/name" check here to see if services are running.
 
     resourceGenerators in Compile <+= Def.task {
       val file = (resourceManaged in Compile).value / "run-class.sh"
