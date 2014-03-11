@@ -203,9 +203,6 @@ object Deploy {
         (sourceDirectory.value / "main" / "bin" ** "*" pair
           relativeTo(sourceDirectory.value / "main")))
 
-  val deployTask = Def.inputTask {
-  }
-
   /** Parses all Java properties-style defines from the argument list, and
     * returns the Config generated from these properties, as well as the updated
     * argument list.
