@@ -10,6 +10,6 @@ credentials += Credentials(
 
 resolvers += "AllenAI Snapshots" at nexus
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "1.0.0-ai2-SNAPSHOT")
+addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "2014.3.11-1-SNAPSHOT")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "1.0.0-ai2-SNAPSHOT")
+addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "2014.3.11-1-SNAPSHOT")
