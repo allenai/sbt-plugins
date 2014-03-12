@@ -1,11 +1,11 @@
 import sbt._
 import Keys._
 
-import com.typesafe.sbt.web.{ SbtWebPlugin => WebPlugin }
+import com.typesafe.sbt.web._
 import com.typesafe.sbt.web.SbtWebPlugin.WebKeys
-import com.typesafe.sbt.jse.{ SbtJsEnginePlugin => JsEnginePlugin, SbtJsTaskPlugin }
-import com.typesafe.sbt.jshint.{ SbtJSHintPlugin => JSHintPlugin }
-import com.typesafe.sbt.less.{ SbtLessPlugin => LessPlugin }
+import com.typesafe.sbt.jse.{ SbtJsEnginePlugin, SbtJsTaskPlugin }
+import com.typesafe.sbt.jshint.SbtJSHintPlugin
+import com.typesafe.sbt.less.SbtLessPlugin
 
 /** The SharedUiPlugin leverages Typesafe's sbt-web SBT plugin platform.
   *
@@ -21,17 +21,13 @@ import com.typesafe.sbt.less.{ SbtLessPlugin => LessPlugin }
   */
 object SharedUiPlugin extends Plugin {
 
-  case class SharedProjectAssets(resourcesManaged: File)
+  case class SharedProjectAssets(public: File)
 
   object SharedUiKeys {
     // public
     val lessFilter = SettingKey[Option[FileFilter]]("shared-less-filter")
 
     // internal
-    val compileLocalAssets = TaskKey[Seq[File]](
-      "compileLocalAssets",
-      "Compile web assets in this project into the target/public directory")
-
     val compileSharedAssets = TaskKey[Seq[SharedProjectAssets]](
       "compileSharedAssets",
       "Compile web assets in shared projects")
@@ -49,7 +45,10 @@ object SharedUiPlugin extends Plugin {
   }
 
   import SharedUiKeys._
-  import LessPlugin.LessKeys
+  import SbtLessPlugin.LessKeys
+
+  // Provides the fileFilter key used by the lessFilter setting.
+  import SbtJsTaskPlugin.JsTaskKeys._
 
   /** Helper for consistent logging messages */
   private def log(msg: String) = s"[shared-ui] $msg"
@@ -58,67 +57,54 @@ object SharedUiPlugin extends Plugin {
   private def compileSharedAssetsTask(sharedProject: Project) =
     compileSharedAssets := {
       streams.value.log.info(log(s"Compiling shared assets in '${sharedProject.id}'"))
-      val sharedState = (compile in WebKeys.Assets in sharedProject).value
-      val resourcesMgd = (resourceManaged in WebKeys.Assets in sharedProject).value
-      compileSharedAssets.value :+ SharedProjectAssets(resourcesMgd)
+      val sharedState = (WebKeys.assets in WebKeys.Assets in sharedProject).value
+      val public = (WebKeys.public in WebKeys.Assets in sharedProject).value
+      compileSharedAssets.value :+ SharedProjectAssets(public)
     }
 
   /** Once assets in all shared projects are compiled, copies them to target/public */
   private def copySharedAssetsToPublicTask = copySharedAssetsToPublic := {
+    streams.value.log.info("About to copy shared assets to public")
     val sharedProjects = compileSharedAssets.value
     sharedProjects.flatMap { sharedProjectAssets =>
-      streams.value.log.info(log(s"Copying shared assets from '${sharedProjectAssets.resourcesManaged.toString}' to target/public"))
-      val newBase = (resourceManaged in WebKeys.Assets).value
-      copyWebResources(Seq(sharedProjectAssets.resourcesManaged), newBase)
+      streams.value.log.info(log(s"Copying shared assets from '${sharedProjectAssets.public.toString}' to target/public"))
+      val newBase = (WebKeys.public in WebKeys.Assets).value
+      copyWebResources(Seq(sharedProjectAssets.public), newBase)
     }
-  }
-
-  /** Once all shared assets have been compiled and copied into target/public,
-    * compiles the assets in the local project (to target/public)
-    */
-  private def compileLocalAssetsTask = compileLocalAssets := {
-    streams.value.log.info(log("Compiling local assets"))
-    val shared = copySharedAssetsToPublic.value
-    val state = (compile in WebKeys.Assets).value
-    (copyResources in WebKeys.Assets).value.map(_._2)
   }
 
   /** Copies the entire target/public directory into managed resources */
   private def copyCompiledAssetsToResourcesTask = copyCompiledAssetsToResources := {
     streams.value.log.info(log("Copying compiled assets to resources"))
-    val allAssets = compileLocalAssets.value
+    val allAssets = filesOnly((WebKeys.assets in WebKeys.Assets).value)
     val newBase = (resourceManaged in Compile).value / "public"
-    val public = (resourceManaged in WebKeys.Assets).value
+    val public = (WebKeys.public in WebKeys.Assets).value
     copyWebResources(public :: Nil, newBase)
   }
 
   /** bases Less CSS settings to be applied to all UI projects */
-  private val lessBaseSettings = LessPlugin.lessSettings ++ Seq(
-    SharedUiKeys.lessFilter := None,
-    LessKeys.lessFilter := {
-      SharedUiKeys.lessFilter.value match {
-        case Some(filter) => filter
-        case None         => (LessKeys.lessFilter in WebKeys.Assets).value
-      }
-    }
-  )
+  private val lessBaseSettings = SbtLessPlugin.lessSettings ++ Seq(
+    SharedUiKeys.lessFilter := None
+  ) ++ inTask(LessKeys.less)(
+      Seq(
+        fileFilter := SharedUiKeys.lessFilter.value.getOrElse(fileFilter.value)
+      ))
 
   private val uiBaseSettings: Seq[Def.Setting[_]] = Seq(
-    compileLocalAssetsTask,
     compileSharedAssets := Nil,
     copySharedAssetsToPublicTask,
     copyCompiledAssetsToResourcesTask,
     resourceGenerators in Compile <+= copyCompiledAssetsToResources,
-    compile in Compile <<= (compile in Compile).dependsOn(compileLocalAssets)
+    compile in WebKeys.Assets <<= (compile in WebKeys.Assets).dependsOn(copySharedAssetsToPublic)
   )
 
   /* ================> Public Interface ================ */
 
   /** Default settings for any project that creates web assets */
-  val uiSettings: Seq[Def.Setting[_]] = WebPlugin.webSettings ++
-    JsEnginePlugin.jsEngineSettings ++
+  val uiSettings: Seq[Def.Setting[_]] = SbtWebPlugin.webSettings ++
+    SbtJsEnginePlugin.jsEngineSettings ++
     SbtJsTaskPlugin.jsEngineAndTaskSettings ++
-    JSHintPlugin.jshintSettings ++
+    SbtJSHintPlugin.jshintSettings ++
     lessBaseSettings ++
     uiBaseSettings
 

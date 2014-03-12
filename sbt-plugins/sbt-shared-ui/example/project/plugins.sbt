@@ -12,4 +12,6 @@ resolvers += "AllenAI Snapshots" at nexus("snapshots")
 
 resolvers += "AllenAI Releases" at nexus("releases")
 
-addSbtPlugin("org.allenai.plugins" % "sbt-shared-ui" % "2014.2.20-3local-SNAPSHOT")
+lazy val root = Project("plugins", file(".")).dependsOn(plugin)
+
+lazy val plugin = ProjectRef(file("../../").getCanonicalFile.toURI, "sbtSharedUi")
