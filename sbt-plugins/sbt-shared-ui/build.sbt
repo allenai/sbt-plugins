@@ -1,6 +1,6 @@
 val nexusHost = "utility.allenai.org"
 
-val nexus = s"http://${nexusHost}:8081/nexus/content/repositories/snapshots"
+val nexus = s"http://${nexusHost}:8081/nexus/content/repositories/releases"
 
 credentials += Credentials(
   "Sonatype Nexus Repository Manager",
@@ -10,6 +10,6 @@ credentials += Credentials(
 
 resolvers += "AllenAI Snapshots" at nexus
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "2014.3.11-1-SNAPSHOT")
+addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "2014.3.12")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "2014.3.11-1-SNAPSHOT")
+addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "2014.3.12")
