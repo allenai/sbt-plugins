@@ -57,8 +57,44 @@ object Deploy {
 
   val deploy = inputKey[Unit](Usage)
 
-  val settings = packageArchetype.java_application ++ Seq(
+  val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
+
+  val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
+
+  val gitRepoCleanTask = gitRepoClean := {
+    // Dependencies
+    gitRepoPresent.value
+
+    // Validate that the git repository is clean.
+    if (Process(Seq("git", "diff", "--shortstat")).!! != "") {
+      throw new IllegalArgumentException("Git repository is dirty, exiting.")
+    }
+
+    println("Git repository is clean.")
+
+    // Validate that the git repository has no untracked files.
+    if (Process(Seq("git", "clean", "-n")).!! != "") {
+      throw new IllegalArgumentException("Git repository has untracked files, exiting.")
+    }
+
+    println("Git repository contains no untracked files.")
+  }
+
+  val gitRepoPresentTask = gitRepoPresent := {
+    // Validate that we are, in fact, in a git repository.
+    // TODO(schmmd): Use JGit instead (http://www.eclipse.org/jgit/)
+    if (Process(Seq("git", "status")).!(ProcessLogger(line => ())) != 0) {
+      throw new IllegalArgumentException("Not in git repository, exiting.")
+    }
+
+    println("Git repository present.")
+  }
+
+  val settings = packageArchetype.java_application ++ Seq(gitRepoCleanTask, gitRepoPresentTask,
     deploy := {
+      // Dependencies
+      gitRepoClean.value
+
       val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
       // Process any definition-like args.
       val (commandlineOverrides, reducedArgs) = parseDefines(args)
@@ -78,20 +114,6 @@ object Deploy {
 
       // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the
       // commands.
-
-      // Validate that we are, in fact, in a git repository.
-      // TODO(schmmd): Use JGit instead (http://www.eclipse.org/jgit/)
-      if (Process(Seq("git", "status")).!(ProcessLogger(line => ())) != 0) {
-        throw new IllegalArgumentException("Not in git repository, exiting.")
-      }
-
-      // Validate that the git repository is clean.
-      if (Process(Seq("git", "diff", "--shortstat")).!! != "") {
-        throw new IllegalArgumentException("Git repository is dirty, exiting.")
-      }
-      if (Process(Seq("git", "clean", "-n")).!! != "") {
-        throw new IllegalArgumentException("Git repository has untracked files, exiting.")
-      }
 
       // Check out the provided version, if it's set.
       for (version <- configMap.get("project.version")) {
