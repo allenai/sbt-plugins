@@ -95,8 +95,8 @@ object SharedUiPlugin extends Plugin {
     copySharedAssetsToWebTargetTask,
     copyCompiledAssetsToResourcesTask,
     resourceGenerators in Compile <+= copyCompiledAssetsToResources,
-    compile in WebKeys.Assets <<= (compile in WebKeys.Assets).dependsOn(copySharedAssetsToWebTarget),
-    compile in Compile <<= (compile in Compile).dependsOn(compile in WebKeys.Assets)
+    WebKeys.assets in WebKeys.Assets <<= (WebKeys.assets in WebKeys.Assets).dependsOn(copySharedAssetsToWebTarget),
+    compile in Compile <<= (compile in Compile).dependsOn(WebKeys.assets in WebKeys.Assets)
   )
 
   /* ================> Public Interface ================ */
