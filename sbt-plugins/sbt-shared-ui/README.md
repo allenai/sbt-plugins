@@ -111,39 +111,39 @@ lazy val ui2 = project.in(file("another-frontend"))
   .settings(SharedUiPlugin.uses(ui1): _*)
 ```
 
-and `ui1` depends on `shared`, and `ui2` depends on `ui1`. After compiling the project, the `[project]/target/public` directories will look like:
+and `ui1` depends on `shared`, and `ui2` depends on `ui1`. After compiling the project, the `[project]/target/web/public/main` directories will look like:
 
 ```
-root/*shared*/target/public/
-                            shared/
-                                   js/util.js
-                                   html/template/header.html
-                                   less/main.less
-                                   *less/main.css*
-                            vendor/
-                                   angular.js
-                                   lo-dash.js
-root/*ui1*/target/public/
-                         *ui1*/{js/,html/,less/}
-                         shared/
-                                js/util.js
-                                html/template/header.html
-                                less/main.less
-                                less/main.css
-                         vendor/
-                                angular.js
-                                lo-dash.js
-root/*ui2*/target/public/
-                         ui1/{js/,html/,less/}
-                         *ui2*/{js/,html/,less/}
-                         shared/
-                                js/util.js
-                                html/template/header.html
-                                less/main.less
-                                less/main.css
-                         vendor/
-                                angular.js
-                                lo-dash.js
+root/*shared*/target/web/public/main/
+                                    shared/
+                                           js/util.js
+                                           html/template/header.html
+                                           less/main.less
+                                           *less/main.css*
+                                    vendor/
+                                           angular.js
+                                           lo-dash.js
+root/*ui1*/target/web/public/main/
+                                 *ui1*/{js/,html/,less/}
+                                 shared/
+                                        js/util.js
+                                        html/template/header.html
+                                        less/main.less
+                                        less/main.css
+                                 vendor/
+                                        angular.js
+                                        lo-dash.js
+root/*ui2*/target/web/public/main/
+                                 ui1/{js/,html/,less/}
+                                 *ui2*/{js/,html/,less/}
+                                 shared/
+                                        js/util.js
+                                        html/template/header.html
+                                        less/main.less
+                                        less/main.css
+                                 vendor/
+                                        angular.js
+                                        lo-dash.js
 ```
 
 #### Serving Web Resources from a Spray Server ####
@@ -238,7 +238,7 @@ You can import Less files from shared subprojects as in the following example:
 
 ```less
 // In [root]/ui1/src/main/assets/ui1/less/main.less
-@import "../../../../../target/public/shared/less/util.less";
+@import "../../../../../target/web/public/main/shared/less/util.less";
 // Now you have styles, mixins, and variables defined in shared/less/util.less
 .ui1 {
   .background-color: @bg-color; // defined in shared/less/util.less

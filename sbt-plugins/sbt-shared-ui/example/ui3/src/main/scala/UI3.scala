@@ -9,17 +9,16 @@ object UI3 extends App with SimpleRoutingApp {
   startServer(interface = "localhost", port = 8093) {
     pathEndOrSingleSlash {
       get {
-        getFromResource(s"public/ui3/html/index.html")
+        getFromResource(s"web/public/main/ui3/html/index.html")
       }
     } ~
     path("ui1") {
       get {
-        getFromResource(s"public/ui1/html/index.html")
+        getFromResource(s"web/public/main/ui1/html/index.html")
       }
     } ~
     path("assets" / Rest) { rest =>
-      println(s"Getting from resource: $rest")
-      getFromResource(s"public/$rest")
+      getFromResource(s"web/public/main/$rest")
     }
   }
 
