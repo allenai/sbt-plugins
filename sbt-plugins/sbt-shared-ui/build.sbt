@@ -8,8 +8,8 @@ credentials += Credentials(
   "deployment",
   "answermyquery")
 
-resolvers += "AllenAI Snapshots" at nexus
+resolvers += "AllenAI Releases" at nexus
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "2014.3.17")
+addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "2014.3.18")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "2014.3.17")
+addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "2014.3.18")
