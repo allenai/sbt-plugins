@@ -1,5 +1,5 @@
 /*
- * Test Javascript files using Jasmine
+ * Test Javascript files using Mocha (http://visionmedia.github.io/mocha/)
  *
  * Arguments:
  * 0 - name given to the command invoking the script (unused)
