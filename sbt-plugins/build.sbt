@@ -38,3 +38,10 @@ lazy val sbtDeploy =
     .settings(
       name := "sbt-deploy"
     )
+
+lazy val sbtJavascriptTester =
+  project.in(file("sbt-javascript-tester"))
+    .settings(sbtPluginSettings: _*)
+    .settings(
+      name := "sbt-javascript-tester"
+    )
