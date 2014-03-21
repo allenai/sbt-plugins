@@ -70,10 +70,6 @@ if process_running; then
     sleep 1
   done
   rm "$PID_FILE"
-else
-  if [[ $STOP ]]; then
-    echo "No process to stop."
-  fi
 fi
 
 # Exit early if we weren't asked to start.
@@ -81,7 +77,10 @@ if [[ ! $START ]]; then
   exit
 fi
 
-LOGBACK_CONF="-Dlogback.appname=$SHORT_NAME"
+LOGBACK_CONF=("-Dlogback.appname=$SHORT_NAME")
+if [ -e conf/logback.xml ]; then
+  LOGBACK_CONF+=("-Dlogback.configurationFile=conf/logback.xml")
+fi
 CONF_FILE="-Dconfig.file=conf/application.conf"
 # Use a per-env config, if it exists.
 if [ -e conf/env.conf ]; then
@@ -89,9 +88,9 @@ if [ -e conf/env.conf ]; then
 fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
-# TODO(jkinkead): Don't always run with the same heap. 8G in particular is a
-# very large max size for a default.
-JAVA_CMD=(java -Xms1g -Xmx8g -classpath $CLASSPATH $CONF_FILE $LOGBACK_CONF)
+# TODO(jkinkead): Don't always run with the same heap.
+JAVA_CMD=(java -Xms256m -Xmx512m -classpath $CLASSPATH $CONF_FILE
+  ${LOGBACK_CONF[@]})
 
 # Run java.
 echo "running in `pwd` ..."
