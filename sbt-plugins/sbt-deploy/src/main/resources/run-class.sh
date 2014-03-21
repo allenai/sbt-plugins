@@ -93,7 +93,7 @@ fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
 # TODO(jkinkead): Don't always run with the same heap.
-JAVA_CMD=(java -Xms256m -Xmx512m -classpath $CLASSPATH $CONF_FILE
+JAVA_CMD=(java -Xms512m -Xmx512m -classpath $CLASSPATH $CONF_FILE
   ${LOGBACK_CONF[@]})
 
 # Run java.
