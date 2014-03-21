@@ -70,6 +70,10 @@ if process_running; then
     sleep 1
   done
   rm "$PID_FILE"
+else
+  if [[ $STOP ]]; then
+    echo "No process to stop."
+  fi
 fi
 
 # Exit early if we weren't asked to start.
