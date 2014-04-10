@@ -51,7 +51,7 @@ import scala.util.Try
   */
 object Deploy {
   /** Static usage string. */
-  val Usage = "Usage: deploy <overrides> [config file] [deploy target]";
+  val Usage = "Usage: deploy <overrides> [deploy target]";
   /** Project subdirectory that the universal sbt plugin's 'stage' command writes to. */
   val UniversalStagingSubdir = "target/universal/stage"
 
@@ -99,14 +99,16 @@ object Deploy {
       // Process any definition-like args.
       val (commandlineOverrides, reducedArgs) = parseDefines(args)
 
-      if (reducedArgs.length != 2) {
+      if (reducedArgs.length != 1) {
         throw new IllegalArgumentException(Usage)
       }
-      val configFile = new File(reducedArgs(0))
+
+      val workingDirectory = (baseDirectory in thisProject).value
+      val configFile = new File(workingDirectory.getPath + "/conf/deploy.conf")
       if (!configFile.isFile()) {
         throw new IllegalArgumentException(s"${configFile.getPath()}: Must be a config file")
       }
-      val deployTarget = reducedArgs(1)
+      val deployTarget = reducedArgs(0)
 
       val targetConfig = loadTargetConfig(commandlineOverrides, configFile, deployTarget)
 
@@ -130,10 +132,8 @@ object Deploy {
         println(s"Error building ${projectName}, exiting.")
       }
 
-      val universalStagingDir = configMap.get("project.subdirectory") match {
-        case Some(subdir) => new File(subdir, UniversalStagingSubdir)
-        case None         => new File(UniversalStagingSubdir)
-      }
+      val universalStagingDir = new File(workingDirectory,
+        UniversalStagingSubdir)
 
       // Copy over the per-env config file, if it exists.
       val deployEnv = if (deployTarget.lastIndexOf('.') >= 0) {
