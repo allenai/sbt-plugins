@@ -57,6 +57,9 @@ object Deploy {
 
   val deploy = inputKey[Unit](Usage)
 
+  val deployDirs = SettingKey[Seq[String]]("deployDirs",
+    "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
+
   val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
 
   val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
@@ -91,6 +94,7 @@ object Deploy {
   }
 
   val settings = packageArchetype.java_application ++ Seq(gitRepoCleanTask, gitRepoPresentTask,
+    deployDirs := Seq("bin", "conf", "lib", "public"),
     deploy := {
       // Dependencies
       gitRepoClean.value
@@ -168,9 +172,10 @@ object Deploy {
       val deployHost = configMap("deploy.host")
       val deployDirectory = configMap("deploy.directory")
 
-      val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" "), "--include=/bin",
-        "--include=/conf", "--include=/lib", "--include=/public", "--exclude=/*", "--delete",
-        universalStagingDir.getPath + "/", deployHost + ":" + deployDirectory)
+      val rsyncDirs = deployDirs.value map (name => s"--include=/${name}")
+      val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")) ++ rsyncDirs ++
+        Seq("--exclude=/*", "--delete", universalStagingDir.getPath + "/", deployHost + ":" + deployDirectory)
+
       // Shell-friendly version of rsync command, with rsh value quoted.
       val quotedRsync = rsyncCommand.patch(
         2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1).mkString(" ")
