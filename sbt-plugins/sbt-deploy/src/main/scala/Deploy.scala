@@ -57,6 +57,10 @@ object Deploy {
 
   val deploy = inputKey[Unit](Usage)
 
+  /** The reason this is a Setting instead of just including * is that including * in the rsync
+    * command causes files created on the server side (like log files and .pid files) to be deleted
+    * when the rsync runs, which we don't want to happen.
+    */
   val deployDirs = SettingKey[Seq[String]]("deployDirs",
     "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
 
