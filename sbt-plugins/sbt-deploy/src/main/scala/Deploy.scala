@@ -155,7 +155,6 @@ object Deploy {
         val destConfFile = new File(universalStagingDir, "conf/env.conf")
         // Copy via commandline, because it's annoying to do filewise in Scala /
         // Java.
-        Process(Seq("cp", envConfFile.getPath, destConfFile.getPath)).!
         IO.copyFile(envConfFile, destConfFile)
       } else {
         println()
