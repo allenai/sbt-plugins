@@ -99,7 +99,6 @@ if [ -e conf/env.conf ]; then
 fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
-# TODO(jkinkead): Don't always run with the same heap.
 JAVA_CMD=(java $JVM_ARGS -classpath $CLASSPATH $CONF_FILE
   ${LOGBACK_CONF[@]})
 
