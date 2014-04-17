@@ -8,6 +8,13 @@
 # 1 - fully-qualified classname to run
 # 2 - short name used to name output and PID files
 # 3 - command, one of start|stop|restart
+#
+# You can specify custom JVM arguments by settings JVM_ARGS.
+
+# Set default JVM_ARGS if undefined
+if [ -z "${JVM_ARGS}" ]; then
+  JVM_ARGS="-Xms512m -Xmx512m"
+fi
 
 SCRIPT_NAME=`basename $0`
 # Use a compact usage if we're being invoked as another script.
@@ -93,7 +100,7 @@ fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
 # TODO(jkinkead): Don't always run with the same heap.
-JAVA_CMD=(java -Xms512m -Xmx512m -classpath $CLASSPATH $CONF_FILE
+JAVA_CMD=(java $JVM_ARGS -classpath $CLASSPATH $CONF_FILE
   ${LOGBACK_CONF[@]})
 
 # Run java.
