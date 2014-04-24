@@ -1,11 +1,11 @@
 import sbt._
 import Keys._
 
-import com.typesafe.sbt.web._
-import com.typesafe.sbt.web.SbtWebPlugin.WebKeys
-import com.typesafe.sbt.jse.{ SbtJsEnginePlugin, SbtJsTaskPlugin }
-import com.typesafe.sbt.jshint.SbtJSHintPlugin
-import com.typesafe.sbt.less.SbtLessPlugin
+import com.typesafe.sbt.web.Import._
+import com.typesafe.sbt.web.SbtWeb
+import com.typesafe.sbt.jse.{ SbtJsEngine, SbtJsTask, JsTaskImport }
+import com.typesafe.sbt.jshint.SbtJSHint
+import com.typesafe.sbt.less.Import.LessKeys
 
 /** The SharedUiPlugin leverages Typesafe's sbt-web SBT plugin platform.
   *
@@ -20,6 +20,7 @@ import com.typesafe.sbt.less.SbtLessPlugin
   *
   */
 object SharedUiPlugin extends Plugin {
+  import SbtWeb.autoImport._
 
   case class SharedProjectAssets(webTarget: File)
 
@@ -45,10 +46,9 @@ object SharedUiPlugin extends Plugin {
   }
 
   import SharedUiKeys._
-  import SbtLessPlugin.LessKeys
 
   // Provides the fileFilter key used by the lessFilter setting.
-  import SbtJsTaskPlugin.JsTaskKeys._
+  import JsTaskImport.JsTaskKeys._
 
   /** Helper for consistent logging messages */
   private def log(projName: String, msg: String) = s"[shared-ui][$projName] $msg"
@@ -57,8 +57,8 @@ object SharedUiPlugin extends Plugin {
   private def compileSharedAssetsTask(sharedProject: Project) =
     compileSharedAssets := {
       streams.value.log.info(log(name.value, s"Compiling shared assets in '${sharedProject.id}'"))
-      val sharedState = (WebKeys.assets in WebKeys.Assets in sharedProject).value
-      val webTarget = (WebKeys.webTarget in WebKeys.Assets in sharedProject).value
+      val sharedState = (WebKeys.assets in Assets in sharedProject).value
+      val webTarget = (WebKeys.webTarget in Assets in sharedProject).value
       compileSharedAssets.value :+ SharedProjectAssets(webTarget)
     }
 
@@ -68,7 +68,7 @@ object SharedUiPlugin extends Plugin {
     val sharedProjects = compileSharedAssets.value
     sharedProjects.flatMap { sharedProjectAssets =>
       streams.value.log.info(log(name.value, s"Copying shared assets from '${sharedProjectAssets.webTarget.toString}' to target/web"))
-      val newBase = (WebKeys.webTarget in WebKeys.Assets).value
+      val newBase = (WebKeys.webTarget in Assets).value
       copyWebResources(Seq(sharedProjectAssets.webTarget), newBase)
     }
   }
@@ -76,9 +76,9 @@ object SharedUiPlugin extends Plugin {
   /** Copies the entire target/web directory into managed resources */
   private def copyCompiledAssetsToResourcesTask = copyCompiledAssetsToResources := {
     streams.value.log.info(log(name.value, "Copying compiled assets to managed resources"))
-    val allAssets = filesOnly((WebKeys.assets in WebKeys.Assets).value)
+    val allAssets = filesOnly((WebKeys.assets in Assets).value)
     val newBase = (resourceManaged in Compile).value / "web"
-    val webTarget = (WebKeys.webTarget in WebKeys.Assets).value
+    val webTarget = (WebKeys.webTarget in Assets).value
     copyWebResources(webTarget :: Nil, newBase)
   }
 
@@ -87,7 +87,7 @@ object SharedUiPlugin extends Plugin {
     SharedUiKeys.lessFilter := None
   ) ++ inTask(LessKeys.less)(
       Seq(
-        fileFilter := SharedUiKeys.lessFilter.value.getOrElse(fileFilter.value)
+        fileFilter := SharedUiKeys.lessFilter.value.getOrElse(GlobFilter("*.less"))
       ))
 
   private val uiBaseSettings: Seq[Def.Setting[_]] = Seq(
@@ -95,8 +95,8 @@ object SharedUiPlugin extends Plugin {
     copySharedAssetsToWebTargetTask,
     copyCompiledAssetsToResourcesTask,
     resourceGenerators in Compile <+= copyCompiledAssetsToResources,
-    WebKeys.assets in WebKeys.Assets <<= (WebKeys.assets in WebKeys.Assets).dependsOn(copySharedAssetsToWebTarget),
-    compile in Compile <<= (compile in Compile).dependsOn(WebKeys.assets in WebKeys.Assets)
+    WebKeys.assets in Assets <<= (WebKeys.assets in Assets).dependsOn(copySharedAssetsToWebTarget),
+    compile in Compile <<= (compile in Compile).dependsOn(WebKeys.assets in Assets)
   )
 
   /* ================> Public Interface ================ */
