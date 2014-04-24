@@ -1,12 +1,12 @@
 import sbt._
 import sbt.Keys._
 
-import com.typesafe.sbt.SbtNativePackager._
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+import com.typesafe.sbt.SbtNativePackager._
+import com.typesafe.sbt.packager.universal
 
 import java.io.File
 
@@ -42,17 +42,19 @@ import scala.util.Try
   *
   * Overrides of the deploy target's settings can also be specified on the
   * commandline as Java property overrides (-Dprop.path=propvalue). This is the
-  * easiest way to specify a version (project.version) or any other variable
-  * info. These key/value pairs are imported into the deploy target's scope.
-  * For example, "project.version" will override the current target's version;
-  * specifying "target.path.project.version" will not work.
+  * easiest way to specify any variable info. These key/value pairs are
+  * imported into the deploy target's scope.  For example, "project.version"
+  * will override the current target's version; specifying
+  * "target.path.project.version" will not work.
   *
   * Command-line overrides have precedence over .deployrc overrides.
   */
 object Deploy {
   /** Static usage string. */
   val Usage = "Usage: deploy <overrides> [deploy target]";
-  /** Project subdirectory that the universal sbt plugin's 'stage' command writes to. */
+  /** Project subdirectory that the universal sbt plugin's 'stage' command
+    * writes to.
+    */
   val UniversalStagingSubdir = "target/universal/stage"
 
   val deploy = inputKey[Unit](Usage)
@@ -102,6 +104,7 @@ object Deploy {
     deploy := {
       // Dependencies
       gitRepoClean.value
+      universal.Keys.stage.value
 
       val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
       // Process any definition-like args.
@@ -124,21 +127,6 @@ object Deploy {
 
       // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the
       // commands.
-
-      // Check out the provided version, if it's set.
-      for (version <- configMap.get("project.version")) {
-        println(s"Checking out ${version} . . .")
-        if (Process(Seq("git", "checkout", "-q", version)).! != 0) {
-          throw new IllegalArgumentException(s"Could not checkout ${version}.")
-        }
-      }
-
-      // Build the target specified.
-      val projectName = configMap("project.name")
-      println(s"Building ${projectName} . . .")
-      if (Process(Seq("sbt", "project " + projectName, "clean", "stage")).! != 0) {
-        println(s"Error building ${projectName}, exiting.")
-      }
 
       val universalStagingDir = new File(workingDirectory,
         UniversalStagingSubdir)
@@ -318,7 +306,7 @@ object Deploy {
     */
   def validateAsMap(targetName: String, targetConfig: Config): Map[String, String] = {
     // Validate that the target has all the required keys.
-    val requiredKeys = Seq("project.name", "deploy.host", "deploy.directory",
+    val requiredKeys = Seq("deploy.host", "deploy.directory",
       "deploy.startup_script", "deploy.user.ssh_keyfile", "deploy.user.ssh_username")
     val requiredKeyPairs: Seq[(String, String)] = for {
       key <- requiredKeys
