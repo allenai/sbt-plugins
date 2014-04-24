@@ -18,7 +18,7 @@ object BuildSettings {
       //"-target:jvm-1.7",
       "-language:_",
       "-Xlog-reflective-calls"),
-    scalaVersion := "2.10.3",
+    scalaVersion := "2.10.4",
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
       .setPreference(AlignSingleLineCaseStatements, true)
       .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)

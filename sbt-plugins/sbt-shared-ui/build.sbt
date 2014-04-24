@@ -10,6 +10,8 @@ credentials += Credentials(
 
 resolvers += "AllenAI Releases" at nexus
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-jshint-plugin" % "2014.3.18")
+resolvers += "Typesafe Releases Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-less-plugin" % "2014.3.18")
+addSbtPlugin("com.typesafe.sbt" % "sbt-jshint" % "1.0.0-M2a")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.0.0-M2a")
