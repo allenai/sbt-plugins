@@ -5,7 +5,6 @@ import sbtrelease.ReleasePlugin._
 
 lazy val root =
   project.in(file ("."))
-    .settings(publishSettings: _*)
     .settings(releaseSettings: _*)
     .settings(
       name := "sbt-plugins")
@@ -21,6 +20,7 @@ lazy val sbtVersionInjector =
 lazy val sbtTravisPublisher =
   project.in(file("sbt-travis-publisher"))
     .settings(sbtPluginSettings: _*)
+    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-travis-publisher"
     )

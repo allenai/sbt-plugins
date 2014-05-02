@@ -24,7 +24,7 @@ object BuildSettings {
       .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)
       .setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true))
 
-  lazy val sbtPluginSettings = basicSettings ++ publishSettings ++ Seq(
+  lazy val sbtPluginSettings = basicSettings ++ ai2PublishSettings ++ Seq(
     sbtPlugin := true
   )
 
@@ -39,7 +39,7 @@ object BuildSettings {
   // TODO: consider moving publishSettings into its own plugin
   // It may make sense to ultimately have a single "sbt-ai2-settings"" plugin that covers
   // version, publish, and scalariform
-  lazy val publishSettings = Seq(
+  lazy val ai2PublishSettings = Seq(
     credentials += Credentials("Sonatype Nexus Repository Manager",
                                "utility.allenai.org",
                                "deployment",
@@ -50,6 +50,18 @@ object BuildSettings {
         Some("snapshots" at nexus + "snapshots")
       else
         Some("releases"  at nexus + "releases")
+    })
+
+  lazy val sonatypePublishSettings = Seq(
+    credentials += Credentials("Sonatype Nexus Repository Manager",
+                               "oss.sonatype.org",
+                               "marksai2",
+                               "answermyquery"),
+    publishTo <<= isSnapshot { isSnap =>
+      if(isSnap)
+        Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
+      else
+        Some("releases"  at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
     })
 
 }
