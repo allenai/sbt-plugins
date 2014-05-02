@@ -62,6 +62,10 @@ object BuildSettings {
         Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
       else
         Some("releases"  at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-    })
+    },
+    licenses := Seq(
+      "BSD 3-Clause" -> new URL("http://opensource.org/licenses/BSD-3-Clause")
+    )
+  )
 
 }
