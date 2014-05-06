@@ -64,7 +64,7 @@ object BuildSettings {
         Some("releases"  at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
     },
     licenses := Seq(
-      "BSD 3-Clause" -> new URL("http://opensource.org/licenses/BSD-3-Clause")
+      "Apache 2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")
     )
   )
 
