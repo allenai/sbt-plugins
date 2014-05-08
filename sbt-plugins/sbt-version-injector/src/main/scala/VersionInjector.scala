@@ -57,15 +57,14 @@ object VersionInjector {
     artifactConfFile
   }
 
-  val injectGitTask = injectGit <<= (resourceManaged in Compile, organization, name, version, streams, gitDescribe, gitSha1, gitCommitDate) map {
-    (resourceManaged, org, name, version, s, describe, sha1, date) =>
+  val injectGitTask = injectGit <<= (resourceManaged in Compile, organization, name, version, streams, gitSha1, gitCommitDate) map {
+    (resourceManaged, org, name, version, s, sha1, date) =>
       val gitConfFile = resourceManaged / org / cleanArtifactName(name) / "git.conf"
 
-      s.log.info(s"Generating git.conf managed resource... (describe: ${describe})")
+      s.log.info(s"Generating git.conf managed resource... (sha1: ${sha1})")
 
       val gitContents =
-        "describe: \"" + describe + "\"\n" +
-          "sha1: \"" + sha1 + "\"\n" +
+        "sha1: \"" + sha1 + "\"\n" +
           "date: " + date.toString
       IO.write(gitConfFile, gitContents)
       gitConfFile
