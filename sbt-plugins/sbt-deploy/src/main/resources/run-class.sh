@@ -9,7 +9,7 @@
 # 2 - short name used to name output and PID files
 # 3 - command, one of start|stop|restart
 #
-# You can specify custom JVM arguments by settings JVM_ARGS.
+# You can specify custom JVM arguments by setting the environment variable JVM_ARGS.
 
 # Set default JVM_ARGS if undefined
 if [ -z "${JVM_ARGS}" ]; then
