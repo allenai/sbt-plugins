@@ -8,7 +8,21 @@ lazy val root =
     .settings(releaseSettings: _*)
     .settings(
       name := "sbt-plugins")
-    .aggregate(sbtVersionInjector, sbtTravisPublisher, sbtSharedUi)
+    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtSharedUi)
+
+lazy val sbtFormat =
+  project.in(file("sbt-format"))
+    .settings(sbtPluginSettings: _*)
+    .settings(
+      name := "sbt-format"
+    )
+
+lazy val sbtFormat =
+  project.in(file("sbt-format"))
+    .settings(sbtPluginSettings: _*)
+    .settings(
+      name := "sbt-format"
+    )
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
