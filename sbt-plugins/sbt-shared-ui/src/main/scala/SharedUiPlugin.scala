@@ -84,11 +84,9 @@ object SharedUiPlugin extends Plugin {
 
   /** bases Less CSS settings to be applied to all UI projects */
   private val lessBaseSettings = Seq(
-    SharedUiKeys.lessFilter := None
-  ) ++ inTask(LessKeys.less)(
+    SharedUiKeys.lessFilter := None) ++ inTask(LessKeys.less)(
       Seq(
-        fileFilter := SharedUiKeys.lessFilter.value.getOrElse(GlobFilter("*.less"))
-      ))
+        fileFilter := SharedUiKeys.lessFilter.value.getOrElse(GlobFilter("*.less"))))
 
   private val uiBaseSettings: Seq[Def.Setting[_]] = Seq(
     compileSharedAssets := Nil,
@@ -96,8 +94,7 @@ object SharedUiPlugin extends Plugin {
     copyCompiledAssetsToResourcesTask,
     resourceGenerators in Compile <+= copyCompiledAssetsToResources,
     WebKeys.assets in Assets <<= (WebKeys.assets in Assets).dependsOn(copySharedAssetsToWebTarget),
-    compile in Compile <<= (compile in Compile).dependsOn(WebKeys.assets in Assets)
-  )
+    compile in Compile <<= (compile in Compile).dependsOn(WebKeys.assets in Assets))
 
   /* ================> Public Interface ================ */
 
@@ -117,7 +114,7 @@ object SharedUiPlugin extends Plugin {
   private def filesOnly(source: File): Seq[File] =
     if (!source.isDirectory) source :: Nil
     else Option(source.listFiles) match {
-      case None        => Nil
+      case None => Nil
       case Some(files) => files flatMap filesOnly
     }
 

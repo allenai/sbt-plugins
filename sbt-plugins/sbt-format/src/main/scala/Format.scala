@@ -21,8 +21,7 @@ object Format {
         compileInputs in (Compile, compile) <<= (compileInputs in (Compile, compile)) dependsOn (FormatKeys.formatCheck in Compile),
         compileInputs in (Test, compile) <<= (compileInputs in (Test, compile)) dependsOn (FormatKeys.formatCheck in Test),
         // scalariform settings
-        ScalariformKeys.preferences := formattingPreferences
-      )
+        ScalariformKeys.preferences := formattingPreferences)
 
   // Settings used for a particular configuration (such as Compile).
   def configSettings: Seq[Setting[_]] =
@@ -37,33 +36,28 @@ object Format {
         thisProjectRef.value,
         configuration.value,
         streams.value,
-        scalaVersion.value
-      ),
+        scalaVersion.value),
       FormatKeys.formatCheckStrict <<= (FormatKeys.formatCheck) map { files: Seq[File] =>
         if (files.size > 0) {
           throw new IllegalArgumentException("Unformatted files.")
         }
-      }
-    )
+      })
 
   object FormatKeys {
     val formatCheck: TaskKey[Seq[File]] =
       TaskKey[Seq[File]](
         "formatCheck",
-        "Check (Scala) sources using scalariform"
-      )
+        "Check (Scala) sources using scalariform")
 
     val formatCheckStrict: TaskKey[Unit] =
       TaskKey[Unit](
         "formatCheckStrict",
-        "Check (Scala) sources using scalariform, failing if an unformatted file is found"
-      )
+        "Check (Scala) sources using scalariform, failing if an unformatted file is found")
 
     val format: TaskKey[Seq[File]] =
       TaskKey[Seq[File]](
         "format",
-        "Format (Scala) sources using scalariform"
-      )
+        "Format (Scala) sources using scalariform")
   }
 
   lazy val formattingPreferences = {
