@@ -29,7 +29,7 @@ object Format {
     // configures scalariform settings
     Seq(
       FormatKeys.format := ScalariformKeys.format.value,
-      FormatKeys.check := checkFormatting(
+      FormatKeys.formatCheck := checkFormatting(
         ScalariformKeys.preferences.value,
         (sourceDirectories in ScalariformKeys.format).value.toList,
         (includeFilter in ScalariformKeys.format).value,
@@ -39,7 +39,7 @@ object Format {
         streams.value,
         scalaVersion.value
       ),
-      FormatKeys.checkStrict <<= (FormatKeys.check) map { files: Seq[File] =>
+      FormatKeys.formatCheckStrict <<= (FormatKeys.check) map { files: Seq[File] =>
         if (files.size > 0) {
           throw new IllegalArgumentException("Unformatted files.")
         }
@@ -49,13 +49,13 @@ object Format {
   object FormatKeys {
     val check: TaskKey[Seq[File]] =
       TaskKey[Seq[File]](
-        "check",
+        "formatCheck",
         "Check (Scala) sources using scalariform"
       )
 
     val checkStrict: TaskKey[Unit] =
       TaskKey[Unit](
-        "checkStrict",
+        "formatCheckStrict",
         "Check (Scala) sources using scalariform, failing if an unformatted file is found"
       )
 

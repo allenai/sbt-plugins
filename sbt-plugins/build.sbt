@@ -17,13 +17,6 @@ lazy val sbtFormat =
       name := "sbt-format"
     )
 
-lazy val sbtFormat =
-  project.in(file("sbt-format"))
-    .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "sbt-format"
-    )
-
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
     .settings(sbtPluginSettings: _*)
