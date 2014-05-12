@@ -18,8 +18,8 @@ object Format {
       inConfig(Test)(configSettings) ++
       Seq(
         // check formatting on compile
-        compileInputs in (Compile, compile) <<= (compileInputs in (Compile, compile)) dependsOn (FormatKeys.check in Compile),
-        compileInputs in (Test, compile) <<= (compileInputs in (Test, compile)) dependsOn (FormatKeys.check in Test),
+        compileInputs in (Compile, compile) <<= (compileInputs in (Compile, compile)) dependsOn (FormatKeys.formatCheck in Compile),
+        compileInputs in (Test, compile) <<= (compileInputs in (Test, compile)) dependsOn (FormatKeys.formatCheck in Test),
         // scalariform settings
         ScalariformKeys.preferences := formattingPreferences
       )
@@ -39,7 +39,7 @@ object Format {
         streams.value,
         scalaVersion.value
       ),
-      FormatKeys.formatCheckStrict <<= (FormatKeys.check) map { files: Seq[File] =>
+      FormatKeys.formatCheckStrict <<= (FormatKeys.formatCheck) map { files: Seq[File] =>
         if (files.size > 0) {
           throw new IllegalArgumentException("Unformatted files.")
         }
@@ -47,13 +47,13 @@ object Format {
     )
 
   object FormatKeys {
-    val check: TaskKey[Seq[File]] =
+    val formatCheck: TaskKey[Seq[File]] =
       TaskKey[Seq[File]](
         "formatCheck",
         "Check (Scala) sources using scalariform"
       )
 
-    val checkStrict: TaskKey[Unit] =
+    val formatCheckStrict: TaskKey[Unit] =
       TaskKey[Unit](
         "formatCheckStrict",
         "Check (Scala) sources using scalariform, failing if an unformatted file is found"
