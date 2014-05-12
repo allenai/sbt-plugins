@@ -21,6 +21,9 @@ Add the deploy settings to your project:
 ```
 // In your project's build.sbt
 Deploy.settings
+
+// Add any additonal directories you need synced from the universal staging dir
+Deploy.deployDirs += "some_other_dir"
 ```
 
 ### running
