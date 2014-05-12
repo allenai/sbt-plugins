@@ -20,8 +20,7 @@ object JavascriptTesterPlugin extends AutoPlugin {
 
   val unscopedSettings = Seq(
     test in TestAssets <<= (test in TestAssets).dependsOn(jstest in TestAssets),
-    test in Test <<= (test in Test).dependsOn(test in TestAssets)
-  )
+    test in Test <<= (test in Test).dependsOn(test in TestAssets))
 
   override def projectSettings = unscopedSettings ++ inTask(jstest)(
     jsTaskSpecificUnscopedSettings ++ Seq(
@@ -33,7 +32,5 @@ object JavascriptTesterPlugin extends AutoPlugin {
 
       jsOptions := "{}",
       taskMessage in Assets := "JavaScript testing NOT",
-      taskMessage in TestAssets := "JavaScript testing"
-    )
-  ) ++ addJsSourceFileTasks(jstest)
+      taskMessage in TestAssets := "JavaScript testing")) ++ addJsSourceFileTasks(jstest)
 }

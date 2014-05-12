@@ -244,7 +244,7 @@ object Deploy {
       arg <- args
     } yield arg match {
       case DefinePattern(key, value) => Left(key -> value)
-      case _                         => Right(arg)
+      case _ => Right(arg)
     }
 
     val config = matchedArgs.foldLeft(ConfigFactory.empty("<commandline overrides>")) {
