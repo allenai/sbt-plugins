@@ -6,23 +6,23 @@ object TravisPublisher {
   val publishMasterOnTravis = taskKey[Unit]("publish to travis if on master branch")
 
   val sonatypePublishToSetting =
-    publishTo :=
-      if(isSnapshot.value)
+    publishTo := {
+      if (isSnapshot.value)
         Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
       else
-        Some("releases"  at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
-      }
+        Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
+    }
 
   val ai2PublishToSetting = {
     val ai2NexusHost = "utility.allenai.org"
-    val ai2NexusUrl = s"http://${nexusHost}:8081/nexus/content/repositories/"
-    publishTo :=
-      if(isSnapshot.value)
+    val ai2NexusUrl = s"http://${ai2NexusHost}:8081/nexus/content/repositories/"
+    publishTo := {
+      if (isSnapshot.value)
         Some("snapshots" at ai2NexusUrl + "content/repositories/snapshots")
       else
-        Some("releases"  at ai2NexusUrl + "service/local/staging/deploy/maven2") },
-      }
+        Some("releases" at ai2NexusUrl + "service/local/staging/deploy/maven2")
     }
+  }
 
   /** Publish only if this is a Travis build on branch master and it is not a
     * pull request.
