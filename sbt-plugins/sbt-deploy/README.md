@@ -6,9 +6,7 @@ A plugin for deploying applications to a machine.
 deploy
 ------
 
-`deploy` is an sbt task that takes as input a [Typesafe Config](https://github.com/typesafehub/config) file and
-performs a push to a remote host based on the values in that file.
-
+`deploy` is a [Typesafe Config](https://github.com/typesafehub/config)-based deploy task.
 
 ### running
 In order to push to a remote host, you need to have the `deploy.user.ssh_keyfile` config key present. The easiest way to
@@ -16,14 +14,17 @@ get this configured is to add it to a `~/.deployrc` file. A sample `.deployrc` f
 
 Once you have an keyfile configured, you can run by executing, from your project root:
 
-    sbt deploy ./conf/my_configuration_file.conf deploy.target
+    sbt deploy deploy.target
 
-"deploy.target" is an arbitrary key into your configuration file that needs to have the required keys, documented in
+"deploy.target" is an arbitrary object in your configuration file. This should be a config file located
+at `conf/deploy.conf` within your project's (or subproject's) root.
+
+This target key must point to an object that has the format documented in
 [`conf/global_deploy.conf`](https://github.com/allenai/tools/blob/master/sbt-plugins/sbt-deploy/conf/global_deploy.conf).
 
 You can provide key/value overrides on the commandline through Java-style property definitions:
 
-    sbt deploy ./conf/my_configuration_file.conf deploy.target -Dproperty.path=some_string_value
+    sbt deploy deploy.target -Dproperty.path=some_string_value
 
 This is mostly useful for setting a custom `project.version`.
 
@@ -31,7 +32,7 @@ This is mostly useful for setting a custom `project.version`.
 Documentation for all of the configuration values is in `conf/global_deploy.conf`, which can serve as a base
 configuration file for the deploy configurations.
 
-A simple configuration, in a `conf` or other folder in a project that includes a copy of `global_deploy.conf` could look like:
+A simple configuration using `global_deploy.conf` could look like:
 
     staging = {
       include "global_deploy.conf"
