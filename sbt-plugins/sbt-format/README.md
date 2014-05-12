@@ -3,9 +3,9 @@ sbt-format
 
 A plugin for formatting Scala source code.
 
-## Tasks
+### Tasks
 
-### format
+#### format
 
 Format the source code.  This is the same as `scalariformFormat`.
 
@@ -19,7 +19,7 @@ Format the source code.  This is the same as `scalariformFormat`.
 Tip: if you have a clean git index, you can revert scalariform changes with
 `git reset HEAD --hard`.
 
-### formatCheck
+#### formatCheck
 
 Check that the source code is formatted.  Misformatted source file will be
 announced with a warning.  The response of this task is a sequence of the
@@ -34,12 +34,12 @@ misformatted files (for chaining of sbt tasks).
 [warn] misformatted: Timing.scala
 ```
 
-### formatCheckStrict
+#### formatCheckStrict
 
 Check that the source code is formatted.  Misformatted source file will be
 announced with a warning.  The exit code will be non-zero.
 
-## Pre-commit Hook
+### Pre-commit Hook
 
 You might want a pre-commit hook that makes sure you've correctly formatted
 your source files.  You can do this easily.
