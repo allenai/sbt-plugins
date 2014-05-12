@@ -13,6 +13,7 @@ lazy val root =
 lazy val sbtFormat =
   project.in(file("sbt-format"))
     .settings(sbtPluginSettings: _*)
+    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-format"
     )
