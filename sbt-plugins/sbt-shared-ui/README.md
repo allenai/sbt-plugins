@@ -36,19 +36,19 @@ Now you can use the plugin in your build file (either `build.sbt` or `project/Bu
 
 // The shared project (name is arbitrary)
 lazy val sharedUi = project.in(file("shared-ui"))
-  .addSbtPlugins(SbtWeb) // required
+  .enablePlugins(SbtWeb) // required
   .settings(SharedUiPlugin.uiSettings: _*)
 
 // A UI project that depends on shared
 lazy val frontend = project.in(file("frontend"))
-  .addSbtPlugins(SbtWeb) // required
+  .enablePlugins(SbtWeb) // required
   .dependsOn(sharedUi)
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(sharedUi): _*)
 
 // Another UI project that depends on shared
 lazy val anotherFrontend = project.in(file("another-frontend"))
-  .addSbtPlugins(SbtWeb) // required
+  .enablePlugins(SbtWeb) // required
   .dependsOn(sharedUi)
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(sharedUi): _*)
@@ -107,17 +107,17 @@ In `build.sbt`, you have:
 
 ```scala
 lazy val shared = project.in(file("shared"))
-  .addSbtPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .settings(SharedUiPlugin.uiSettings: _*)
 
 lazy val ui1 = project.in(file("ui1"))
-  .addSbtPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .dependsOn(sharedUi)
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(shared): _*)
 
 lazy val ui2 = project.in(file("another-frontend"))
-  .addSbtPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .dependsOn(ui1)
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(ui1): _*)
