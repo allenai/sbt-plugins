@@ -15,7 +15,7 @@ val serverSettings = Revolver.settings ++ Seq(
 // You must add the SharedUiPlugin.uiSettings to a project
 // to enable web asset management (javascript linting, LESS processing, etc.)
 lazy val shared = project.in(file("shared"))
-  .addPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(
     // Force LESS processing of a single main file.
@@ -29,7 +29,7 @@ lazy val shared = project.in(file("shared"))
 // These settings force building of shared web assets as
 // a dependency for the dependent project's build.
 lazy val ui1 = project.in(file("ui1"))
-  .addPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .dependsOn(shared) // required to enable watching assets in `shared`
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(shared): _*)
@@ -38,7 +38,7 @@ lazy val ui1 = project.in(file("ui1"))
 // A UI project that uses another project with a dependency.
 // Illustrates transitive dependecny.
 lazy val ui3 = project.in(file("ui3"))
-  .addPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .dependsOn(ui1)
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(ui1): _*)
@@ -46,7 +46,7 @@ lazy val ui3 = project.in(file("ui3"))
 
 // A second UI project that uses the `shared` project's assets
 lazy val ui2 = project.in(file("ui2"))
-  .addPlugins(SbtWeb)
+  .enablePlugins(SbtWeb)
   .dependsOn(shared) // required to enable watching assets in `shared`
   .settings(SharedUiPlugin.uiSettings: _*)
   .settings(SharedUiPlugin.uses(shared): _*)

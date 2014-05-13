@@ -86,7 +86,7 @@ object SharedUiPlugin extends Plugin {
   private val lessBaseSettings = Seq(
     SharedUiKeys.lessFilter := None) ++ inTask(LessKeys.less)(
       Seq(
-        fileFilter := SharedUiKeys.lessFilter.value.getOrElse(GlobFilter("*.less"))))
+        includeFilter := SharedUiKeys.lessFilter.value.getOrElse(GlobFilter("*.less"))))
 
   private val uiBaseSettings: Seq[Def.Setting[_]] = Seq(
     compileSharedAssets := Nil,
