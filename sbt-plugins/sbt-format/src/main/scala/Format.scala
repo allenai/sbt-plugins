@@ -88,7 +88,7 @@ object Format {
             scalaVersion = pureScalaVersion(scalaVersion))
         } catch {
           case e: ScalaParserException =>
-            streams.log.warn("Scalariform parser error for %s: %s".format(file, e.getMessage))
+            streams.log.error("Scalariform parser error for %s: %s".format(file, e.getMessage))
             contents
         }
         if formatted != contents
@@ -98,7 +98,7 @@ object Format {
     val files = sourceDirectories.descendantsExcept(includeFilter, excludeFilter).get.toSet
     val unformatted = unformattedFiles(files).toSeq sortBy (_.getName)
     for (file <- unformatted) {
-      streams.log.warn(f"misformatted: ${file.getName}")
+      streams.log.error(f"misformatted: ${file.getName}")
     }
 
     unformatted
