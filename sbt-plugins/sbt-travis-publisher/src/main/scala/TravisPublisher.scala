@@ -18,9 +18,9 @@ object TravisPublisher {
     val ai2NexusUrl = s"http://${ai2NexusHost}:8081/nexus/content/repositories/"
     publishTo := {
       if (isSnapshot.value)
-        Some("snapshots" at ai2NexusUrl + "content/repositories/snapshots")
+        Some("snapshots" at ai2NexusUrl + "snapshots")
       else
-        Some("releases" at ai2NexusUrl + "service/local/staging/deploy/maven2")
+        Some("releases" at ai2NexusUrl + "releases")
     }
   }
 
