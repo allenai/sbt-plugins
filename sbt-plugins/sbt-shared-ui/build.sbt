@@ -12,6 +12,6 @@ resolvers += "AllenAI Releases" at nexus
 
 resolvers += "Typesafe Releases Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-jshint" % "1.0.0-RC1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-jshint" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.0.0-RC1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.0.0")
