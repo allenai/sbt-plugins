@@ -1,1 +1,1 @@
-version := "2014.2.24-1"
+version := "2014.06.11-0-SNAPSHOT"
