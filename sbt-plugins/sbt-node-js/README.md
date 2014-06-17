@@ -1,4 +1,50 @@
 # SBT NodeJS plugin
 
-This plugin provides the ability to run `npm` (Node Package Manager) commands from SBT.
+This plugin provides the ability to manage building a Node.js application from SBT. The primary use case is to allow client-side development to occur in a complete isolation from SBT using Node.js build tools (such as Gulp.js). The only requirement is to have `npm` (Node Package Manager) on your PATH. `npm` is included with every Node.js installation.
+
+## Installation
+
+Add the following to your `project/plugins.sbt`:
+
+```
+resolvers += Resolver.sonatypeRepo("snapshots")
+
+addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014-06-17-0-SNAPSHOT")
+```
+
+Add the setting to your Spray server application's `build.sbt` or `Build.scala`:
+
+```
+NodeJsPlugin.nodeJsSettings(file("node-app"))
+```
+
+where "node-app" is the directory containing your Node.js application.
+
+## Usage
+
+Start an SBT session scoped to your Spray application:
+
+```
+$ sbt
+> project my-spray-server
+```
+
+### Provided Tasks
+
+The plugin provides several tasks, all scoped to the `npm` config. This means that to execute them, you have to prefix the command with `npm:`.
+
+- `npm:install` download and install all the Node.js dependencies for the client app
+- `npm:build` generate a production build of the client app (depends on a `build` task being defined in the package.json of the client app)
+- `npm:test` run tests in the client app (depends on a `test` task being defined in the package.json of the client app)
+- `npm:clean` clean the client app (depends on a `clean` task being defined in the package.json of the client app)
+
+Note: running `npm:build` will always run `npm:install`, so it is not necessary to run both commands separately.
+
+### Arbitrary `npm` Commands
+
+You can run arbitrary `npm` commands from the SBT prompt:
+
+```
+> npm <arbitrary commands here>
+```
 

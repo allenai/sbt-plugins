@@ -50,6 +50,7 @@ lazy val sbtDeploy =
 lazy val sbtNodeJs =
   project.in(file("sbt-node-js"))
     .settings(sbtPluginSettings: _*)
+    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-node-js"
     )

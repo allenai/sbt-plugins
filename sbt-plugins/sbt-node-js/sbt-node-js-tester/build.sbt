@@ -16,8 +16,6 @@ libraryDependencies ++= Seq(
 )
 
 // Install the NodeJsPlugin settings, providing the relative client directory path
-NodeJsPlugin.nodeJsSettings("node-app")
-
-NodeKeys.buildDir in Npm := (baseDirectory / "public").value
+NodeJsPlugin.nodeJsSettings(file("node-app"))
 
 Revolver.settings
