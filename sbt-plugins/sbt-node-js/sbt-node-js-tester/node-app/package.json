@@ -33,6 +33,7 @@
   "scripts": {
     "test": "gulp test",
     "build": "gulp build",
+    "clean": "gulp clean",
     "dev": "gulp"
   }
 }
