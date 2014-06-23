@@ -9,7 +9,7 @@ Add the following to your `project/plugins.sbt`:
 ```
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014-06-19-0-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014.06.19-0-SNAPSHOT")
 ```
 
 Add the setting to your Spray server application's `build.sbt` or `Build.scala`:
