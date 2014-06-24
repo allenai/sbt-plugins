@@ -67,7 +67,7 @@ object NodeJsPlugin extends Plugin {
     npmBuildTask,
     npmInstallTask,
     test in Test <<= (test in Test).dependsOn(test in Npm),
-    clean in Compile <<= (clean in Compile).dependsOn(clean in Npm),
+    clean <<= clean.dependsOn(clean in Npm),
     resourceGenerators in Compile += (build in Npm).taskValue,
     commands += npm)
 
