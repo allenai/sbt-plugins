@@ -30,6 +30,7 @@ object NodeJsPlugin extends Plugin {
   }
 
   val npmTestTask = test in Npm := {
+    (install in Npm).value
     exec("run test", (npmRoot in Npm).value, (environment in Npm).value)
   }
 
@@ -68,7 +69,7 @@ object NodeJsPlugin extends Plugin {
     npmInstallTask,
     test in Test <<= (test in Test).dependsOn(test in Npm),
     clean <<= clean.dependsOn(clean in Npm),
-    resourceGenerators in Compile += (build in Npm).taskValue,
+    products in Compile <<= (products in Compile).dependsOn(build in Npm),
     commands += npm)
 
   /** Allows user to execute arbitrary npm command from the SBT console with working directory set to npmRoot */
@@ -88,17 +89,26 @@ object NodeJsPlugin extends Plugin {
 
   /** Execute `cmd` with `npm` setting `root` as the working directory */
   private def exec(cmd: String, root: File, env: Map[String, String]) = {
-    Process("command -v npm >/dev/null 2>&1").! match {
-      case 0 => // we're good, npm is installed
-      case _ =>
-        println("'npm' is required. Please install it and add it to your PATH.")
-        throw NpmMissingException
+
+    val isTravis = sys.env.get("TRAVIS") match {
+      case Some(_) => true
+      case None => false
     }
 
-    Process(s"npm ${cmd}", root, env.toSeq: _*).! match {
-      case 0 => // we're good
-      case _ => throw new Exception("failed process call")
+    def npmInstalled = Process("hash npm >/dev/null").! match {
+      case 0 => true
+      case _ => false
+    }
+
+    if (isTravis || npmInstalled) {
+      println(s"Will execute `npm ${cmd}` in file ${root.getAbsolutePath}")
+      Process(s"npm ${cmd}", root, env.toSeq: _*).! match {
+        case 0 => // we're good
+        case _ => throw new Exception(s"Failed process call `npm ${cmd}`")
+      }
+    } else {
+      println("'npm' is required. Please install it and add it to your PATH.")
+      throw NpmMissingException
     }
   }
-
 }
