@@ -69,7 +69,6 @@ object NodeJsPlugin extends Plugin {
     npmInstallTask,
     test in Test <<= (test in Test).dependsOn(test in Npm),
     clean <<= clean.dependsOn(clean in Npm),
-    products in Compile <<= (products in Compile).dependsOn(build in Npm),
     commands += npm)
 
   /** Allows user to execute arbitrary npm command from the SBT console with working directory set to npmRoot */
