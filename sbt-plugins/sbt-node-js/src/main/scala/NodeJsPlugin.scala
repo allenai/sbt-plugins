@@ -73,7 +73,7 @@ object NodeJsPlugin extends AutoPlugin {
     npmBuildTask,
     npmInstallTask,
     test in Test <<= (test in Test).dependsOn(test in Npm),
-    clean <<= clean.dependsOn(clean in Npm),
+    cleanFiles += (buildDir in Npm).value,
     commands += npm)
 
   /** Allows user to execute arbitrary npm command from the SBT console with working directory set to npmRoot */
