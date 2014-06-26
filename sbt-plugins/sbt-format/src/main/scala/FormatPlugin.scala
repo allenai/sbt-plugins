@@ -1,3 +1,5 @@
+package org.allenai.sbt.format
+
 import sbt._
 import sbt.Keys._
 
@@ -6,11 +8,31 @@ import scalariform.formatter.preferences.IFormattingPreferences
 import scalariform.formatter.ScalaFormatter
 import scalariform.parser.ScalaParserException
 
-object Format {
+object FormatPlugin extends AutoPlugin {
   import scalariform.formatter.preferences._
 
-  // Default settings for formatting.
-  def settings =
+  object autoImport {
+    object FormatKeys {
+      val formatCheck: TaskKey[Seq[File]] =
+        TaskKey[Seq[File]](
+          "formatCheck",
+          "Check (Scala) sources using scalariform")
+
+      val formatCheckStrict: TaskKey[Unit] =
+        TaskKey[Unit](
+          "formatCheckStrict",
+          "Check (Scala) sources using scalariform, failing if an unformatted file is found")
+
+      val format: TaskKey[Seq[File]] =
+        TaskKey[Seq[File]](
+          "format",
+          "Format (Scala) sources using scalariform")
+    }
+  }
+
+  import autoImport._
+
+  override def projectSettings =
     // adds scalariformFormat task
     defaultScalariformSettings ++
       // formatting for config settings
@@ -42,23 +64,6 @@ object Format {
           throw new IllegalArgumentException("Unformatted files.")
         }
       })
-
-  object FormatKeys {
-    val formatCheck: TaskKey[Seq[File]] =
-      TaskKey[Seq[File]](
-        "formatCheck",
-        "Check (Scala) sources using scalariform")
-
-    val formatCheckStrict: TaskKey[Unit] =
-      TaskKey[Unit](
-        "formatCheckStrict",
-        "Check (Scala) sources using scalariform, failing if an unformatted file is found")
-
-    val format: TaskKey[Seq[File]] =
-      TaskKey[Seq[File]](
-        "format",
-        "Format (Scala) sources using scalariform")
-  }
 
   lazy val formattingPreferences = {
     FormattingPreferences().

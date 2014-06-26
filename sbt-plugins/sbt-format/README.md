@@ -3,6 +3,24 @@ sbt-format
 
 A plugin for formatting Scala source code.
 
+## Installation
+
+The plugin is an AutoPlugin which requires SBT version 0.13.5 or later.
+
+To install, add the following to your `project/plugins.sbt`:
+
+```scala
+resolvers += Resolver.sonatypeRepo("snapshots")
+
+addSbtPlugin("org.allenai.plugins" % "sbt-format" % "2014.06.26-0-SNAPSHOT")
+```
+
+Then, enable the plugin per project in your `build.sbt`:
+
+```scala
+val myProject = project.in(file(".")).enablePlugins(FormatPlugin)
+```
+
 ### Tasks
 
 #### format
