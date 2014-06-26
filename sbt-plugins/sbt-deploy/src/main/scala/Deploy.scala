@@ -1,3 +1,5 @@
+package org.allenai.sbt.deploy
+
 import sbt._
 import sbt.Keys._
 
@@ -49,24 +51,29 @@ import scala.util.Try
   *
   * Command-line overrides have precedence over .deployrc overrides.
   */
-object Deploy {
-  /** Static usage string. */
-  val Usage = "Usage: deploy <overrides> [deploy target]";
-  /** Project subdirectory that the universal sbt plugin's 'stage' command writes to. */
-  val UniversalStagingSubdir = "target/universal/stage"
+object DeployPlugin extends AutoPlugin {
 
-  val deploy = inputKey[Unit](Usage)
+  object autoImport {
+    /** Static usage string. */
+    val Usage = "Usage: deploy <overrides> [deploy target]";
+    /** Project subdirectory that the universal sbt plugin's 'stage' command writes to. */
+    val UniversalStagingSubdir = "target/universal/stage"
 
-  /** The reason this is a Setting instead of just including * is that including * in the rsync
-    * command causes files created on the server side (like log files and .pid files) to be deleted
-    * when the rsync runs, which we don't want to happen.
-    */
-  val deployDirs = SettingKey[Seq[String]]("deployDirs",
-    "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
+    val deploy = inputKey[Unit](Usage)
 
-  val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
+    /** The reason this is a Setting instead of just including * is that including * in the rsync
+      * command causes files created on the server side (like log files and .pid files) to be deleted
+      * when the rsync runs, which we don't want to happen.
+      */
+    val deployDirs = SettingKey[Seq[String]]("deployDirs",
+      "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
 
-  val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
+    val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
+
+    val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
+  }
+
+  import autoImport._
 
   val gitRepoCleanTask = gitRepoClean := {
     // Dependencies
@@ -97,7 +104,9 @@ object Deploy {
     println("Git repository present.")
   }
 
-  val settings = packageArchetype.java_application ++ Seq(gitRepoCleanTask, gitRepoPresentTask,
+  override def projectSettings = packageArchetype.java_application ++ Seq(
+    gitRepoCleanTask,
+    gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
     deploy := {
       // Dependencies
