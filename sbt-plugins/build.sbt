@@ -43,6 +43,7 @@ lazy val sbtSharedUi =
 lazy val sbtDeploy =
   project.in(file("sbt-deploy"))
     .settings(sbtPluginSettings: _*)
+    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-deploy"
     )

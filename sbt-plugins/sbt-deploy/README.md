@@ -15,7 +15,7 @@ deploy
 Add the plugin to your project:
 ```
 // In project/plugins.sbt
-addSbtPlugin("org.allenai.plugins" % "sbt-deploy" % "2014.06.26-0-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-deploy" % "2014.06.26-2l-SNAPSHOT")
 ```
 Enable the deploy plugin, which will provide default settings
 ```
