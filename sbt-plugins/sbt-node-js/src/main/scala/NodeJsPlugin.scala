@@ -99,7 +99,7 @@ object NodeJsPlugin extends AutoPlugin {
       case None => false
     }
 
-    def npmInstalled = Process("hash npm >/dev/null").! match {
+    def npmInstalled = Process("which npm >/dev/null").! match {
       case 0 => true
       case _ => false
     }
