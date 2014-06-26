@@ -17,11 +17,11 @@ object NodeJsPlugin extends AutoPlugin {
     object NodeKeys {
       val build = TaskKey[Seq[File]]("build", "Execution `npm run build` in the Node application directory")
       val install = TaskKey[Unit]("install", "Execution `npm install` in the Node application directory to install dependencies")
-      val npmRoot = SettingKey[File]("npmRoot", "The directory containing the Node application")
+      val nodeProjectDir = SettingKey[File]("nodeProjectDir", "The directory containing the Node application")
       val environment = TaskKey[Map[String, String]]("environment", "Environment variable names and values to set for npm commands")
 
       // Environment variables that are set for npm commands
-      val buildDir = SettingKey[File]("buildDir", "Target directory for Node application build")
+      val nodeProjectTarget = SettingKey[File]("nodeProjectTarget", "Target directory for Node application build")
     }
   }
 
@@ -31,31 +31,31 @@ object NodeJsPlugin extends AutoPlugin {
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
   val npmInstallTask = install in Npm := {
-    exec("install", (npmRoot in Npm).value, (environment in Npm).value)
+    exec("install", (nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
   val npmTestTask = test in Npm := {
     (install in Npm).value
-    exec("run test", (npmRoot in Npm).value, (environment in Npm).value)
+    exec("run test", (nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
   val npmCleanTask = clean in Npm := {
-    exec("run clean", (npmRoot in Npm).value, (environment in Npm).value)
+    exec("run clean", (nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
   val npmEnvironmentTask = environment in Npm := {
     Map(
       "NODE_ENV" -> "prod",
       "NODE_API_HOST" -> "/api",
-      "NODE_BUILD_DIR" -> (buildDir in Npm).value.getAbsolutePath)
+      "NODE_BUILD_DIR" -> (nodeProjectTarget in Npm).value.getAbsolutePath)
   }
 
   val npmBuildTask = build in Npm := {
     // make sure we install dependencies first.
     // this is necssary for building on a clean repository (e.g. Travis)
     (install in Npm).value
-    exec("run build", (npmRoot in Npm).value, (environment in Npm).value)
-    (buildDir in Npm).value.listFiles.toSeq
+    exec("run build", (nodeProjectDir in Npm).value, (environment in Npm).value)
+    (nodeProjectTarget in Npm).value.listFiles.toSeq
   }
 
   /** Settings for a single node project located at `root`
@@ -65,25 +65,25 @@ object NodeJsPlugin extends AutoPlugin {
   // 1) ensure it is a valid node project, and
   // 2) read in some attributes about the project.
   override def projectSettings = Seq(
-    npmRoot in Npm := baseDirectory.value / "webclient",
-    buildDir in Npm := baseDirectory.value / "public",
+    nodeProjectDir in Npm := baseDirectory.value / "webclient",
+    nodeProjectTarget in Npm := baseDirectory.value / "public",
     npmEnvironmentTask,
     npmTestTask,
     npmCleanTask,
     npmBuildTask,
     npmInstallTask,
     test in Test <<= (test in Test).dependsOn(test in Npm),
-    cleanFiles += (buildDir in Npm).value,
+    cleanFiles += (nodeProjectTarget in Npm).value,
     commands += npm)
 
-  /** Allows user to execute arbitrary npm command from the SBT console with working directory set to npmRoot */
+  /** Allows user to execute arbitrary npm command from the SBT console with working directory set to nodeProjectDir */
   def npm = Command.args("npm", "<command>") { (state, args) =>
     val extracted = Project.extract(state)
     // we don't care if the command fails here because we are just
     // passing through to the local `npm`
     try {
       val (newState, env) = extracted.runTask(environment in Npm, state)
-      exec(args.mkString(" "), extracted.getOpt(npmRoot in Npm).get, env)
+      exec(args.mkString(" "), extracted.getOpt(nodeProjectDir in Npm).get, env)
       newState
     } catch {
       case NpmMissingException => state.fail

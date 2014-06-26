@@ -5,7 +5,7 @@ This plugin aggregates the `sbt-deploy` and `sbt-node-js` plugins.
 To use, add the following to your projects `project/plugins.sbt` file:
 
 ```scala
-addSbtPlugin("org.allenai.plugins" % "sbt-webapp" % "2014.06.26-0-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-webapp" % "2014.06.26-1-SNAPSHOT")
 ```
 
 The `sbt-webapp` is an [AutoPlugin](http://www.scala-sbt.org/release/tutorial/Using-Plugins.html#Creating+an+auto+plugin), which provides default settings (more on defaults later). You have to enable the plugin for your project. In `build.sbt`:
@@ -35,8 +35,8 @@ You can change any of the settings for `sbt-node-js` and `sbt-deploy` plugins in
 val myProject = project.in(file("."))
   .enablePlugins(WebappPlugin)
   .settings(
-    npmRoot in Npm := file("clientapp"),
-    buildDir in Npm := file("client-build"),
+    nodeProjectDir in Npm := file("clientapp"),
+    nodeProjectTarget in Npm := file("client-build"),
     mappings in Universal += ...
   )
 ```
