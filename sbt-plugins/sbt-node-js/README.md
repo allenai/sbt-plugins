@@ -9,16 +9,14 @@ Add the following to your `project/plugins.sbt`:
 ```
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014.06.24-5-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014.06.26-1-SNAPSHOT")
 ```
 
-Add the setting to your Spray server application's `build.sbt` or `Build.scala`:
+Enable the plugin for your project in `build.sbt`:
 
 ```
-NodeJsPlugin.nodeJsSettings(file("node-app"))
+val myProject = project.in(file(".")).enablePlugins(NodeJsPlugin)
 ```
-
-where "node-app" is the directory containing your Node.js application.
 
 ## Usage
 

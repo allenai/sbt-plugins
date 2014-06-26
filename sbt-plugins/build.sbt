@@ -8,7 +8,7 @@ lazy val root =
     .settings(releaseSettings: _*)
     .settings(
       name := "sbt-plugins")
-    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtSharedUi)
+    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtSharedUi, sbtDeploy, sbtNodeJs, sbtWebapp)
 
 lazy val sbtFormat =
   project.in(file("sbt-format"))
@@ -54,3 +54,11 @@ lazy val sbtNodeJs =
     .settings(
       name := "sbt-node-js"
     )
+
+lazy val sbtWebapp =
+  project.in(file("sbt-webapp"))
+    .settings(sbtPluginSettings: _*)
+    .settings(sonatypePublishSettings: _*)
+    .settings(
+      name := "sbt-webapp"
+    ).dependsOn(sbtDeploy, sbtNodeJs)

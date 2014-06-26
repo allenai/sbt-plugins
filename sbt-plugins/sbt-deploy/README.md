@@ -15,15 +15,14 @@ deploy
 Add the plugin to your project:
 ```
 // In project/plugins.sbt
-addSbtPlugin("org.allenai.plugins" % "sbt-deploy" % "2014.4.14-1-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-deploy" % "2014.06.26-0-SNAPSHOT")
 ```
-Add the deploy settings to your project:
+Enable the deploy plugin, which will provide default settings
 ```
 // In your project's build.sbt
-Deploy.settings
-
-// Add any additonal directories you need synced from the universal staging dir
-Deploy.deployDirs += "some_other_dir"
+val myProject = project.in(file(".")).enablePlugins(DeployPlugin).settings(
+  // Add any additonal directories you need synced from the universal staging dir
+  deployDirs += "some_other_dir")
 ```
 
 ### running

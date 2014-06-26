@@ -1,6 +1,4 @@
-import NodeJsPlugin.{ NodeKeys, Npm }
-
-name := "sbt-node-js-tester"
+name := "tester"
 
 scalaVersion := "2.10.4"
 
@@ -16,6 +14,9 @@ libraryDependencies ++= Seq(
 )
 
 // Install the NodeJsPlugin settings, providing the relative client directory path
-NodeJsPlugin.nodeJsSettings(file("node-app"))
 
-Revolver.settings
+val tester = project.in(file(".")).enablePlugins(NodeJsPlugin)
+  .settings(
+  NodeKeys.npmRoot in Npm := file("node-app"),
+    products in Compile <<= (products in Compile).dependsOn(NodeKeys.build in Npm))
+  .settings(Revolver.settings: _*)
