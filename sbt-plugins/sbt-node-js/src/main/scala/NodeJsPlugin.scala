@@ -99,9 +99,9 @@ object NodeJsPlugin extends AutoPlugin {
       case None => false
     }
 
-    def npmInstalled = Process("which npm >/dev/null").! match {
+    def npmInstalled = Process("which npm").! match {
       case 0 => true
-      case _ => false
+      case x => println("`which npm` had a nonzero exit code: " + x); false
     }
 
     if (isTravis || npmInstalled) {
