@@ -1,3 +1,5 @@
+package org.allenai.sbt.nodejs
+
 import sbt._
 import sbt.Keys._
 import sbt.inc.Analysis
@@ -7,23 +9,26 @@ import complete.DefaultParsers._
 
 /** Plugin that provides an 'npm' command and tasks for test, clean, and build.
   */
-object NodeJsPlugin extends Plugin {
+object NodeJsPlugin extends AutoPlugin {
 
-  val Npm = ConfigKey("npm")
+  object autoImport {
+    val Npm = ConfigKey("npm")
 
-  object NodeKeys {
-    val build = TaskKey[Seq[File]]("build", "Execution `npm run build` in the Node application directory")
-    val install = TaskKey[Unit]("install", "Execution `npm install` in the Node application directory to install dependencies")
-    val npmRoot = SettingKey[File]("npmRoot", "The directory containing the Node application")
-    val environment = TaskKey[Map[String, String]]("environment", "Environment variable names and values to set for npm commands")
+    object NodeKeys {
+      val build = TaskKey[Seq[File]]("build", "Execution `npm run build` in the Node application directory")
+      val install = TaskKey[Unit]("install", "Execution `npm install` in the Node application directory to install dependencies")
+      val npmRoot = SettingKey[File]("npmRoot", "The directory containing the Node application")
+      val environment = TaskKey[Map[String, String]]("environment", "Environment variable names and values to set for npm commands")
 
-    // Environment variables that are set for npm commands
-    val buildDir = SettingKey[File]("buildDir", "Target directory for Node application build")
+      // Environment variables that are set for npm commands
+      val buildDir = SettingKey[File]("buildDir", "Target directory for Node application build")
+    }
   }
 
-  case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
-
+  import autoImport._
   import NodeKeys._
+
+  case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
   val npmInstallTask = install in Npm := {
     exec("install", (npmRoot in Npm).value, (environment in Npm).value)
@@ -59,8 +64,8 @@ object NodeJsPlugin extends Plugin {
   // TODO(markschaake): should check the `root` directory and read the `package.json` file to
   // 1) ensure it is a valid node project, and
   // 2) read in some attributes about the project.
-  def nodeJsSettings(root: File) = Seq(
-    npmRoot in Npm := root,
+  override def projectSettings = Seq(
+    npmRoot in Npm := baseDirectory.value / "webclient",
     buildDir in Npm := baseDirectory.value / "public",
     npmEnvironmentTask,
     npmTestTask,
