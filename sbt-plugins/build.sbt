@@ -9,7 +9,7 @@ lazy val root =
     .settings(
       scalaVersion := "2.10.4",
       name := "sbt-plugins")
-    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtSharedUi, sbtDeploy, sbtNodeJs, sbtWebapp)
+    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtDeploy, sbtNodeJs, sbtWebapp)
 
 lazy val sbtFormat =
   project.in(file("sbt-format"))
@@ -30,13 +30,6 @@ lazy val sbtTravisPublisher =
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "sbt-travis-publisher"
-    )
-
-lazy val sbtSharedUi =
-  project.in(file("sbt-shared-ui"))
-    .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "sbt-shared-ui"
     )
 
 lazy val sbtDeploy =
