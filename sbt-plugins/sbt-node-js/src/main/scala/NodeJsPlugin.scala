@@ -58,13 +58,15 @@ object NodeJsPlugin extends AutoPlugin {
     (nodeProjectTarget in Npm).value.listFiles.toSeq
   }
 
+  override def requires = plugins.JvmPlugin
+
   /** Settings for a single node project located at `root`
     * @param root  the directory containing the node project.
     */
   // TODO(markschaake): should check the `root` directory and read the `package.json` file to
   // 1) ensure it is a valid node project, and
   // 2) read in some attributes about the project.
-  override def projectSettings = Seq(
+  override lazy val projectSettings = Seq(
     nodeProjectDir in Npm := baseDirectory.value / "webclient",
     nodeProjectTarget in Npm := baseDirectory.value / "public",
     npmEnvironmentTask,

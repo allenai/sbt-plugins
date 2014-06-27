@@ -7,6 +7,7 @@ lazy val root =
   project.in(file ("."))
     .settings(releaseSettings: _*)
     .settings(
+      scalaVersion := "2.10.4",
       name := "sbt-plugins")
     .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtSharedUi, sbtDeploy, sbtNodeJs, sbtWebapp)
 

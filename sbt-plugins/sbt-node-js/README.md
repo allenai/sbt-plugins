@@ -9,7 +9,7 @@ Add the following to your `project/plugins.sbt`:
 ```
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014.06.26-2l-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014.06.27-1-SNAPSHOT")
 ```
 
 Enable the plugin for your project in `build.sbt`:

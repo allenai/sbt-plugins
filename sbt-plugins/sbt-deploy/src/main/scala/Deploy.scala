@@ -75,23 +75,32 @@ object DeployPlugin extends AutoPlugin {
 
   import autoImport._
 
+  /** sbt.Logger wrapper that prepends [deploy] to log messages */
+  case class DeployLogger(sbtLogger: Logger) {
+    private def logMsg(msg: String) = s"[deploy] ${msg}"
+    def info(msg: String) = sbtLogger.info(logMsg(msg))
+    def error(msg: String) = sbtLogger.error(logMsg(msg))
+  }
+
   val gitRepoCleanTask = gitRepoClean := {
     // Dependencies
     gitRepoPresent.value
+
+    val log = DeployLogger(streams.value.log)
 
     // Validate that the git repository is clean.
     if (Process(Seq("git", "diff", "--shortstat")).!! != "") {
       throw new IllegalArgumentException("Git repository is dirty, exiting.")
     }
 
-    println("Git repository is clean.")
+    log.info("Git repository is clean.")
 
     // Validate that the git repository has no untracked files.
     if (Process(Seq("git", "clean", "-n")).!! != "") {
       throw new IllegalArgumentException("Git repository has untracked files, exiting.")
     }
 
-    println("Git repository contains no untracked files.")
+    log.info("Git repository contains no untracked files.")
   }
 
   val gitRepoPresentTask = gitRepoPresent := {
@@ -101,132 +110,143 @@ object DeployPlugin extends AutoPlugin {
       throw new IllegalArgumentException("Not in git repository, exiting.")
     }
 
-    println("Git repository present.")
+    DeployLogger(streams.value.log).info("Git repository present.")
   }
+
+  val generateRunClassTask = Def.task {
+    val log = DeployLogger(streams.value.log)
+    log.info("Generating run-class.sh")
+    val file = (resourceManaged in Compile).value / "run-class.sh"
+    // Read the plugin's resource file.
+    val contents = {
+      val is = this.getClass.getClassLoader.getResourceAsStream("run-class.sh")
+      val source = scala.io.Source.fromInputStream(is)
+      try {
+        source.getLines.mkString("\n")
+      } finally {
+        source.close()
+      }
+    }
+
+    // Copy the contents to the clients managed resources.
+    IO.write(file, contents)
+    log.info(s"Wrote ${contents.size} characters to ${file.getPath}.")
+
+    Seq(file)
+  }
+
+  lazy val deployTask = deploy := {
+    // Dependencies
+    gitRepoClean.value
+
+    val log = DeployLogger(streams.value.log)
+
+    val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
+    // Process any definition-like args.
+    val (commandlineOverrides, reducedArgs) = parseDefines(args)
+
+    if (reducedArgs.length != 1) {
+      throw new IllegalArgumentException(Usage)
+    }
+
+    val workingDirectory = (baseDirectory in thisProject).value
+    val configFile = new File(workingDirectory.getPath + "/conf/deploy.conf")
+    if (!configFile.isFile()) {
+      throw new IllegalArgumentException(s"${configFile.getPath()}: Must be a config file")
+    }
+    val deployTarget = reducedArgs(0)
+
+    val targetConfig = loadTargetConfig(commandlineOverrides, configFile, deployTarget)
+
+    val configMap = validateAsMap(deployTarget, targetConfig)
+
+    // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the
+    // commands.
+
+    // Check out the provided version, if it's set.
+    for (version <- configMap.get("project.version")) {
+      log.info(s"Checking out ${version} . . .")
+      if (Process(Seq("git", "checkout", "-q", version)).! != 0) {
+        throw new IllegalArgumentException(s"Could not checkout ${version}.")
+      }
+    }
+
+    // Build the target specified.
+    val projectName = configMap("project.name")
+    log.info(s"Building ${projectName} . . .")
+    if (Process(Seq("sbt", "project " + projectName, "clean", "stage")).! != 0) {
+      log.error(s"Error building ${projectName}, exiting.")
+    }
+
+    val universalStagingDir = new File(workingDirectory,
+      UniversalStagingSubdir)
+
+    // Copy over the per-env config file, if it exists.
+    val deployEnv = if (deployTarget.lastIndexOf('.') >= 0) {
+      deployTarget.substring(deployTarget.lastIndexOf('.') + 1)
+    } else {
+      deployTarget
+    }
+    val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
+    if (envConfFile.exists) {
+      log.info(s"Copying config for ${deployEnv} . . .")
+      val destConfFile = new File(universalStagingDir, "conf/env.conf")
+      // Copy via commandline, because it's annoying to do filewise in Scala /
+      // Java.
+      IO.copyFile(envConfFile, destConfFile)
+    } else {
+      log.info("")
+      log.info(s"WARNING: Could not find config file ${deployEnv}.conf!")
+      log.info("")
+      log.info("Press ENTER to continue with no environment configuration, CTRL-C to abort.")
+      log.info("")
+      System.console.readLine()
+    }
+
+    // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
+    // operations.
+    val sshCommand = {
+      val sshKeyfile = configMap("deploy.user.ssh_keyfile")
+      val sshUser = configMap("deploy.user.ssh_username")
+      Seq("ssh", "-i", sshKeyfile, "-l", sshUser)
+    }
+    val deployHost = configMap("deploy.host")
+    val deployDirectory = configMap("deploy.directory")
+
+    val rsyncDirs = deployDirs.value map (name => s"--include=/${name}")
+    val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")) ++ rsyncDirs ++
+    Seq("--exclude=/*", "--delete", universalStagingDir.getPath + "/", deployHost + ":" + deployDirectory)
+
+    // Shell-friendly version of rsync command, with rsh value quoted.
+    val quotedRsync = rsyncCommand.patch(
+      2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1).mkString(" ")
+    log.info("Running " + quotedRsync + " . . .")
+    if (Process(rsyncCommand).! != 0) {
+      throw new IllegalArgumentException("Error running rsync.")
+    }
+
+    // Now, ssh to the remote host and run the restart script.
+    val restartScript = deployDirectory + "/" + configMap("deploy.startup_script")
+    val restartCommand = sshCommand ++ Seq(deployHost, restartScript, "restart")
+    log.info("Running " + restartCommand.mkString(" ") + " . . .")
+    if (Process(restartCommand).! != 0) {
+      throw new IllegalArgumentException("Error running restart command.")
+    }
+    log.info("")
+    log.info("Deploy complete. Validate your server!")
+  }
+
+  override def requires = plugins.JvmPlugin
 
   override def projectSettings = packageArchetype.java_application ++ Seq(
     gitRepoCleanTask,
     gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
-    deploy := {
-      // Dependencies
-      gitRepoClean.value
-
-      val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
-      // Process any definition-like args.
-      val (commandlineOverrides, reducedArgs) = parseDefines(args)
-
-      if (reducedArgs.length != 1) {
-        throw new IllegalArgumentException(Usage)
-      }
-
-      val workingDirectory = (baseDirectory in thisProject).value
-      val configFile = new File(workingDirectory.getPath + "/conf/deploy.conf")
-      if (!configFile.isFile()) {
-        throw new IllegalArgumentException(s"${configFile.getPath()}: Must be a config file")
-      }
-      val deployTarget = reducedArgs(0)
-
-      val targetConfig = loadTargetConfig(commandlineOverrides, configFile, deployTarget)
-
-      val configMap = validateAsMap(deployTarget, targetConfig)
-
-      // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the
-      // commands.
-
-      // Check out the provided version, if it's set.
-      for (version <- configMap.get("project.version")) {
-        println(s"Checking out ${version} . . .")
-        if (Process(Seq("git", "checkout", "-q", version)).! != 0) {
-          throw new IllegalArgumentException(s"Could not checkout ${version}.")
-        }
-      }
-
-      // Build the target specified.
-      val projectName = configMap("project.name")
-      println(s"Building ${projectName} . . .")
-      if (Process(Seq("sbt", "project " + projectName, "clean", "stage")).! != 0) {
-        println(s"Error building ${projectName}, exiting.")
-      }
-
-      val universalStagingDir = new File(workingDirectory,
-        UniversalStagingSubdir)
-
-      // Copy over the per-env config file, if it exists.
-      val deployEnv = if (deployTarget.lastIndexOf('.') >= 0) {
-        deployTarget.substring(deployTarget.lastIndexOf('.') + 1)
-      } else {
-        deployTarget
-      }
-      val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
-      if (envConfFile.exists) {
-        println(s"Copying config for ${deployEnv} . . .")
-        val destConfFile = new File(universalStagingDir, "conf/env.conf")
-        // Copy via commandline, because it's annoying to do filewise in Scala /
-        // Java.
-        IO.copyFile(envConfFile, destConfFile)
-      } else {
-        println()
-        println(s"WARNING: Could not find config file ${deployEnv}.conf!")
-        println()
-        println("Press ENTER to continue with no environment configuration, CTRL-C to abort.")
-        println()
-        System.console.readLine()
-      }
-
-      // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
-      // operations.
-      val sshCommand = {
-        val sshKeyfile = configMap("deploy.user.ssh_keyfile")
-        val sshUser = configMap("deploy.user.ssh_username")
-        Seq("ssh", "-i", sshKeyfile, "-l", sshUser)
-      }
-      val deployHost = configMap("deploy.host")
-      val deployDirectory = configMap("deploy.directory")
-
-      val rsyncDirs = deployDirs.value map (name => s"--include=/${name}")
-      val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")) ++ rsyncDirs ++
-        Seq("--exclude=/*", "--delete", universalStagingDir.getPath + "/", deployHost + ":" + deployDirectory)
-
-      // Shell-friendly version of rsync command, with rsh value quoted.
-      val quotedRsync = rsyncCommand.patch(
-        2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1).mkString(" ")
-      println("Running " + quotedRsync + " . . .")
-      if (Process(rsyncCommand).! != 0) {
-        throw new IllegalArgumentException("Error running rsync.")
-      }
-
-      // Now, ssh to the remote host and run the restart script.
-      val restartScript = deployDirectory + "/" + configMap("deploy.startup_script")
-      val restartCommand = sshCommand ++ Seq(deployHost, restartScript, "restart")
-      println("Running " + restartCommand.mkString(" ") + " . . .")
-      if (Process(restartCommand).! != 0) {
-        throw new IllegalArgumentException("Error running restart command.")
-      }
-      println()
-      println("Deploy complete. Validate your server!")
-    },
+    deployTask,
 
     // TODO(jkinkead): Run an automated "/info/name" check here to see if services are running.
 
-    resourceGenerators in Compile <+= Def.task {
-      val file = (resourceManaged in Compile).value / "run-class.sh"
-      // Read the plugin's resource file.
-      val contents = {
-        val source = io.Source.fromInputStream(this.getClass.getResourceAsStream("run-class.sh"))
-        try {
-          source.getLines.mkString("\n")
-        } finally {
-          source.close()
-        }
-      }
-
-      // Copy the contents to the clients managed resources.
-      IO.write(file, contents)
-      println(s"Wrote ${contents.size} characters to ${file.getPath}.")
-
-      Seq(file)
-    },
+    resourceGenerators in Compile <+= generateRunClassTask,
 
     // Add root run script.
     mappings in Universal += {
