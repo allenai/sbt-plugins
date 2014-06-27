@@ -5,7 +5,11 @@ This plugin aggregates the `sbt-deploy` and `sbt-node-js` plugins.
 To use, add the following to your projects `project/plugins.sbt` file:
 
 ```scala
-addSbtPlugin("org.allenai.plugins" % "sbt-webapp" % "2014.06.27-1-SNAPSHOT")
+resolvers += Resolver.url(
+  "bintray-sbt-plugin-releases",
+  url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
+
+addSbtPlugin("org.allenai.plugins" % "sbt-webapp" % "2014.06.27")
 ```
 
 The `sbt-webapp` is an [AutoPlugin](http://www.scala-sbt.org/release/tutorial/Using-Plugins.html#Creating+an+auto+plugin), which provides default settings (more on defaults later). You have to enable the plugin for your project. In `build.sbt`:

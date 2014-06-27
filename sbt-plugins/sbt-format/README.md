@@ -10,9 +10,11 @@ The plugin is an AutoPlugin which requires SBT version 0.13.5 or later.
 To install, add the following to your `project/plugins.sbt`:
 
 ```scala
-resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers += Resolver.url(
+  "bintray-sbt-plugin-releases",
+  url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("org.allenai.plugins" % "sbt-format" % "2014.06.26-0-SNAPSHOT")
+addSbtPlugin("org.allenai.plugins" % "sbt-format" % "2014.06.27")
 ```
 
 Then, enable the plugin per project in your `build.sbt`:
