@@ -7,7 +7,9 @@ This plugin provides the ability to manage building a Node.js application from S
 Add the following to your `project/plugins.sbt`:
 
 ```
-resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers += Resolver.url(
+  "bintray-sbt-plugin-releases",
+  url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
 
 addSbtPlugin("org.allenai.plugins" % "sbt-node-js" % "2014.06.27-1-SNAPSHOT")
 ```

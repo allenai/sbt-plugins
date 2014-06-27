@@ -14,7 +14,6 @@ lazy val root =
 lazy val sbtFormat =
   project.in(file("sbt-format"))
     .settings(sbtPluginSettings: _*)
-    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-format"
     )
@@ -29,7 +28,6 @@ lazy val sbtVersionInjector =
 lazy val sbtTravisPublisher =
   project.in(file("sbt-travis-publisher"))
     .settings(sbtPluginSettings: _*)
-    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-travis-publisher"
     )
@@ -44,7 +42,6 @@ lazy val sbtSharedUi =
 lazy val sbtDeploy =
   project.in(file("sbt-deploy"))
     .settings(sbtPluginSettings: _*)
-    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-deploy"
     )
@@ -52,7 +49,7 @@ lazy val sbtDeploy =
 lazy val sbtNodeJs =
   project.in(file("sbt-node-js"))
     .settings(sbtPluginSettings: _*)
-    .settings(sonatypePublishSettings: _*)
+    .settings(publishToBintraySettings: _*)
     .settings(
       name := "sbt-node-js"
     )
@@ -60,7 +57,6 @@ lazy val sbtNodeJs =
 lazy val sbtWebapp =
   project.in(file("sbt-webapp"))
     .settings(sbtPluginSettings: _*)
-    .settings(sonatypePublishSettings: _*)
     .settings(
       name := "sbt-webapp"
     ).dependsOn(sbtDeploy, sbtNodeJs)
