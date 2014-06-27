@@ -17,6 +17,6 @@ libraryDependencies ++= Seq(
 
 val tester = project.in(file(".")).enablePlugins(NodeJsPlugin)
   .settings(
-  NodeKeys.npmRoot in Npm := file("node-app"),
+  NodeKeys.nodeProjectDir in Npm := file("node-app"),
     products in Compile <<= (products in Compile).dependsOn(NodeKeys.build in Npm))
   .settings(Revolver.settings: _*)
