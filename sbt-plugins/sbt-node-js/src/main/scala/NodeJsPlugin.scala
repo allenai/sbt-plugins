@@ -31,7 +31,7 @@ object NodeJsPlugin extends AutoPlugin {
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
   val npmInstallTask = install in Npm := {
-    exec("install", (nodeProjectDir in Npm).value, (environment in Npm).value)
+    exec("install --quiet", (nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
   val npmTestTask = test in Npm := {

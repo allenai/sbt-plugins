@@ -15,11 +15,7 @@ deploy
 Add the plugin to your project:
 ```
 // In project/plugins.sbt
-resolvers += Resolver.url(
-  "bintray-sbt-plugin-releases",
-  url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
-
-addSbtPlugin("org.allenai.plugins" % "sbt-deploy" % "2014.06.27")
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-deploy" % VERSION
 ```
 Enable the deploy plugin, which will provide default settings
 ```

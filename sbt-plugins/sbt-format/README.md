@@ -10,11 +10,7 @@ The plugin is an AutoPlugin which requires SBT version 0.13.5 or later.
 To install, add the following to your `project/plugins.sbt`:
 
 ```scala
-resolvers += Resolver.url(
-  "bintray-sbt-plugin-releases",
-  url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
-
-addSbtPlugin("org.allenai.plugins" % "sbt-format" % "2014.06.27")
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-format" % VERSION)
 ```
 
 Then, enable the plugin per project in your `build.sbt`:
