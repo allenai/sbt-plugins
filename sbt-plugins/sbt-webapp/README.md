@@ -7,6 +7,7 @@ To use, add the following to your projects `project/plugins.sbt` file:
 ```scala
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-webapp" % VERSION)
 ```
+Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
 
 The `sbt-webapp` is an [AutoPlugin](http://www.scala-sbt.org/release/tutorial/Using-Plugins.html#Creating+an+auto+plugin), which provides default settings (more on defaults later). You have to enable the plugin for your project. In `build.sbt`:
 

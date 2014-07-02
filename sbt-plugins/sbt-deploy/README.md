@@ -17,7 +17,9 @@ Add the plugin to your project:
 // In project/plugins.sbt
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-deploy" % VERSION
 ```
-Enable the deploy plugin, which will provide default settings
+Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
+
+Enable the deploy plugin, which will provide default settings:
 ```
 // In your project's build.sbt
 val myProject = project.in(file(".")).enablePlugins(DeployPlugin).settings(

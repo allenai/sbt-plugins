@@ -12,6 +12,7 @@ To install, add the following to your `project/plugins.sbt`:
 ```scala
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-format" % VERSION)
 ```
+Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
 
 Then, enable the plugin per project in your `build.sbt`:
 

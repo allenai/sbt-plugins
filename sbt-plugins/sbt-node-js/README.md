@@ -9,6 +9,7 @@ Add the following to your `project/plugins.sbt`:
 ```
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-node-js" % VERSION)
 ```
+Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
 
 Enable the plugin for your project in `build.sbt`:
 
