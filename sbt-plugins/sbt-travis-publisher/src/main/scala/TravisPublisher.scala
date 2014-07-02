@@ -1,9 +1,20 @@
+package org.allenai.sbt.travispublisher
+
 import sbt._
 import sbt.Keys._
 import scala.util.Try
 
-object TravisPublisher {
-  val publishMasterOnTravis = taskKey[Unit]("publish to travis if on master branch")
+object TravisPublisherPlugin extends AutoPlugin {
+
+  object autoImport {
+    val publishMasterOnTravis = taskKey[Unit]("publish to travis if on master branch")
+  }
+
+  import autoImport._
+
+  override def requires = plugins.JvmPlugin
+
+  override def projectSettings = Seq(publishMasterOnTravis := publishMasterOnTravisImpl.value)
 
   val sonatypePublishToSetting =
     publishTo := {
@@ -68,6 +79,4 @@ object TravisPublisher {
       Def.task()
     }
   }
-
-  def settings = Seq(publishMasterOnTravis := publishMasterOnTravisImpl.value)
 }

@@ -1,3 +1,5 @@
+package org.allenai.sbt.versioninjector
+
 import sbt._
 import Keys._
 
@@ -7,9 +9,22 @@ import Keys._
   * 1.  An organization defined that does not include hyphens.
   * 2.  An annotated tag in your current git repository.
   */
-object VersionInjector {
+object VersionInjectorPlugin extends AutoPlugin {
 
-  def settings: Seq[Setting[_]] = Seq(
+  object autoImport {
+    val injectVersion = TaskKey[Seq[File]]("injectVersion", "Generates both the artifact.conf and git.conf version files")
+    val injectArtifact = TaskKey[File]("injectArtifact", "Generate the artifact.conf resource")
+    val injectGit = TaskKey[File]("injectGit", "Generate the git.conf resource")
+    val gitCommitDate = TaskKey[Long]("gitCommitDate", "The date in milliseconds of the current git commit")
+    val gitSha1 = TaskKey[String]("gitSha1", "The sha1 hash of the current git commit")
+    val gitDescribe = TaskKey[String]("gitDescribe", "The description of the current git commit")
+  }
+
+  import autoImport._
+
+  override def requires = plugins.JvmPlugin
+
+  override def projectSettings = Seq(
     injectVersionTask,
     injectArtifactTask,
     injectGitTask,
@@ -17,13 +32,6 @@ object VersionInjector {
     gitCommitDateTask,
     gitSha1Task,
     resourceGenerators in Compile <+= injectVersion)
-
-  val injectVersion = TaskKey[Seq[File]]("injectVersion", "Generates both the artifact.conf and git.conf version files")
-  val injectArtifact = TaskKey[File]("injectArtifact", "Generate the artifact.conf resource")
-  val injectGit = TaskKey[File]("injectGit", "Generate the git.conf resource")
-  val gitCommitDate = TaskKey[Long]("gitCommitDate", "The date in milliseconds of the current git commit")
-  val gitSha1 = TaskKey[String]("gitSha1", "The sha1 hash of the current git commit")
-  val gitDescribe = TaskKey[String]("gitDescribe", "The description of the current git commit")
 
   private def executableName(command: String) = {
     val maybeOsName = sys.props.get("os.name").map(_.toLowerCase)
