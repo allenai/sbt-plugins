@@ -5,21 +5,15 @@ import sbtrelease._
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 
-import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Date
 
 // TODO(markschaake): consider turning this into a standalone plugin
 object ReleaseSettings {
 
   private def todayVersion: String = {
-    val cal = Calendar.getInstance()
-    def zeroPad(n: Int) =
-      if (n < 10) s"0${n}"
-      else s"${n}"
-
-    val year = cal.get(Calendar.YEAR)
-    val month = zeroPad(cal.get(Calendar.MONTH) + 1)
-    val day = zeroPad(cal.get(Calendar.DAY_OF_MONTH))
-    s"${year}.${month}.${day}"
+    val df = new SimpleDateFormat("yyyy.MM.dd")
+    df.format(new Date())
   }
 
   val VersionPattern = """(\d+\.\d+\.\d+)-(\d+)(?:-SNAPSHOT)?""".r
