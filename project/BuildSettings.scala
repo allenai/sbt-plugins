@@ -1,19 +1,13 @@
 import sbt._
 import Keys._
 
-import com.typesafe.sbt.SbtScalariform.scalariformSettings
-import com.typesafe.sbt.SbtScalariform._
-
 import bintray.{ Keys => BintrayKeys }
 import bintray.{ Plugin => BintrayPlugin }
-
-import scalariform.formatter.preferences._
 import sbtrelease.ReleasePlugin._
 
 object BuildSettings {
 
-  lazy val basicSettings = releaseSettings ++ scalariformSettings ++ Seq(
-    isSnapshot := version.value.trim.endsWith("SNAPSHOT"),
+  lazy val basicSettings = ReleaseSettings.settings ++ Seq(
     organization := "org.allenai.plugins",
     scalacOptions := Seq(
       "-encoding", "utf8",
@@ -23,13 +17,9 @@ object BuildSettings {
       //"-target:jvm-1.7",
       "-language:_",
       "-Xlog-reflective-calls"),
-    scalaVersion := "2.10.4",
-    ScalariformKeys.preferences := ScalariformKeys.preferences.value
-      .setPreference(AlignSingleLineCaseStatements, true)
-      .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)
-      .setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true))
+    scalaVersion := "2.10.4")
 
-  lazy val sbtPluginSettings = basicSettings ++ Format.settings ++ publishToBintraySettings ++ Seq(
+  lazy val sbtPluginSettings = basicSettings ++ publishToBintraySettings ++ Seq(
     sbtPlugin := true
   )
 
@@ -47,5 +37,4 @@ object BuildSettings {
     // https://github.com/sbt/sbt-pgp/issues/36
     publishTo := None
   )
-
 }

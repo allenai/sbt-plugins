@@ -1,2 +1,1 @@
-// The global version shared by all subprojects
-version in Global := "2014.07.02"
+version in ThisBuild := "2014.07.02-0-SNAPSHOT"
