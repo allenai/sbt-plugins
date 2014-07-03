@@ -21,8 +21,8 @@ Note: you do not need to import anything as `WebappPlugin` is automatically impo
 
 By default, the `sbt-webapp` plugin sets the `sbt-node-js` settings for the webapp root directory and build directory. They are:
 
-    npmRoot -> [project]/webapp
-    buildDir -> [project]/public
+    nodeProjectDirectory -> [project]/webapp
+    nodeProjectTarget -> [project]/public
 
 Note: these files are relative to your project, so they will be at the same level as `src` and `target` in your project directory.
 
