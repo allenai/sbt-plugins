@@ -43,6 +43,14 @@ lazy val sbtDeploy =
       name := "allenai-sbt-deploy"
     )
 
+lazy val sbtRelease =
+  project.in(file("sbt-release"))
+    .enablePlugins(FormatPlugin)
+    .settings(sbtPluginSettings: _*)
+    .settings(
+      name := "allenai-sbt-release"
+    )
+
 lazy val sbtNodeJs =
   project.in(file("sbt-node-js"))
     .enablePlugins(FormatPlugin)
