@@ -42,4 +42,4 @@ val myProject = project.in(file("."))
   )
 ```
 
-Note: if you change the `buildDir`, the `mappings in Universal` will automatically use the overridden value and package it up during deploy.
+Note: if you change `nodeProjectDirectory`, the `mappings in Universal` will automatically use the overridden value and package it up during deploy.
