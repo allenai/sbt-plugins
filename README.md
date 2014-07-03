@@ -1,3 +1,5 @@
+[![Build Status](https://magnum.travis-ci.com/allenai/sbt-plugins.svg?token=bTo69ep8z4cnh7oxWjjY)](https://magnum.travis-ci.com/allenai/sbt-plugins)
+
 SBT Plugins
 ===========
 
