@@ -14,11 +14,7 @@ addSbtPlugin("org.allenai.plugins" % "allenai-sbt-format" % VERSION)
 ```
 Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
 
-Then, enable the plugin per project in your `build.sbt`:
-
-```scala
-val myProject = project.in(file(".")).enablePlugins(FormatPlugin)
-```
+The plugin is set to be auto-enabled for every project, so you don't have to explicitly enable it in `build.sbt`.
 
 ### Tasks
 
