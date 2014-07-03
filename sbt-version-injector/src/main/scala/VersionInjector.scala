@@ -24,6 +24,8 @@ object VersionInjectorPlugin extends AutoPlugin {
 
   override def requires = plugins.JvmPlugin
 
+  override def trigger = allRequirements
+
   override def projectSettings = Seq(
     injectVersionTask,
     injectArtifactTask,
