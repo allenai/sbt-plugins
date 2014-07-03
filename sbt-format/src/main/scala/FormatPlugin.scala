@@ -32,6 +32,10 @@ object FormatPlugin extends AutoPlugin {
 
   import autoImport._
 
+  override def requires = plugins.JvmPlugin
+
+  override def trigger = allRequirements
+
   override def projectSettings =
     // adds scalariformFormat task
     defaultScalariformSettings ++
