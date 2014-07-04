@@ -40,6 +40,6 @@ object BuildSettings {
     publishLocal := (),
     // required until these tickets are closed https://github.com/sbt/sbt-pgp/issues/42,
     // https://github.com/sbt/sbt-pgp/issues/36
-    publishTo := None
+    publishTo := Some("fake" at "for sbt-release plugin happiness")
   )
 }
