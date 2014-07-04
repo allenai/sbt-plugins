@@ -9,7 +9,7 @@ lazy val root =
     .settings(
       scalaVersion := "2.10.4",
       name := "sbt-plugins")
-    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtDeploy, sbtNodeJs, sbtWebapp)
+    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtDeploy, sbtRelease, sbtNodeJs, sbtWebapp)
 
 lazy val sbtFormat =
   project.in(file("sbt-format"))
