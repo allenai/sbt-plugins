@@ -4,16 +4,16 @@ import BuildSettings._
 
 lazy val root =
   project.in(file ("."))
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(noPublishing: _*)
-    .settings(ReleaseSettings.settings: _*)
     .settings(
       scalaVersion := "2.10.4",
       name := "sbt-plugins")
-    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtDeploy, sbtNodeJs, sbtWebapp)
+    .aggregate(sbtFormat, sbtVersionInjector, sbtTravisPublisher, sbtDeploy, sbtRelease, sbtNodeJs, sbtWebapp)
 
 lazy val sbtFormat =
   project.in(file("sbt-format"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "allenai-sbt-format"
@@ -21,7 +21,7 @@ lazy val sbtFormat =
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "allenai-sbt-version-injector"
@@ -29,7 +29,7 @@ lazy val sbtVersionInjector =
 
 lazy val sbtTravisPublisher =
   project.in(file("sbt-travis-publisher"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "allenai-sbt-travis-publisher"
@@ -37,7 +37,7 @@ lazy val sbtTravisPublisher =
 
 lazy val sbtDeploy =
   project.in(file("sbt-deploy"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "allenai-sbt-deploy"
@@ -45,7 +45,7 @@ lazy val sbtDeploy =
 
 lazy val sbtRelease =
   project.in(file("sbt-release"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "allenai-sbt-release"
@@ -53,7 +53,7 @@ lazy val sbtRelease =
 
 lazy val sbtNodeJs =
   project.in(file("sbt-node-js"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(publishToBintraySettings: _*)
     .settings(
@@ -62,7 +62,7 @@ lazy val sbtNodeJs =
 
 lazy val sbtWebapp =
   project.in(file("sbt-webapp"))
-    .enablePlugins(FormatPlugin)
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(
       name := "allenai-sbt-webapp"

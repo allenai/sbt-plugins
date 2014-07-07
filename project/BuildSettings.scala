@@ -7,7 +7,7 @@ import sbtrelease.ReleasePlugin._
 
 object BuildSettings {
 
-  lazy val basicSettings = ReleaseSettings.settings ++ Seq(
+  lazy val basicSettings = Seq(
     organization := "org.allenai.plugins",
     scalacOptions := Seq(
       "-encoding", "utf8",
@@ -27,7 +27,12 @@ object BuildSettings {
     publishMavenStyle := false,
     BintrayKeys.repository in BintrayKeys.bintray := "sbt-plugins",
     BintrayKeys.bintrayOrganization in BintrayKeys.bintray := Some("allenai"),
-    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html")),
+    // release plugin checks to make sure the publishTo setting is
+    // set. However, we're using bintray sbt plugin for publishing and are not
+    // using the publishTo setting. To make the release plugin happy,
+    // we just set it to a fake resolver value.
+    publishTo := Some("fake" at "for sbt-release plugin happiness")
   )
 
   lazy val noPublishing = Seq(
@@ -35,6 +40,6 @@ object BuildSettings {
     publishLocal := (),
     // required until these tickets are closed https://github.com/sbt/sbt-pgp/issues/42,
     // https://github.com/sbt/sbt-pgp/issues/36
-    publishTo := None
+    publishTo := Some("fake" at "for sbt-release plugin happiness")
   )
 }
