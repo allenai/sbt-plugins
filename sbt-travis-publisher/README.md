@@ -1,4 +1,4 @@
-sbt-travis-publiser
+sbt-travis-publisher
 ===================
 
 SBT plugin that limits publishing from TravisCI to releases only.
