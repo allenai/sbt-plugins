@@ -55,12 +55,16 @@ announced with a warning.  The exit code will be non-zero.
 ### Pre-commit Hook
 
 You might want a pre-commit hook that makes sure you've correctly formatted
-your source files.  You can do this easily.
+your source files. You can do this easily by creating the `pre-commit` file in your repository's `.git/hooks/` directory.
 
-    $ echo '#!/bin/bash
+    #!/bin/sh
 
-    sbt formatCheckStrict' > .git/hooks/pre-commit
+    trap 'exit 1' ERR
+    /usr/local/bin/sbt -Dsbt.log.noformat=true warn compile test:compile formatCheckStrict test:formatCheckStrict
+
+Don't forget to make your pre-commit script executable:
+
     $ chmod +x .git/hooks/pre-commit
 
-Now `formatCheckStrict` will run before you make a commit.  If you have
-misformatted files, you will need to correct them before comitting.
+Now `compile` and `formatCheckStrict` will run before you make a commit, for test and main sources. If you have
+misformatted files, or files that don't compile, you will need to correct them before comitting.
