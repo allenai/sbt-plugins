@@ -1,6 +1,8 @@
 sbt-deploy
 ====================
 
+**Boss**: Jesse
+
 A plugin for deploying applications to a machine using [Typesafe Config](https://github.com/typesafehub/config) for
 configuration.
 
