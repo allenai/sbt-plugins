@@ -3,6 +3,8 @@
 SBT Plugins
 ===========
 
+**Boss**: Mark S
+
 ## Publishing
 
 Following the Typesafe lead, we publish our plugins to a [bintray](https://bintray.com/allenai/sbt-plugins).
