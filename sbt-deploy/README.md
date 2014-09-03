@@ -35,9 +35,9 @@ get this configured is to add it to a `~/.deployrc` file. A sample `.deployrc` f
 
 Once you have an keyfile configured, you can run by executing, from your project root:
 
-    sbt deploy deploy.target
+    sbt deploy <target>
 
-"deploy.target" is an arbitrary object in your configuration file. This should be a config file located
+"<target>" is an arbitrary object in your configuration file. This should be a config file located
 at `conf/deploy.conf` within your project's (or subproject's) root.
 
 This target key must point to an object that has the format documented in
@@ -45,9 +45,9 @@ This target key must point to an object that has the format documented in
 
 You can provide key/value overrides on the commandline through Java-style property definitions:
 
-    sbt deploy deploy.target -Dproperty.path=some_string_value
+    sbt deploy <target> -Dproperty.path=some_string_value
 
-This is mostly useful for setting a custom `project.version`.
+The override key is within the <target> namespace.  E.g. to set the project version, use `-Dproject.version=`. To set the host use `-Ddeploy.host=`, etc.
 
 ### configuration
 Documentation for all of the configuration values is in `conf/global_deploy.conf`, which can serve as a base
