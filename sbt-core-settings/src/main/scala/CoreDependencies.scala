@@ -7,6 +7,7 @@ import sbt.Keys._
   * consistency accross projects
   */
 object CoreDependencies {
+  val defaultScalaVersion = "2.10.4"
   val slf4jVersion = "1.7.7"
   // The logging API to use. This should be the only logging dependency of any API artifact
   // (anything that's going to be depended on outside of this SBT project).
@@ -62,5 +63,10 @@ object CoreDependencies {
 
   // Spray json (separate from Spray toolkit)
   val sprayJson = "io.spray" %%  "spray-json" % "1.2.6"
+
+  val defaultDependencyOverrides = Set(
+    slf4jApi,
+    "org.scala-lang" % "scala-library" % defaultScalaVersion
+  )
 
 }

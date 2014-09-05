@@ -2,7 +2,8 @@ import CoreSettings.Dependencies._
 
 name := "core-settings-tester"
 
-scalaVersion := "2.10.4"
+// The core settings set the scala version for us
+//scalaVersion := "2.10.4"
 
 // Since CoreSettingsPlugin.autoImport contains a CoreSettings object
 // and since the plugin is automatically enabled, we can add dependencies

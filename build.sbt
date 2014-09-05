@@ -9,25 +9,30 @@ lazy val root =
     .settings(
       scalaVersion := "2.10.4",
       name := "sbt-plugins")
-    .aggregate(sbtFormat, sbtVersionInjector, coreSettings, sbtTravisPublisher, sbtDeploy, sbtRelease, sbtNodeJs, sbtWebapp)
+    .aggregate(
+      sbtFormat,
+      sbtVersionInjector,
+      sbtCoreSettings,
+      sbtTravisPublisher,
+      sbtDeploy,
+      sbtRelease,
+      sbtNodeJs,
+      sbtWebService,
+      sbtWebapp)
 
 lazy val sbtFormat =
   project.in(file("sbt-format"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-format"
-    )
+    .settings(name := "allenai-sbt-format")
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-version-injector"
-    )
+    .settings(name := "allenai-sbt-version-injector")
 
-lazy val coreSettings =
+lazy val sbtCoreSettings =
   project.in(file("sbt-core-settings"))
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-core-settings")
@@ -37,38 +42,37 @@ lazy val sbtTravisPublisher =
   project.in(file("sbt-travis-publisher"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-travis-publisher"
-    )
+    .settings(name := "allenai-sbt-travis-publisher")
 
 lazy val sbtDeploy =
   project.in(file("sbt-deploy"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-deploy"
-    )
+    .settings(name := "allenai-sbt-deploy")
 
 lazy val sbtRelease =
   project.in(file("sbt-release"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-release"
-    )
+    .settings(name := "allenai-sbt-release")
 
 lazy val sbtNodeJs =
   project.in(file("sbt-node-js"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-node-js"
-    )
+    .settings(name := "allenai-sbt-node-js")
+
+// Archetype Plugins
+
+lazy val sbtWebService =
+  project.in(file("sbt-web-service"))
+    .settings(sbtPluginSettings: _*)
+    .settings(name := "allenai-sbt-web-service")
+    .dependsOn(sbtCoreSettings, sbtDeploy)
 
 lazy val sbtWebapp =
   project.in(file("sbt-webapp"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(
-      name := "allenai-sbt-webapp"
-    ).dependsOn(sbtDeploy, sbtNodeJs)
+    .settings(name := "allenai-sbt-webapp")
+    .dependsOn(sbtCoreSettings, sbtDeploy, sbtNodeJs)
