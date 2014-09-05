@@ -4,6 +4,7 @@ import sbt._
 import sbt.Keys._
 
 object CoreSettingsPlugin extends AutoPlugin {
+
   override def requires = plugins.JvmPlugin
 
   // Automatically enable the plugin (no need for projects to `enablePlugins(CoreSettingsPlugin)`)

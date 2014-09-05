@@ -75,4 +75,4 @@ lazy val sbtWebapp =
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-webapp")
-    .dependsOn(sbtCoreSettings, sbtDeploy, sbtNodeJs)
+    .dependsOn(sbtWebService, sbtNodeJs)
