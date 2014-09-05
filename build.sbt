@@ -66,6 +66,7 @@ lazy val sbtNodeJs =
 
 lazy val sbtWebService =
   project.in(file("sbt-web-service"))
+    .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-web-service")
     .dependsOn(sbtCoreSettings, sbtDeploy)
@@ -76,3 +77,5 @@ lazy val sbtWebapp =
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-webapp")
     .dependsOn(sbtWebService, sbtNodeJs)
+
+// TODO(markschaake): sbtCliApp and other archetype plugins
