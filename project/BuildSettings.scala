@@ -32,7 +32,7 @@ object BuildSettings {
     // set. However, we're using bintray sbt plugin for publishing and are not
     // using the publishTo setting. To make the release plugin happy,
     // we just set it to a fake resolver value.
-    publishTo := Some("fake" at "for sbt-release plugin happiness")
+    publishTo := Some("fake" at "http://forsbtreleasepluginhappiness.com")
   )
 
   lazy val noPublishing = Seq(
