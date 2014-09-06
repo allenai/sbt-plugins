@@ -6,7 +6,7 @@ import sbt.Keys._
 /** Declares common dependencies with specific versions to encourage
   * consistency accross projects
   */
-object CoreDependencies {
+trait CoreDependencies {
   val defaultScalaVersion = "2.10.4"
 
   object Logging {
@@ -79,4 +79,10 @@ object CoreDependencies {
     Logging.logbackClassic
   )
 
+  val defaultResolvers = Seq(
+    "spray" at "http://repo.spray.io/",
+    "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+  )
 }
+
+object CoreDependencies extends CoreDependencies

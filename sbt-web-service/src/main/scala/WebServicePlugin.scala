@@ -19,5 +19,7 @@ object WebServicePlugin extends AutoPlugin {
         akkaLogging,
         sprayCan,
         sprayRouting,
-        sprayJson))
+        sprayCaching,
+        sprayJson,
+        typesafeConfig))
 }
