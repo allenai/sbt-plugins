@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="app.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="main.css">
+  </head>
+  <body ng-app="app" ng-controller="AppController">
+    <div class="container">
+
+      <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <a class="navbar-brand" href="#">Webapp with NodeJS Client Dev</a>
+          </div>
+        </div>
+      </nav>
+
+      <h2>Data Binding Example</h2>
+      <p>There should be 5 items in the list below:</p>
+      <div class="items">
+        <ul>
+          <li ng-repeat="item in items">{{item}}</li>
+        </ul>
+      </div>
+
+      <hr>
+
+      <h2>Form Submission Example</h2>
+      <form name="exampleForm">
+        <div class="form-group">
+          <label>Submit some text</label>
+          <input
+            class="form-control"
+            ng-model="submit.text"
+            required>
+        </div>
+        <button
+          class="btn btn-default"
+          ng-disabled="exampleForm.$invalid"
+          ng-click="submitToServer()">Submit</button>
+      </form>
+      <div class="well submit-response" ng-if="submitResponse">
+        {{submitResponse}}
+      </div>
+    </div>
+  </body>
+</html>
