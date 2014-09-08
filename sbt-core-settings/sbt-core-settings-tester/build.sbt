@@ -1,15 +1,13 @@
-import CoreSettings.Dependencies._
+import Dependencies._
 
 name := "core-settings-tester"
 
-// The core settings set the scala version for us
+// The core settings set the scala version for us, which will set it to:
 //scalaVersion := "2.10.4"
 
-// Since CoreSettingsPlugin.autoImport contains a CoreSettings object
-// and since the plugin is automatically enabled, we can add dependencies
-// defined in CoreSettings.Dependencies (imported above)
 libraryDependencies ++= Seq(
-  sprayCan,
+  jodaTime, // declared in Dependencies
+  sprayCan, // declared in CoreDependencies
   sprayRouting,
   akkaActor,
   sprayJson)

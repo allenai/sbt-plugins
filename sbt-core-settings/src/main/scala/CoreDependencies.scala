@@ -11,16 +11,18 @@ trait CoreDependencies {
 
   object Logging {
     val slf4jVersion = "1.7.7"
+    val logbackVersion = "1.1.2"
     // The logging API to use. This should be the only logging dependency of any API artifact
     // (anything that's going to be depended on outside of this SBT project).
     val slf4jApi = "org.slf4j" % "slf4j-api" % slf4jVersion
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.1.2"
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.1.2"
+    val logbackCore = "ch.qos.logback" % "logback-core" % logbackVersion
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
   }
 
   // slf4j implementation (logback), and the log4j -> slf4j bridge.
   // This should be called on libraryDependencies like:
   // addLoggingDependencies(libraryDependencies)
+  // TODO(markschaake&jkinkead): more comments about what is going on here
   def addLoggingDependencies(deps: SettingKey[Seq[ModuleID]]): Seq[Setting[Seq[ModuleID]]] = {
     import Logging._
     val cleanedDeps = deps ~= { seq =>
@@ -80,6 +82,7 @@ trait CoreDependencies {
   )
 
   val defaultResolvers = Seq(
+    // needed for spray-json:
     "spray" at "http://repo.spray.io/",
     "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
   )
