@@ -1,0 +1,42 @@
+{
+  "name": "my-app",
+  "branchVersion": "0.1.0-SNAPSHOT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foo/foo.git"
+  },
+  "devDependencies": {
+    "angular": "^1.2.16",
+    "bootstrap": "^3.1.1",
+    "browserify": "^4.1.9",
+    "browserify-shim": "^3.5.0",
+    "connect": "^2.16.2",
+    "d3": "^3.4.8",
+    "gulp": "^3.6.2",
+    "gulp-browserify": "^0.5.0",
+    "gulp-clean": "^0.2.4",
+    "gulp-concat": "^2.2.0",
+    "gulp-embedlr": "^0.5.2",
+    "gulp-if": "^1.2.1",
+    "gulp-insert": "^0.3.0",
+    "gulp-jshint": "^1.6.1",
+    "gulp-karma": "0.0.4",
+    "gulp-less": "^1.2.3",
+    "gulp-livereload": "^1.5.0",
+    "gulp-mocha": "^0.4.1",
+    "gulp-uglify": "^0.3.0",
+    "gulp-util": "^2.2.16",
+    "install": "^0.1.7",
+    "jshint-stylish": "^0.2.0",
+    "karma-jasmine": "~0.2.0",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "lodash": "^2.4.1",
+    "npm": "^1.4.10",
+    "source-map-support": "^0.2.6"
+  },
+  "scripts": {
+    "test": "gulp test",
+    "build": "gulp build",
+    "dev": "gulp"
+  }
+}
