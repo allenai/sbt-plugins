@@ -64,6 +64,13 @@ lazy val sbtNodeJs =
 
 // Archetype Plugins
 
+lazy val sbtLibrary =
+  project.in(file("sbt-library"))
+    .enablePlugins(AllenaiReleasePlugin)
+    .settings(sbtPluginSettings: _*)
+    .settings(name := "allenai-sbt-library")
+    .dependsOn(sbtCoreSettings, sbtRelease)
+
 lazy val sbtWebService =
   project.in(file("sbt-web-service"))
     .enablePlugins(AllenaiReleasePlugin)
