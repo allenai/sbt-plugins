@@ -21,5 +21,8 @@ object WebServicePlugin extends AutoPlugin {
         sprayRouting,
         sprayCaching,
         sprayJson,
-        typesafeConfig))
+        typesafeConfig,
+        allenAiCommon,
+        allenAiTestkit % "test"
+      ))
 }
