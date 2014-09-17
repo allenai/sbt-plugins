@@ -26,6 +26,12 @@ lazy val sbtFormat =
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-format")
 
+lazy val sbtStyle =
+  project.in(file("sbt-style"))
+    .enablePlugins(AllenaiReleasePlugin)
+    .settings(sbtPluginSettings: _*)
+    .settings(name := "allenai-sbt-style")
+
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
     .enablePlugins(AllenaiReleasePlugin)
@@ -36,7 +42,7 @@ lazy val sbtCoreSettings =
   project.in(file("sbt-core-settings"))
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-core-settings")
-    .dependsOn(sbtFormat, sbtVersionInjector)
+    .dependsOn(sbtFormat, sbtStyle, sbtVersionInjector)
 
 lazy val sbtTravisPublisher =
   project.in(file("sbt-travis-publisher"))
