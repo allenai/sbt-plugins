@@ -31,11 +31,7 @@ trait CoreSettings {
   }
 
   object resolverRepos {
-    val defaults = Seq(
-      // needed for spray-json:
-      spray,
-      typesafe.releases)
-
+    // needed for spray-json:
     val spray = "spray" at "http://repo.spray.io/"
 
     object typesafe {
@@ -49,6 +45,10 @@ trait CoreSettings {
       val releases =
         "AllenAI Releases" at "http://utility.allenai.org:8081/nexus/content/repositories/releases"
     }
+
+    val defaults = Seq(
+      spray,
+      typesafe.releases)
   }
 }
 
