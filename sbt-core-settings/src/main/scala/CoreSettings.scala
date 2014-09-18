@@ -29,4 +29,28 @@ trait CoreSettings {
       }
     }
   }
+
+  object resolverRepos {
+    val defaults = Seq(
+      // needed for spray-json:
+      spray,
+      typesafe.releases
+    )
+
+    val spray = "spray" at "http://repo.spray.io/"
+
+    object typesafe {
+      val releases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+    }
+
+    object allenAi {
+      val snapshots =
+        "AllenAI Snapshots" at "http://utility.allenai.org:8081/nexus/content/repositories/snapshots"
+
+      val releases =
+        "AllenAI Releases" at "http://utility.allenai.org:8081/nexus/content/repositories/releases"
+    }
+  }
 }
+
+object CoreSettings extends CoreSettings

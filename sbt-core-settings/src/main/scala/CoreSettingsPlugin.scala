@@ -26,6 +26,6 @@ object CoreSettingsPlugin extends AutoPlugin {
         scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
         javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
         conflictManager := ConflictManager.strict,
-        resolvers ++= CoreDependencies.resolvers.defaults,
+        resolvers ++= CoreSettings.resolverRepos.defaults,
         dependencyOverrides ++= CoreDependencies.defaultDependencyOverrides)
 }
