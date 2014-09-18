@@ -23,8 +23,9 @@ object CoreSettingsPlugin extends AutoPlugin {
     CoreDependencies.addLoggingDependencies(libraryDependencies) ++
       Seq(
         scalaVersion := CoreDependencies.defaultScalaVersion,
-        scalacOptions ++= Seq("-Xlint", "-deprecation", "-feature"),
+        scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
+        javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
         conflictManager := ConflictManager.strict,
-        resolvers ++= CoreDependencies.defaultResolvers,
+        resolvers ++= CoreDependencies.resolvers.defaults,
         dependencyOverrides ++= CoreDependencies.defaultDependencyOverrides)
 }

@@ -87,11 +87,27 @@ trait CoreDependencies {
     Logging.logbackClassic
   )
 
-  val defaultResolvers = Seq(
-    // needed for spray-json:
-    "spray" at "http://repo.spray.io/",
-    "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
-  )
+  object resolvers {
+    val defaults = Seq(
+      // needed for spray-json:
+      spray,
+      typesafe.releases
+    )
+
+    val spray = "spray" at "http://repo.spray.io/"
+
+    object typesafe {
+      val releases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+    }
+
+    object allenAi {
+      val snapshots =
+        "AllenAI Snapshots" at "http://utility.allenai.org:8081/nexus/content/repositories/snapshots"
+
+      val releases =
+        "AllenAI Releases" at "http://utility.allenai.org:8081/nexus/content/repositories/releases"
+    }
+  }
 }
 
 object CoreDependencies extends CoreDependencies
