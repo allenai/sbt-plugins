@@ -15,9 +15,7 @@ object CoreSettingsPlugin extends AutoPlugin {
   override def trigger = allRequirements
 
   object autoImport {
-    object CoreSettings {
-      val Dependencies = CoreDependencies
-    }
+    object CoreSettings extends CoreSettings
   }
 
   // These settings will be automatically applied to projects
