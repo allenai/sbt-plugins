@@ -10,7 +10,7 @@ trait CoreSettings {
   val Dependencies = CoreDependencies
 
   object publishToRepos {
-    val sonatype=
+    val sonatype =
       publishTo := {
         if (isSnapshot.value)
           Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
@@ -34,8 +34,7 @@ trait CoreSettings {
     val defaults = Seq(
       // needed for spray-json:
       spray,
-      typesafe.releases
-    )
+      typesafe.releases)
 
     val spray = "spray" at "http://repo.spray.io/"
 
