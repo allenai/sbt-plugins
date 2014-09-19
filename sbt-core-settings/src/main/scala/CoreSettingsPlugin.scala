@@ -1,6 +1,6 @@
 package org.allenai.sbt.core
 
-import org.allenai.sbt.format.FormatPlugin
+import org.allenai.sbt.style.StylePlugin
 import org.allenai.sbt.versioninjector.VersionInjectorPlugin
 
 import sbt._
@@ -8,8 +8,8 @@ import sbt.Keys._
 
 object CoreSettingsPlugin extends AutoPlugin {
 
-  // Automatically add the FormatPlugin and VersionInjectorPlugin
-  override def requires = FormatPlugin && VersionInjectorPlugin
+  // Automatically add the StylePlugin and VersionInjectorPlugin
+  override def requires = StylePlugin && VersionInjectorPlugin
 
   // Automatically enable the plugin (no need for projects to `enablePlugins(CoreSettingsPlugin)`)
   override def trigger = allRequirements

@@ -8,5 +8,5 @@ import sbt.Keys._
   * be imported in other build files (such as build.sbt)
   */
 object Dependencies extends CoreDependencies {
-  val jodaTime = "joda-time" %% "joda-time" % "2.4"
+  val jodaTime = "joda-time" % "joda-time" % "2.4"
 }

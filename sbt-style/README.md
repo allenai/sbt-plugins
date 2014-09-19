@@ -1,7 +1,37 @@
-sbt-format
+sbt-style
 ==========
 
-A plugin for formatting Scala source code.
+A plugin for formatting Scala code and checking Scala style. Auto-formatting is done with [scalariform](https://github.com/mdr/scalariform), and other style checking is done with [scalastyle](http://www.scalastyle.org/).
+
+Installing this plugin will make a project's `compile` task depend on the format and style checker.
+
+## Disabling warnings
+To disable format warnings and auto-formatting for a block of code, bound it in these special comments:
+```
+// format: OFF
+
+bad_code()
+
+// format: ON
+```
+This is case-sensitive, but may have zero or more spaces after the `:`.
+
+
+To disable style warnings for a block of code, bound it in these special comments:
+```
+// scalastyle:off
+
+bad_code()
+
+// scalastyle:on
+```
+
+Note that *no spaces* can happen after the `:` in the comment - this is different than with format warnings!
+
+You can also disable style checks on a single line with a postfix comment:
+```
+bad_code() // scalastyle:ignore
+```
 
 ## Installation
 
@@ -10,11 +40,11 @@ The plugin is an AutoPlugin which requires SBT version 0.13.5 or later.
 To install, add the following to your `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-format" % VERSION)
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-style" % VERSION)
 ```
 Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
 
-The plugin is set to be auto-enabled for every project, so you don't have to explicitly enable it in `build.sbt`.
+The plugin should be auto-enabled for every project, so you don't have to explicitly enable it in `build.sbt`.
 
 ### Tasks
 
@@ -31,6 +61,17 @@ Format the source code.  This is the same as `scalariformFormat`.
 
 Tip: if you have a clean git index, you can revert scalariform changes with
 `git reset HEAD --hard`.
+
+#### styleCheck
+
+Check the source code's style. This will print out any warnings or errors, as
+well as a cryptic success message:
+```
+> styleCheck
+[warn] sbt-plugins/sbt-style/sbt-style-tester/src/main/scala/Main.scala:1: Line is more than 100 characters long
+[warn] sbt-plugins/sbt-style/sbt-style-tester/src/main/scala/Main.scala:3:12: var initialized with integer literal; should be initialized from named constant or made val
+[success] created: sbt.SettingKey$$anon$4@25d7a745
+```
 
 #### formatCheck
 

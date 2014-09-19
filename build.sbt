@@ -10,7 +10,7 @@ lazy val root =
       scalaVersion := "2.10.4",
       name := "sbt-plugins")
     .aggregate(
-      sbtFormat,
+      sbtStyle,
       sbtVersionInjector,
       sbtCoreSettings,
       sbtTravisPublisher,
@@ -20,11 +20,11 @@ lazy val root =
       sbtWebService,
       sbtWebapp)
 
-lazy val sbtFormat =
-  project.in(file("sbt-format"))
+lazy val sbtStyle =
+  project.in(file("sbt-style"))
     .enablePlugins(AllenaiReleasePlugin)
     .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-format")
+    .settings(name := "allenai-sbt-style")
 
 lazy val sbtVersionInjector =
   project.in(file("sbt-version-injector"))
@@ -36,7 +36,7 @@ lazy val sbtCoreSettings =
   project.in(file("sbt-core-settings"))
     .settings(sbtPluginSettings: _*)
     .settings(name := "allenai-sbt-core-settings")
-    .dependsOn(sbtFormat, sbtVersionInjector)
+    .dependsOn(sbtStyle, sbtVersionInjector)
 
 lazy val sbtTravisPublisher =
   project.in(file("sbt-travis-publisher"))
