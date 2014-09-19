@@ -29,15 +29,15 @@ trait CoreDependencies {
       seq map { module =>
         // Exclude the transitive dependencies that might mess things up for us.
         // slf4j replaces log4j.
-        (module exclude("log4j", "log4j")
+        (module exclude ("log4j", "log4j")
           // We're using logback as the slf4j implementation, and we're providing it below.
-          exclude("org.slf4j", "slf4j-log4j12")
-          exclude("org.slf4j", "slf4j-jdk14")
-          exclude("org.slf4j", "slf4j-jcl")
-          exclude("org.slf4j", "slf4j-simple")
+          exclude ("org.slf4j", "slf4j-log4j12")
+          exclude ("org.slf4j", "slf4j-jdk14")
+          exclude ("org.slf4j", "slf4j-jcl")
+          exclude ("org.slf4j", "slf4j-simple")
           // We'll explicitly provide the logback version; this avoids having to do an override.
-          exclude("ch.qos.logback", "logback-core")
-          exclude("ch.qos.logback", "logback-classic"))
+          exclude ("ch.qos.logback", "logback-core")
+          exclude ("ch.qos.logback", "logback-classic"))
       }
     }
     // Now, add the logging libraries.
@@ -76,7 +76,7 @@ trait CoreDependencies {
   val sprayCaching = sprayModule("caching")
 
   // Spray json (separate from Spray toolkit)
-  val sprayJson = "io.spray" %%  "spray-json" % "1.2.6"
+  val sprayJson = "io.spray" %% "spray-json" % "1.2.6"
 
   val defaultDependencyOverrides = Set(
     "org.scala-lang" % "scala-library" % defaultScalaVersion,
@@ -84,14 +84,7 @@ trait CoreDependencies {
     typesafeConfig,
     Logging.slf4jApi,
     Logging.logbackCore,
-    Logging.logbackClassic
-  )
-
-  val defaultResolvers = Seq(
-    // needed for spray-json:
-    "spray" at "http://repo.spray.io/",
-    "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
-  )
+    Logging.logbackClassic)
 }
 
 object CoreDependencies extends CoreDependencies
