@@ -5,7 +5,7 @@ This plugin provides core settings to projects including:
 - Setting `conflictManager := ConflictManager.strict`
 - Adds slf4j dependencies and resolves common slf4j conflicts
 - Provides `CoreSettings.Dependencies` object with many common (and versioned) dependencies
-- Enables the `FormatPlugin`, `StylePlugin`, and `VersionInjectorPlugin`
+- Enables the `StylePlugin` and `VersionInjectorPlugin`
 
 To use, add the following to your projects `project/plugins.sbt` file:
 

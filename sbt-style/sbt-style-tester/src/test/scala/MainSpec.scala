@@ -4,4 +4,5 @@ object MainSpec extends App {
   object fooBar {
     println("this is "+1)
   }
+  val b  =   1 +   3
 }
