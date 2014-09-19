@@ -82,7 +82,7 @@ object StylePlugin extends AutoPlugin {
       val outputXml = new File(scalastyleTarget(target.value), "scalastyle-results.xml")
       val localStreams = streams.value
       ScalastyleTasks.doScalastyle(
-        args, configXml, warnIsError, sourceDir, outputXml,  localStreams)
+        args, configXml, warnIsError, sourceDir, outputXml, localStreams)
     })
 
   /** @return a `scalastyle` directory in `targetDir`, creating it if needed */
