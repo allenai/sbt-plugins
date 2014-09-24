@@ -53,7 +53,9 @@ object StylePlugin extends AutoPlugin {
       compileInputs in (Compile, compile) <<=
         (compileInputs in (Compile, compile)) dependsOn (StyleKeys.styleCheck in Compile),
       compileInputs in (Compile, compile) <<=
-        (compileInputs in (Compile, compile)) dependsOn (StyleKeys.formatCheck in Compile))
+        (compileInputs in (Compile, compile)) dependsOn (StyleKeys.formatCheck in Compile),
+      // scalariform settings
+      ScalariformKeys.preferences := formattingPreferences)
 
   // Settings used for a particular configuration (such as Compile).
   def configSettings: Seq[Setting[_]] = Seq(
@@ -100,8 +102,11 @@ object StylePlugin extends AutoPlugin {
     val destinationFile = new File(scalastyleTarget(targetDir), "scalastyle-config.xml")
 
     if (!destinationFile.exists) {
-      val sourceStream = getClass.getClassLoader.getResourceAsStream("./allenai-style-config.xml")
-      IO.write(destinationFile, IO.readStream(sourceStream))
+      val resourceName = "allenai-style-config.xml"
+      Option(getClass.getClassLoader.getResourceAsStream(resourceName)) match {
+        case None => throw new NullPointerException(s"Failed to find $resourceName in resources")
+        case Some(sourceStream) => IO.write(destinationFile, IO.readStream(sourceStream))
+      }
     }
     destinationFile
   }
