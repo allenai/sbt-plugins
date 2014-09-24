@@ -103,11 +103,10 @@ object StylePlugin extends AutoPlugin {
 
     if (!destinationFile.exists) {
       val resourceName = "allenai-style-config.xml"
-      val sourceStream = getClass.getClassLoader.getResourceAsStream(resourceName)
-      if (sourceStream == null) {
-        throw new NullPointerException(s"Failed to find $resourceName in resources")
+      Option(getClass.getClassLoader.getResourceAsStream(resourceName)) match {
+        case None => throw new NullPointerException(s"Failed to find $resourceName in resources")
+        case Some(sourceStream) => IO.write(destinationFile, IO.readStream(sourceStream))
       }
-      IO.write(destinationFile, IO.readStream(sourceStream))
     }
     destinationFile
   }
