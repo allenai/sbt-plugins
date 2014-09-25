@@ -11,9 +11,14 @@ Following the Typesafe lead, we publish our plugins to a [bintray](https://bintr
 
 Bintray does not like snapshot versions, so all of our published versions are releases.
 
-To publish new versions, you will need a bintray account and for it to be added to the bintray allenai organization.
+To publish new versions you will need a `~/.bintray/.credentials` file with the following contents:
 
-TODO(markschaake): create a generic bintray account for ari-role that all devs can use.
+```
+realm = Bintray API Realm
+host = api.bintray.com
+user = ai2-dev
+password = [API Key for ai2-dev user]
+```
 
 ## Developing Plugins
 
