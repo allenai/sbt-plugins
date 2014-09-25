@@ -21,6 +21,7 @@ password = [API Key for ai2-dev user]
 ```
 
 Where `[API Key]` is the API key for the ai2-dev account on Bintray. You can find it by:
+
 1. Log into bintray (password is in passwords.txt on ari prod server)
 2. Click on the `ai2-dev` account name in top-right corner 
 3. Click on `Edit` under `ai2-dev`
