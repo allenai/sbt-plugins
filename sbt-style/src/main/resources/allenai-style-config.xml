@@ -101,7 +101,7 @@
     </parameters>
   </check>
   <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="true">
-    <customMessage>var initialized with integer literal; should be initialized from named constant or made val</customMessage>
+    <customMessage>Magic integer literal in expression; should be read from a named constant</customMessage>
     <parameters>
       <parameter name="ignore">-1,0,1,2,3</parameter>
     </parameters>
