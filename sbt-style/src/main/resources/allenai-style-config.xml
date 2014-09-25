@@ -107,6 +107,9 @@
     </parameters>
   </check>
   <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="true">
+    <parameters>
+      <parameter name="ignoreOverride">true</parameter>
+    </parameters>
     <customMessage>Missing return type for public method</customMessage>
   </check>
   <check level="warning" class="org.scalastyle.scalariform.UppercaseLChecker" enabled="true">
