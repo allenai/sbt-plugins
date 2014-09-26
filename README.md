@@ -11,7 +11,8 @@ Following the Typesafe lead, we publish our plugins to a [bintray](https://bintr
 
 Bintray does not like snapshot versions, so all of our published versions are releases.
 
-To publish new versions you will need a `~/.bintray/.credentials` file with the following contents:
+# Configuration
+To publish new versions you will need a `~/.bintray/.credentials` file with the following contents. Be sure to `chmod 600` it!
 
 ```
 realm = Bintray API Realm
@@ -26,6 +27,12 @@ Where `[API Key]` is the API key for the ai2-dev account on Bintray. You can fin
 2. Click on the `ai2-dev` account name in top-right corner 
 3. Click on `Edit` under `ai2-dev`
 4. Click on `API Key` in navigation list
+
+# Publishing
+
+Manually update the `version.sbt` file.
+
+Run `sbt publish`.
 
 ## Developing Plugins
 
