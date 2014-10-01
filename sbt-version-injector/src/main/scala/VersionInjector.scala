@@ -16,7 +16,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     val injectArtifact = TaskKey[File]("injectArtifact", "Generate the artifact.conf resource")
     val injectGit = TaskKey[File]("injectGit", "Generate the git.conf resource")
     val gitCommitDate = TaskKey[Long]("gitCommitDate", "The date in milliseconds of the current git commit")
-    val gitSha1 = TaskKey[String]("gitSha1", "The sha1 hash of the current git commit")
+    val gitOrigin = TaskKey[String]("gitOrigin", "The origin repository of the current git repository")
+    val gitSha1 = TaskKey[String]("gitSha1", "The sha1 hash of the current git commit!!!")
     val gitDescribe = TaskKey[String]("gitDescribe", "The description of the current git commit")
   }
 
@@ -33,6 +34,7 @@ object VersionInjectorPlugin extends AutoPlugin {
     gitDescribeTask,
     gitCommitDateTask,
     gitSha1Task,
+    gitOriginTask,
     resourceGenerators in Compile <+= injectVersion)
 
   private def executableName(command: String) = {
@@ -50,6 +52,7 @@ object VersionInjectorPlugin extends AutoPlugin {
 
   val gitCommitDateTask = gitCommitDate := (gitCommand("log", "-1", "--format=%ct", "HEAD").!!).trim.toLong * 1000
   val gitSha1Task = gitSha1 := (gitCommand("rev-parse", "HEAD").!!).trim
+  val gitOriginTask = gitOrigin := (gitCommand("config", "--get", "remote.origin.url").!!).trim
 
   val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile) map { (artifactFile, gitFile) =>
     Seq(artifactFile, gitFile)
@@ -67,15 +70,17 @@ object VersionInjectorPlugin extends AutoPlugin {
     artifactConfFile
   }
 
-  val injectGitTask = injectGit <<= (resourceManaged in Compile, organization, name, version, streams, gitSha1, gitCommitDate) map {
-    (resourceManaged, org, name, version, s, sha1, date) =>
+  val injectGitTask = injectGit <<= (resourceManaged in Compile, organization, name, version, streams, gitOrigin, gitSha1, gitCommitDate) map {
+    (resourceManaged, org, name, version, s, sha1, origin, date) =>
       val gitConfFile = resourceManaged / org / cleanArtifactName(name) / "git.conf"
 
       s.log.info(s"Generating git.conf managed resource... (sha1: ${sha1})")
 
+      def quote(s: String) = "\"" + s + "\""
       val gitContents =
-        "sha1: \"" + sha1 + "\"\n" +
-          "date: " + date.toString
+        "sha1: " + quote(sha1) + "\n" +
+        "origin: " + quote(origin) + "\n" +
+          "date: " + quote(date.toString)
       IO.write(gitConfFile, gitContents)
       gitConfFile
   }
