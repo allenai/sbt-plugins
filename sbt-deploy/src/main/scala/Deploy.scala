@@ -75,8 +75,14 @@ object DeployPlugin extends AutoPlugin {
 
     val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
 
+    val deployEnvironment = TaskKey[String](
+      "deployEnvironment", "Returns the current deploy environment")
+
     val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
   }
+
+  /** Environment variable key that will be set for deployment */
+  val DeployEnvironment = "deploy.env"
 
   import autoImport._
 
@@ -178,13 +184,6 @@ object DeployPlugin extends AutoPlugin {
 
     // Build the target specified.
     val projectName = configMap("project.name")
-    log.info(s"Building ${projectName} . . .")
-    if (Process(Seq("sbt", "project " + projectName, "clean", "stage")).! != 0) {
-      log.error(s"Error building ${projectName}, exiting.")
-    }
-
-    val universalStagingDir = new File(workingDirectory,
-      UniversalStagingSubdir)
 
     // Copy over the per-env config file, if it exists.
     val deployEnv = if (deployTarget.lastIndexOf('.') >= 0) {
@@ -192,6 +191,20 @@ object DeployPlugin extends AutoPlugin {
     } else {
       deployTarget
     }
+
+    val buildProcess = Process(
+      Seq("sbt", "project " + projectName, "clean", "stage"),
+      None,
+      DeployEnvironment -> deployEnv)
+
+    log.info(s"Building ${projectName} . . .")
+    if (buildProcess.! != 0) {
+      log.error(s"Error building ${projectName}, exiting.")
+    }
+
+    val universalStagingDir = new File(workingDirectory,
+      UniversalStagingSubdir)
+
     val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
     if (envConfFile.exists) {
       log.info(s"Copying config for ${deployEnv} . . .")
@@ -245,6 +258,9 @@ object DeployPlugin extends AutoPlugin {
     gitRepoCleanTask,
     gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
+    deployEnvironment := {
+      sys.env.get(DeployEnvironment).getOrElse("dev")
+    },
     deployTask,
 
     // TODO(jkinkead): Run an automated "/info/name" check here to see if services are running.
