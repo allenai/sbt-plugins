@@ -16,7 +16,7 @@ object VersionInjectorPlugin extends AutoPlugin {
     val injectArtifact = TaskKey[File]("injectArtifact", "Generate the artifact.conf resource")
     val injectGit = TaskKey[File]("injectGit", "Generate the git.conf resource")
     val gitCommitDate = TaskKey[Long]("gitCommitDate", "The date in milliseconds of the current git commit")
-    val gitRemotes = TaskKey[Seq[String]]("gitRemotes", "The origin repository of the current git repository")
+    val gitRemotes = TaskKey[Seq[String]]("gitRemotes", "A list of the remotes of this git repository")
     val gitSha1 = TaskKey[String]("gitSha1", "The sha1 hash of the current git commit!!!")
     val gitDescribe = TaskKey[String]("gitDescribe", "The description of the current git commit")
   }
