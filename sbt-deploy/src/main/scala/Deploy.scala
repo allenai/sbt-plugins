@@ -259,7 +259,7 @@ object DeployPlugin extends AutoPlugin {
     gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
     deployEnvironment := {
-      sys.env.get(DeployEnvironment).getOrElse("dev")
+      sys.env.get(DeployEnvironment).getOrElse("sbt-dev")
     },
     deployTask,
 
