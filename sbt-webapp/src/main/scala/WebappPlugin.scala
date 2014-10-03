@@ -40,7 +40,7 @@ object WebappPlugin extends AutoPlugin {
     UniversalKeys.stage <<= UniversalKeys.stage.dependsOn(WebappKeys.logNodeEnvironment in Webapp),
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
     // Set NODE_ENV to the deploy target (e.g. 'prod', 'staging', etc.)
-    NodeKeys.buildEnvironment in Npm := deployEnvironment.value,
+    NodeKeys.buildEnvironment in Npm := deployEnvironment.value.getOrElse("sbt-dev"),
     // Print the node environment on stage
     // Force npm:build when using sbt-revolver re-start to ensure UI is built
     Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.build in Npm),

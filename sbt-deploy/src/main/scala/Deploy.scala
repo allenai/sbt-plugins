@@ -75,7 +75,7 @@ object DeployPlugin extends AutoPlugin {
 
     val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
 
-    val deployEnvironment = TaskKey[String](
+    val deployEnvironment = TaskKey[Option[String]](
       "deployEnvironment", "Returns the current deploy environment")
 
     val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
@@ -259,7 +259,7 @@ object DeployPlugin extends AutoPlugin {
     gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
     deployEnvironment := {
-      sys.env.get(DeployEnvironment).getOrElse("sbt-dev")
+      sys.env.get(DeployEnvironment)
     },
     deployTask,
 
