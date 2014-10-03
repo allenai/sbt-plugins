@@ -16,6 +16,8 @@ object NodeJsPlugin extends AutoPlugin {
 
     object NodeKeys {
       val build = TaskKey[Seq[File]]("build", "Execution `npm run build` in the Node application directory")
+      val buildEnvironment = TaskKey[String]("buildEnvironment",
+        "Returns the build environment which will set the NODE_ENV variable for npm")
       val install = TaskKey[Unit]("install", "Execution `npm install` in the Node application directory to install dependencies")
       val nodeProjectDir = SettingKey[File]("nodeProjectDir", "The directory containing the Node application")
       val environment = TaskKey[Map[String, String]]("environment", "Environment variable names and values to set for npm commands")
@@ -45,7 +47,7 @@ object NodeJsPlugin extends AutoPlugin {
 
   val npmEnvironmentTask = environment in Npm := {
     Map(
-      "NODE_ENV" -> "prod",
+      "NODE_ENV" -> (buildEnvironment in Npm).value,
       "NODE_API_HOST" -> "/api",
       "NODE_BUILD_DIR" -> (nodeProjectTarget in Npm).value.getAbsolutePath)
   }
@@ -69,6 +71,7 @@ object NodeJsPlugin extends AutoPlugin {
   override lazy val projectSettings = Seq(
     nodeProjectDir in Npm := baseDirectory.value / "webclient",
     nodeProjectTarget in Npm := baseDirectory.value / "public",
+    buildEnvironment in Npm := "prod",
     npmEnvironmentTask,
     npmTestTask,
     npmCleanTask,
