@@ -31,7 +31,8 @@ val myProject = project.in(file(".")).enablePlugins(DeployPlugin).settings(
 
 ### running
 In order to push to a remote host, you need to have the `deploy.user.ssh_keyfile` config key present. The easiest way to
-get this configured is to add it to a `~/.deployrc` file. A sample `.deployrc` file is in [`conf/example_rcfile.conf`](https://github.com/allenai/tools/blob/master/sbt-plugins/sbt-deploy/conf/example_rcfile.conf).
+get this configured is to add it to a `~/.deployrc` file. A sample `.deployrc` file is in [`conf/example_rcfile.conf`](
+https://github.com/allenai/sbt-plugins/blob/master/sbt-deploy/conf/example_rcfile.conf).
 
 Once you have an keyfile configured, you can run by executing, from your project root:
 
