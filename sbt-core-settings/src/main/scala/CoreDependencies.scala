@@ -52,9 +52,11 @@ trait CoreDependencies {
   }
 
   // AI2 common libraries
-  val allenAiCommon = "org.allenai.common" %% "common-core" % "2014.10.07-0"
-  val allenAiTestkit = "org.allenai.common" %% "common-testkit" % "2014.10.07-0"
-  val allenAiWebapp = "org.allenai.common" %% "common-webapp" % "2014.10.07-0"
+  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "2014.10.10-0"
+  val allenAiCommon = common("core")
+  val allenAiTestkit = common("testkit")
+  val allenAiWebapp = common("webapp")
+  val allenAiDatastore = common("datastore")
 
   val scopt = "com.github.scopt" % "scopt_2.10" % "3.2.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.0"
