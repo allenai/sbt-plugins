@@ -9,13 +9,14 @@ lazy val root =
       scalaVersion := "2.10.4",
       name := "sbt-plugins")
     .aggregate(
-      sbtStyle,
-      sbtVersionInjector,
       sbtCoreSettings,
-      sbtTravisPublisher,
       sbtDeploy,
-      sbtRelease,
+      sbtLibrary,
       sbtNodeJs,
+      sbtRelease,
+      sbtStyle,
+      sbtTravisPublisher,
+      sbtVersionInjector,
       sbtWebService,
       sbtWebapp)
 
