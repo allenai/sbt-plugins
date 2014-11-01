@@ -3,6 +3,25 @@
 SBT Plugins
 ===========
 
+## Usage
+
+Add plugins in your project's `project/plugins.sbt`. For example:
+
+```scala
+lazy val ai2PluginsVersion = "2014.11.01-0"
+
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-library" % ai2PluginsVersion)
+
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-web-service" % ai2PluginsVersion)
+
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-webapp" % ai2PluginsVersion)
+
+// Due to an SBT bug, the following settings are necessary when adding the allenai-sbt-web-service plugin:
+conflictManager := ConflictManager.strict
+
+dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.6"
+```
+
 **Boss**: Mark S
 
 ## Publishing
