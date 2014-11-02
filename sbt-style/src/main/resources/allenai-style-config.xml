@@ -100,12 +100,6 @@
       <parameter name="regex">^[a-z][A-Za-z]*$</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="true">
-    <customMessage>Magic integer literal in expression; should be read from a named constant</customMessage>
-    <parameters>
-      <parameter name="ignore">-1,0,1,2,3</parameter>
-    </parameters>
-  </check>
   <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="true">
     <customMessage>Missing return type for public method</customMessage>
   </check>
@@ -122,6 +116,12 @@
     </parameters>
   </check>
 
+  <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="false">
+    <customMessage>Magic integer literal in expression; should be read from a named constant</customMessage>
+    <parameters>
+      <parameter name="ignore">-1,0,1,2,3</parameter>
+    </parameters>
+  </check>
   <check level="warning" class="org.scalastyle.file.FileLengthChecker" enabled="false">
     <parameters>
       <parameter name="maxFileLength">800></parameter>
