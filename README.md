@@ -16,7 +16,8 @@ addSbtPlugin("org.allenai.plugins" % "allenai-sbt-web-service" % ai2PluginsVersi
 
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-webapp" % ai2PluginsVersion)
 
-// Due to an SBT bug, the following settings are necessary when adding the allenai-sbt-web-service plugin:
+// Due to an SBT bug, the following settings are necessary when adding the allenai-sbt-web-service
+// plugin:
 conflictManager := ConflictManager.strict
 
 dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.6"
