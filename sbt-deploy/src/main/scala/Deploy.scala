@@ -216,9 +216,6 @@ object DeployPlugin extends AutoPlugin {
       log.info("")
       log.info(s"WARNING: Could not find config file ${deployEnv}.conf!")
       log.info("")
-      log.info("Press ENTER to continue with no environment configuration, CTRL-C to abort.")
-      log.info("")
-      System.console.readLine()
     }
 
     // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
