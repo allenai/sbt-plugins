@@ -33,6 +33,7 @@ Bintray does not like snapshot versions, so all of our published versions are re
 
 # Configuration
 To publish new versions you will need a `~/.bintray/.credentials` file with the following contents. Be sure to `chmod 600` it!
+You can also use a personal Bintray login that has access to the `allenai` organization.
 
 ```
 realm = Bintray API Realm
