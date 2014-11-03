@@ -10,18 +10,20 @@ trait CoreSettings {
   val Dependencies = CoreDependencies
 
   object publishToRepos {
-    val sonatype =
+    val sonatype = {
       publishTo := {
         if (isSnapshot.value)
           Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
         else
           Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
       }
+    }
 
     object ai2 {
       val ai2NexusUrl = "http://utility.allenai.org:8081/nexus"
-      val ai2RepoUrl = s"${ai2NexusHost}/content/repositories/"
-      val public = {
+      val ai2RepoUrl = s"${ai2NexusUrl}/content/repositories/"
+
+      val privateRepo = {
         publishTo := {
           if (isSnapshot.value)
             Some("snapshots" at ai2RepoUrl + "snapshots")
@@ -30,7 +32,7 @@ trait CoreSettings {
         }
       }
 
-      val public = {
+      val publicRepo = {
         publishTo := {
           if (isSnapshot.value)
             Some("snapshots" at ai2RepoUrl + "public-snapshots")
