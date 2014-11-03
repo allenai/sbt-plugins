@@ -18,14 +18,25 @@ trait CoreSettings {
           Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
       }
 
-    val ai2 = {
-      val ai2NexusHost = "utility.allenai.org"
-      val ai2NexusUrl = s"http://${ai2NexusHost}:8081/nexus/content/repositories/"
-      publishTo := {
-        if (isSnapshot.value)
-          Some("snapshots" at ai2NexusUrl + "snapshots")
-        else
-          Some("releases" at ai2NexusUrl + "releases")
+    object ai2 {
+      val ai2NexusUrl = "http://utility.allenai.org:8081/nexus"
+      val ai2RepoUrl = s"${ai2NexusHost}/content/repositories/"
+      val public = {
+        publishTo := {
+          if (isSnapshot.value)
+            Some("snapshots" at ai2RepoUrl + "snapshots")
+          else
+            Some("releases" at ai2RepoUrl + "releases")
+        }
+      }
+
+      val public = {
+        publishTo := {
+          if (isSnapshot.value)
+            Some("snapshots" at ai2RepoUrl + "public-snapshots")
+          else
+            Some("releases" at ai2RepoUrl + "public-releases")
+        }
       }
     }
   }
