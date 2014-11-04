@@ -5,7 +5,7 @@ import sbt.Keys._
 
 import com.typesafe.sbt.SbtScalariform._
 import org.scalastyle.sbt.{
-  PluginKeys => ScalastylePluginKeys, ScalastylePlugin, Tasks => ScalastyleTasks
+  ScalastylePlugin, Tasks => ScalastyleTasks
 }
 import scalariform.formatter.ScalaFormatter
 import scalariform.formatter.preferences._
@@ -39,7 +39,7 @@ object StylePlugin extends AutoPlugin {
   override def projectSettings =
     // Add default scalariform + scalastyle settings.
     defaultScalariformSettings ++
-    ScalastylePlugin.Settings ++
+    ScalastylePlugin.projectSettings ++
     // Add our default settings to test & compile.
     inConfig(Compile)(configSettings) ++
     inConfig(Test)(configSettings) ++
@@ -84,7 +84,17 @@ object StylePlugin extends AutoPlugin {
       val outputXml = new File(scalastyleTarget(target.value), "scalastyle-results.xml")
       val localStreams = streams.value
       ScalastyleTasks.doScalastyle(
-        args, configXml, warnIsError, sourceDir, outputXml, localStreams)
+        args,
+        configXml,
+        None, // Config URL; overrides configXml.
+        warnIsError,
+        sourceDir,
+        outputXml,
+        localStreams,
+        0, // How frequently, in hours, to refresh config from URL. Ignored if URL is None.
+        target.value,
+        "/dev/null" // URL cache file. Ignored if URL is None.
+        )
     })
 
   /** @return a `scalastyle` directory in `targetDir`, creating it if needed */
