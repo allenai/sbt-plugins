@@ -57,7 +57,7 @@ trait CoreDependencies {
   val allenAiTestkit = common("testkit")
   val allenAiWebapp = common("webapp")
   val allenAiPipeline = common("pipeline")
-  val allenAiDatastore = "org.allenai" %% "datastore" % "2014.11.03-0"
+  val allenAiDatastore = "org.allenai" %% "datastore" % "2014.11.04-0"
 
   @deprecated("Please use allenAiDatastore instead","2014-11-04")
   def datastore = allenAiDatastore
