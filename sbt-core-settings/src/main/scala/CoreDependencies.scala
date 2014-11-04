@@ -56,8 +56,9 @@ trait CoreDependencies {
   val allenAiCommon = common("core")
   val allenAiTestkit = common("testkit")
   val allenAiWebapp = common("webapp")
-  val allenAiDatastore = common("datastore")
   val allenAiPipeline = common("pipeline")
+
+  val datastore = "org.allenai" %% "datastore" % "2014.11.03-0"
 
   val scopt = "com.github.scopt" % "scopt_2.10" % "3.2.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.0"
