@@ -8,7 +8,7 @@ SBT Plugins
 Add plugins in your project's `project/plugins.sbt`. For example:
 
 ```scala
-lazy val ai2PluginsVersion = "2014.11.02-0"
+lazy val ai2PluginsVersion = "2014.11.05-0"
 
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-library" % ai2PluginsVersion)
 
