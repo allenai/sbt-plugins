@@ -8,6 +8,7 @@ name := "core-settings-tester"
 libraryDependencies ++= Seq(
   jodaTime, // declared in Dependencies
   sprayCan, // declared in CoreDependencies
+  allenAiCommon, // delcared in CoreDependencies, uses resolver in CoreSettings.
   sprayRouting,
   akkaActor,
   sprayJson)

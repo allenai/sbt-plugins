@@ -55,13 +55,17 @@ trait CoreSettings {
       val snapshots =
         "AllenAI Snapshots" at "http://utility.allenai.org:8081/nexus/content/repositories/snapshots"
 
-      val releases =
+      val privateReleases =
         "AllenAI Releases" at "http://utility.allenai.org:8081/nexus/content/repositories/releases"
+
+      val publicReleases =
+        "AllenAI Public" at "http://utility.allenai.org:8081/nexus/content/repositories/public-releases/"
     }
 
     val defaults = Seq(
       spray,
-      typesafe.releases)
+      typesafe.releases,
+      allenAi.publicReleases)
   }
 }
 
