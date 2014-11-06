@@ -5,7 +5,7 @@ libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0")
 
 organization := "org.allenai.plugins"
 
-name := "plugins"
+name := "allenai-sbt-plugins"
 
 lazy val plugins = project.in(file(".")).enablePlugins(AllenaiReleasePlugin)
 
@@ -20,15 +20,6 @@ scalacOptions := Seq(
 scalaVersion := "2.10.4"
 
 sbtPlugin := true
-
-conflictManager := ConflictManager.strict
-
-// This is important because we wrap plugins that use a pre 0.13.5 SBT version
-// (sbt-release, sbt-scalariform, sbt-scalastyle) which will cause loss of 0.13.5 sbt interface
-// during SBT project load (this seems to be an SBT bug).
-// This manifests as an SBT error complaining that `enablePlugins` is not a member
-// of sbt.Project. To prevent this build error, we force those plugins to use 0.13.6
-dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.6"
 
 // We wrap some 3rd party plugins:
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.7.6")
