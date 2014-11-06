@@ -58,9 +58,6 @@ trait CoreDependencies {
   val allenAiWebapp = common("webapp")
   val allenAiPipeline = common("pipeline")
 
-  @deprecated("Until the datastore code becomes more stable, we won't have the datastore in the plugin.","2014-11-04")
-  def datastore = "org.allenai" %% "datastore" % "2014.11.04-0"
-
   val scopt = "com.github.scopt" % "scopt_2.10" % "3.2.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.0"
 
