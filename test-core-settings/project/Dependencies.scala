@@ -1,4 +1,4 @@
-import org.allenai.sbt.core.CoreDependencies
+import org.allenai.plugins.CoreDependencies
 
 import sbt._
 import sbt.Keys._
