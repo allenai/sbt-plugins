@@ -52,10 +52,10 @@ import scala.util.Try
   */
 object DeployPlugin extends AutoPlugin {
 
-  override def requires = plugins.JvmPlugin
+  override def requires: Plugins = plugins.JvmPlugin
 
   // Auto enable the plugin
-  override def trigger = allRequirements
+  override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
     /** Static usage string. */
@@ -253,7 +253,7 @@ object DeployPlugin extends AutoPlugin {
     log.info("Deploy complete. Validate your server!")
   }
 
-  override def projectSettings = packageArchetype.java_application ++ Seq(
+  override def projectSettings: Seq[Def.Setting[_]] = packageArchetype.java_application ++ Seq(
     gitRepoCleanTask,
     gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
