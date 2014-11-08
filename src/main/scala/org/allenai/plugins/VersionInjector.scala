@@ -23,11 +23,11 @@ object VersionInjectorPlugin extends AutoPlugin {
 
   import autoImport._
 
-  override def requires = plugins.JvmPlugin
+  override def requires: Plugins = plugins.JvmPlugin
 
-  override def trigger = allRequirements
+  override def trigger: PluginTrigger = allRequirements
 
-  override def projectSettings = Seq(
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
     injectVersionTask,
     injectArtifactTask,
     injectGitTask,

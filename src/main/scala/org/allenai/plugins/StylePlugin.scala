@@ -34,11 +34,11 @@ object StylePlugin extends AutoPlugin {
     )
   }
 
-  override def requires = plugins.JvmPlugin
+  override def requires: Plugins = plugins.JvmPlugin
 
-  override def trigger = allRequirements
+  override def trigger: PluginTrigger = allRequirements
 
-  override def projectSettings =
+  override def projectSettings: Seq[Def.Setting[_]] =
     // Add default scalariform + scalastyle settings.
     defaultScalariformSettings ++
     ScalastylePlugin.projectSettings ++

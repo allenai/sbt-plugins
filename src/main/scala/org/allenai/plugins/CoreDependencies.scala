@@ -63,14 +63,14 @@ trait CoreDependencies {
 
   // Akka
   val akkaVersion = "2.3.5"
-  def akkaModule(id: String) = "com.typesafe.akka" %% s"akka-$id" % akkaVersion
+  def akkaModule(id: String): ModuleID = "com.typesafe.akka" %% s"akka-$id" % akkaVersion
   val akkaActor = akkaModule("actor")
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")
 
   // Spray
   val sprayVersion = "1.3.1"
-  def sprayModule(id: String) = "io.spray" % s"spray-$id" % sprayVersion
+  def sprayModule(id: String): ModuleID = "io.spray" % s"spray-$id" % sprayVersion
   val sprayCan = sprayModule("can")
   val sprayRouting = sprayModule("routing")
   val sprayClient = sprayModule("client")

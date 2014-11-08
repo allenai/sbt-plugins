@@ -10,7 +10,7 @@ import sbt.Keys._
 
 object WebServicePlugin extends AutoPlugin {
 
-  override def requires = DeployPlugin && CoreSettingsPlugin
+  override def requires: Plugins = DeployPlugin && CoreSettingsPlugin
 
   override def projectSettings: Seq[Setting[_]] =
     Revolver.settings ++ Seq(

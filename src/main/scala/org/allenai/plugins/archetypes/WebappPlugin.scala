@@ -14,7 +14,7 @@ import sbt.Keys._
 
 object WebappPlugin extends AutoPlugin {
 
-  override def requires = WebServicePlugin && NodeJsPlugin
+  override def requires: Plugins = WebServicePlugin && NodeJsPlugin
 
   object autoImport {
     val Webapp = ConfigKey("webapp")

@@ -6,10 +6,10 @@ import sbt.Keys._
 object CoreSettingsPlugin extends AutoPlugin {
 
   // Automatically add the StylePlugin and VersionInjectorPlugin
-  override def requires = StylePlugin && VersionInjectorPlugin
+  override def requires: Plugins = StylePlugin && VersionInjectorPlugin
 
   // Automatically enable the plugin (no need for projects to `enablePlugins(CoreSettingsPlugin)`)
-  override def trigger = allRequirements
+  override def trigger: PluginTrigger = allRequirements
 
   object autoImport {
     val CoreResolvers = CoreRepositories.Resolvers

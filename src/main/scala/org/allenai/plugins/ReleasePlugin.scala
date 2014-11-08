@@ -12,7 +12,7 @@ import java.util.Date
 
 object ReleasePlugin extends AutoPlugin {
 
-  override def requires = plugins.JvmPlugin
+  override def requires: Plugins = plugins.JvmPlugin
 
   private def todayVersion: String = {
     val df = new SimpleDateFormat("yyyy.MM.dd")
@@ -28,16 +28,17 @@ object ReleasePlugin extends AutoPlugin {
     }
   }
 
-  override lazy val projectSettings = WrappedReleasePlugin.releaseSettings ++ Seq(
-    releaseVersion := { ver =>
-      val today = todayVersion
-      if (ver.startsWith(today)) {
-        ver.replace("-SNAPSHOT", "")
-      } else {
-        s"${today}-0"
-      }
-    },
-    nextVersion := { ver =>
-      s"${incrementVersion(ver)}-SNAPSHOT"
-    })
+  override lazy val projectSettings: Seq[Def.Setting[_]] =
+    WrappedReleasePlugin.releaseSettings ++ Seq(
+      releaseVersion := { ver =>
+        val today = todayVersion
+        if (ver.startsWith(today)) {
+          ver.replace("-SNAPSHOT", "")
+        } else {
+          s"${today}-0"
+        }
+      },
+      nextVersion := { ver =>
+        s"${incrementVersion(ver)}-SNAPSHOT"
+      })
 }
