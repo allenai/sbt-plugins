@@ -7,7 +7,7 @@ organization := "org.allenai.plugins"
 
 name := "allenai-sbt-plugins"
 
-lazy val ai2Plugins = project.in(file(".")).enablePlugins(AllenaiReleasePlugin)
+lazy val ai2Plugins = project.in(file(".")).enablePlugins(ReleasePlugin)
 
 scalacOptions := Seq(
   "-encoding", "utf8",
