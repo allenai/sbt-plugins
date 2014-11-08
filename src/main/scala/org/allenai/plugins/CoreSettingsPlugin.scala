@@ -12,7 +12,8 @@ object CoreSettingsPlugin extends AutoPlugin {
   override def trigger = allRequirements
 
   object autoImport {
-    object CoreSettings extends CoreSettings
+    val CoreResolvers = CoreRepositories.Resolvers
+    val PublishTo = CoreRepositories.PublishTo
   }
 
   // These settings will be automatically applied to projects
@@ -23,6 +24,6 @@ object CoreSettingsPlugin extends AutoPlugin {
         scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
         javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
         conflictManager := ConflictManager.strict,
-        resolvers ++= CoreSettings.resolverRepos.defaults,
+        resolvers ++= CoreRepositories.Resolvers.defaults,
         dependencyOverrides ++= CoreDependencies.defaultDependencyOverrides)
 }
