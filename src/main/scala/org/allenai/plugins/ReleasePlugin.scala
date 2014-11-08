@@ -3,14 +3,14 @@ package org.allenai.plugins
 import sbt._
 import sbt.Keys._
 
-import sbtrelease._
+import sbtrelease.{ ReleasePlugin => WrappedReleasePlugin, _ }
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-object AllenaiReleasePlugin extends AutoPlugin {
+object ReleasePlugin extends AutoPlugin {
 
   override def requires = plugins.JvmPlugin
 
@@ -28,7 +28,7 @@ object AllenaiReleasePlugin extends AutoPlugin {
     }
   }
 
-  override lazy val projectSettings = ReleasePlugin.releaseSettings ++ Seq(
+  override lazy val projectSettings = WrappedReleasePlugin.releaseSettings ++ Seq(
     releaseVersion := { ver =>
       val today = todayVersion
       if (ver.startsWith(today)) {
