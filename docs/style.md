@@ -1,9 +1,16 @@
 sbt-style
 ==========
 
-A plugin for formatting Scala code and checking Scala style. Auto-formatting is done with [scalariform](https://github.com/mdr/scalariform), and other style checking is done with [scalastyle](http://www.scalastyle.org/).
+**Required by**: `CoreSettings`
 
-Installing this plugin will make a project's `compile` task depend on the format and style checker.
+**Wraps**:
+
+- [scalariform](https://github.com/mdr/scalariform) for auto-formatting
+- [scalastyle](http://www.scalastyle.org/) for style checking
+
+**Note**: This plugin is auto-enabled as part of `CoreSettings`
+
+Enabling this plugin will make a project's `compile` task depend on the format and style checker.
 
 ## Disabling warnings
 To disable format warnings and auto-formatting for a block of code, bound it in these special comments:

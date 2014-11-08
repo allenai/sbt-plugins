@@ -1,17 +1,12 @@
 # SBT NodeJS plugin
 
+**Required by**: `WebappPlugin`
+
+**Note**: you most likely want to enable the `WebappPlugin` archetype for your project instead of enabling the `NodeJsPlugin` directly.
+
 This plugin provides the ability to manage building a Node.js application from SBT. The primary use case is to allow client-side development to occur in a complete isolation from SBT using Node.js build tools (such as Gulp.js). The only requirement is to have `npm` (Node Package Manager) on your PATH. `npm` is included with every Node.js installation.
 
 ## Installation
-
-Add the following to your `project/plugins.sbt`:
-
-```
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-node-js" % VERSION)
-```
-Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
-
-Enable the plugin for your project in `build.sbt`:
 
 ```
 val myProject = project.in(file(".")).enablePlugins(NodeJsPlugin)

@@ -10,6 +10,7 @@ The AI2 SBT plugins are intended to minimize build boilerplate accross projects.
 - `WebServicePlugin` - for web service applications
 - `WebappPlugin` - for web applications
 
+Documentation for individual plugins can be found in the [docs](docs/) directory.
 
 # Usage
 

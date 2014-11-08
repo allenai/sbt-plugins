@@ -1,15 +1,12 @@
 # allenai-sbt-release
 
-AutoPlugin that wraps [sbt-release](https://github.com/sbt/sbt-release) providing a custom versioning scheme.
+AutoPlugin that provides a custom versioning scheme.
+
+**Required by**: `LibraryPlugin`
+
+**Wraps**: [sbt-release](https://github.com/sbt/sbt-release)
 
 ## Installation
-
-Add the plugin to your project:
-```
-// In project/plugins.sbt
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-release" % VERSION
-```
-Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
 
 Enable the plugin for your **root** project in `build.sbt`:
 

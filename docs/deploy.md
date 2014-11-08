@@ -3,6 +3,10 @@ sbt-deploy
 
 **Boss**: Jesse
 
+**Required by**: `WebServicePlugin` && `WebappPlugin`
+
+**Wraps**: [`sbt-native-packager`](https://github.com/sbt/sbt-native-packager)
+
 A plugin for deploying applications to a machine using [Typesafe Config](https://github.com/typesafehub/config) for
 configuration.
 
@@ -12,15 +16,7 @@ pushing to EC2 hosts, and restarting your service.
 deploy
 ------
 
-### installation
-
-Add the plugin to your project:
-```
-// In project/plugins.sbt
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-deploy" % VERSION
-```
-Substitute `VERSION` with the latest version for the plugin on [bintray](https://bintray.com/allenai/sbt-plugins).
-
+### configuration
 Enable the deploy plugin, which will provide default settings:
 ```
 // In your project's build.sbt
