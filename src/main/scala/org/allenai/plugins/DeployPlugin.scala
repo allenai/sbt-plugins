@@ -54,9 +54,6 @@ object DeployPlugin extends AutoPlugin {
 
   override def requires: Plugins = plugins.JvmPlugin
 
-  // Auto enable the plugin
-  override def trigger: PluginTrigger = allRequirements
-
   object autoImport {
     /** Static usage string. */
     val Usage = "Usage: deploy <overrides> [deploy target]";
