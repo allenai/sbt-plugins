@@ -5,10 +5,12 @@ AI2 SBT Plugins
 
 The AI2 SBT plugins are intended to minimize build boilerplate accross projects. It is recommended to only enable "Archetype" plugins, which currently include:
 
-- `CliPlugin` - for command line applications
-- `LibraryPlugin` - for libraries to be published
-- `WebServicePlugin` - for web service applications
-- `WebappPlugin` - for web applications
+- `CliPlugin` - for command line applications using the [scopt](https://github.com/scopt/scopt) library.
+- `LibraryPlugin` - for libraries to be released / published using our `ReleasePlugin`
+- `WebServicePlugin` - for web service applications built on spray, akka, and spray-json
+- `WebappPlugin` ([docs](docs/webapp.md)) - for web applications that have a service layer and a Node.js built web client.
+
+It is fine to enable more than one plugin, including more than one archetype plugin. However, if we find the need to do so it could be an indicator that we have a new archetype to define.
 
 Documentation for individual plugins can be found in the [docs](docs/) directory.
 
@@ -58,7 +60,7 @@ Currently, all plugins are defined in the same SBT project. New plugins should b
 
 ## Test Projects
 
-Each plugin should have its own `test-[plugin]` project in the root directory, which are separate SBT projects using the plugin under test. These projects are meant for rapid feedback while making changes to the plugins, and not necessarily as a template for how to use the plugins.
+Each plugin should have its own `test-[plugin]` project in the `test-projects/` directory, which are separate SBT projects using the plugin under test. These projects are meant for rapid feedback while making changes to the plugins, and not necessarily as a template for how to use the plugins.
 
 ## Publishing Releases
 
@@ -91,11 +93,14 @@ We dogfood our own `AllenaiReleasePlugin` for releasing new plugin versions. To 
 
 1. Checkout the `master` branch of the repository
 2. Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins
+  ```shell
+  $ git branch --set-upstream-to=upstream/master
+  ```
 3. Cut the release:
   ```shell
   $ sbt release
   ```
 
-The plugin will set the appropriate defaults so just hit `<ENTER>` through the prompts. Also, some errors will be logged when the plugin creates a tag and pushes it to the upstream repository. This is not really an error.
+The plugin will set the appropriate defaults so just hit `<ENTER>` through the prompts. Also, some errors will be logged when the plugin creates a tag and pushes it to the upstream repository. This is not really an error but git outputting some text to stderr.
 
 To verify your release, look for the new version in our [bintray repo](https://bintray.com/allenai/sbt-plugins) and also for the tag in the [github repository](https://github.com/allenai/sbt-plugins)
