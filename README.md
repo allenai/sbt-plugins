@@ -89,7 +89,7 @@ Where `[API Key]` is the API key for the ai2-dev account (or your account if usi
 
 ### Releasing
 
-We dogfood our own `AllenaiReleasePlugin` for releasing new plugin versions. To issue a release, do the following:
+We dogfood our own `ReleasePlugin` for releasing new plugin versions. To issue a release, do the following:
 
 1. Checkout the `master` branch of the repository
 2. Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins
