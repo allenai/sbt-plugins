@@ -1,79 +1,49 @@
-import BuildSettings._
+import bintray.{ Keys => BintrayKeys }
+import bintray.{ Plugin => BintrayPlugin }
 
-// Subprojects are aggregated to enforce publishing all to the same version.
+libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0")
 
-lazy val root =
-  project.in(file ("."))
-    .settings(noPublishing: _*)
-    .settings(
-      scalaVersion := "2.10.4",
-      name := "sbt-plugins")
-    .aggregate(
-      sbtCoreSettings,
-      sbtDeploy,
-      sbtLibrary,
-      sbtNodeJs,
-      sbtRelease,
-      sbtStyle,
-      sbtTravisPublisher,
-      sbtVersionInjector,
-      sbtWebService,
-      sbtWebapp)
+organization := "org.allenai.plugins"
 
-lazy val sbtStyle =
-  project.in(file("sbt-style"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-style")
+name := "allenai-sbt-plugins"
 
-lazy val sbtVersionInjector =
-  project.in(file("sbt-version-injector"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-version-injector")
+lazy val ai2Plugins = project.in(file(".")).enablePlugins(ReleasePlugin)
 
-lazy val sbtCoreSettings =
-  project.in(file("sbt-core-settings"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-core-settings")
-    .dependsOn(sbtStyle, sbtVersionInjector)
+scalacOptions := Seq(
+  "-encoding", "utf8",
+  "-feature",
+  "-unchecked",
+  "-deprecation",
+  "-language:_",
+  "-Xlog-reflective-calls")
 
-lazy val sbtTravisPublisher =
-  project.in(file("sbt-travis-publisher"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-travis-publisher")
+scalaVersion := "2.10.4"
 
-lazy val sbtDeploy =
-  project.in(file("sbt-deploy"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-deploy")
+sbtPlugin := true
 
-lazy val sbtRelease =
-  project.in(file("sbt-release"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-release")
+// We wrap some 3rd party plugins:
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.7.6")
 
-lazy val sbtNodeJs =
-  project.in(file("sbt-node-js"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-node-js")
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
 
-// Archetype Plugins
+addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
 
-lazy val sbtLibrary =
-  project.in(file("sbt-library"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-library")
-    .dependsOn(sbtCoreSettings, sbtRelease)
+addSbtPlugin("com.danieltrinh" % "sbt-scalariform" % "1.3.0")
 
-lazy val sbtWebService =
-  project.in(file("sbt-web-service"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-web-service")
-    .dependsOn(sbtCoreSettings, sbtDeploy)
+// Wrapped by WebServicePlugin and WebappPlugin
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 
-lazy val sbtWebapp =
-  project.in(file("sbt-webapp"))
-    .settings(sbtPluginSettings: _*)
-    .settings(name := "allenai-sbt-webapp")
-    .dependsOn(sbtWebService, sbtNodeJs)
+// Allows us to test our plugins via the sbt-scripted plugin:
+scriptedSettings
+
+BintrayPlugin.bintrayPublishSettings
+
+publishMavenStyle := false
+
+BintrayKeys.repository in BintrayKeys.bintray := "sbt-plugins"
+
+BintrayKeys.bintrayOrganization in BintrayKeys.bintray := Some("allenai")
+
+licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
 // TODO(markschaake): sbtCliApp and other archetype plugins

@@ -1,11 +1,15 @@
-resolvers += Resolver.url("bintray-sbt-plugin-releases",
-  url("http://dl.bintray.com/content/sbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.1.2")
 
+// This is required until our allenai-sbt-plugins is added
+// to https://bintray.com/sbt/sbt-plugin-releases (request pending)
 resolvers += Resolver.url("bintray-allenai-sbt-plugin-releases",
   url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("me.lessis" % "bintray-sbt" % "0.1.2")
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % "2014.11.09-0")
 
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-format" % "2014.07.03-0")
+// for testing sbt plugins:
+libraryDependencies <+= (sbtVersion) { sv =>
+  "org.scala-sbt" % "scripted-plugin" % sv
+}
 
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-release" % "2014.07.03-0")
+dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7-RC3"
