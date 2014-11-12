@@ -42,8 +42,7 @@ val service = project.in(file("service")).enablePlugins(WebServicePlugin)
 ```scala
 import org.allenai.plugins.archetypes._
 
-import sbt._
-import sbt.Keys._
+import sbt.Build
 
 object ProjBuild extends Build {
   lazy val service = project.in(file("service")).enablePlugins(WebServicePlugin)
@@ -93,10 +92,12 @@ We dogfood our own `ReleasePlugin` for releasing new plugin versions. To issue a
 
 1. Checkout the `master` branch of the repository
 2. Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins
+  
   ```shell
   $ git branch --set-upstream-to=upstream/master
   ```
 3. Cut the release:
+  
   ```shell
   $ sbt release
   ```
