@@ -19,9 +19,10 @@ Add the following to your project's `project/plugins.sbt`:
 ```scala
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % VERSION)
 
-conflictManager := ConflictManager.strict
-
-dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7-RC3"
+// sometimes necessary to avoid weird error that `enablePlugins` is not a
+// member of sbt.Project... The override version you provide should be
+// whatever version of SBT you have defined in build.properties.
+dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7-RC4"
 ```
 
 where `VERSION` is the current release version (see [our bintray repo](https://bintray.com/allenai/sbt-plugins) to find available versions).
