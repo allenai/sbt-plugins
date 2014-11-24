@@ -25,5 +25,6 @@ object CoreSettingsPlugin extends AutoPlugin {
         javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
         conflictManager := ConflictManager.strict,
         resolvers ++= CoreRepositories.Resolvers.defaults,
-        dependencyOverrides ++= CoreDependencies.defaultDependencyOverrides)
+        dependencyOverrides ++= CoreDependencies.defaultDependencyOverrides,
+        dependencyOverrides += "org.scala-lang" % "scala-library" % scalaVersion.value)
 }

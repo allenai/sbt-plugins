@@ -12,4 +12,4 @@ libraryDependencies <+= (sbtVersion) { sv =>
   "org.scala-sbt" % "scripted-plugin" % sv
 }
 
-dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7-RC3"
+dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7"
