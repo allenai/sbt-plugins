@@ -29,7 +29,7 @@ lazy val root = project.in(file(".")).settings(
     publish := { },
     publishTo := Some("bogus" at "http://nowhere.com"),
     publishLocal := { })
-   .enablePlugins(AllenaiReleasePlugin)
+   .enablePlugins(ReleasePlugin)
    .aggregate(core, service)
    
 // The core subproject will be released when you issue the release SBT command   

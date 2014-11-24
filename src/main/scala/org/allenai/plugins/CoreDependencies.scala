@@ -58,7 +58,7 @@ trait CoreDependencies {
   val allenAiWebapp = common("webapp")
   val allenAiPipeline = common("pipeline")
 
-  val scopt = "com.github.scopt" % "scopt_2.10" % "3.2.0"
+  val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.0"
 
   // Akka
@@ -70,7 +70,7 @@ trait CoreDependencies {
 
   // Spray
   val sprayVersion = "1.3.1"
-  def sprayModule(id: String): ModuleID = "io.spray" % s"spray-$id" % sprayVersion
+  def sprayModule(id: String): ModuleID = "io.spray" %% s"spray-$id" % sprayVersion
   val sprayCan = sprayModule("can")
   val sprayRouting = sprayModule("routing")
   val sprayClient = sprayModule("client")
@@ -81,7 +81,6 @@ trait CoreDependencies {
   val sprayJson = "io.spray" %% "spray-json" % "1.2.6"
 
   val defaultDependencyOverrides = Set(
-    "org.scala-lang" % "scala-library" % defaultScalaVersion,
     akkaActor,
     typesafeConfig,
     Logging.slf4jApi,

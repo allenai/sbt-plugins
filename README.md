@@ -1,5 +1,3 @@
-[![Build Status](https://magnum.travis-ci.com/allenai/sbt-plugins.svg?token=bTo69ep8z4cnh7oxWjjY)](https://magnum.travis-ci.com/allenai/sbt-plugins)
-
 AI2 SBT Plugins
 ===========
 
@@ -21,9 +19,10 @@ Add the following to your project's `project/plugins.sbt`:
 ```scala
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % VERSION)
 
-conflictManager := ConflictManager.strict
-
-dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7-RC3"
+// sometimes necessary to avoid weird error that `enablePlugins` is not a
+// member of sbt.Project... The override version you provide should be
+// whatever version of SBT you have defined in build.properties.
+dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7"
 ```
 
 where `VERSION` is the current release version (see [our bintray repo](https://bintray.com/allenai/sbt-plugins) to find available versions).
@@ -42,8 +41,7 @@ val service = project.in(file("service")).enablePlugins(WebServicePlugin)
 ```scala
 import org.allenai.plugins.archetypes._
 
-import sbt._
-import sbt.Keys._
+import sbt.Build
 
 object ProjBuild extends Build {
   lazy val service = project.in(file("service")).enablePlugins(WebServicePlugin)
@@ -93,10 +91,12 @@ We dogfood our own `ReleasePlugin` for releasing new plugin versions. To issue a
 
 1. Checkout the `master` branch of the repository
 2. Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins
+  
   ```shell
   $ git branch --set-upstream-to=upstream/master
   ```
 3. Cut the release:
+  
   ```shell
   $ sbt release
   ```
