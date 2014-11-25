@@ -81,7 +81,6 @@ trait CoreDependencies {
   val sprayJson = "io.spray" %% "spray-json" % "1.2.6"
 
   val defaultDependencyOverrides = Set(
-    akkaActor,
     typesafeConfig,
     Logging.slf4jApi,
     Logging.logbackCore,
