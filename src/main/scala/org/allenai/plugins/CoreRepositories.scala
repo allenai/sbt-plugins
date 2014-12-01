@@ -34,10 +34,8 @@ object CoreRepositories {
     private val sonatypeUrl = "https://oss.sonatype.org"
 
     private val sonatypeSnapshots = Resolver.sonatypeRepo("snapshots")
-      "Sonatype Snapshots" at s"${sonatypeUrl}/content/repositories/snapshots"
 
     private val sonatypeReleases = Resolver.sonatypeRepo("releases")
-      "Sonatype Releases" at s"${sonatypeUrl}/service/local/staging/deploy/maven2"
 
     /** Sets publishTo to public Sonatype repo according to isSnapshot value */
     val sonatype = {
