@@ -7,14 +7,7 @@ object CoreRepositories {
 
   /** Common resolvers */
   object Resolvers {
-    private val ai2RepoUrl = "http://utility.allenai.org:8081/nexus/content/repositories/"
-    private val sonatypeUrl = "https://oss.sonatype.org"
-
-    val sonatypeSnapshots =
-      "Sonatype Snapshots" at s"${sonatypeUrl}/content/repositories/snapshots"
-
-    val sonatypeReleases =
-      "Sonatype Releases" at s"${sonatypeUrl}/service/local/staging/deploy/maven2"
+    private val ai2RepoUrl = "http://utility.allenai.org:8081/nexus/content/repositories"
 
     val ai2PrivateSnapshots = "AI2 Private Snapshots" at s"${ai2RepoUrl}/snapshots"
     val ai2PrivateReleases = "AI2 Private Releases" at s"${ai2RepoUrl}/releases"
@@ -34,7 +27,16 @@ object CoreRepositories {
 
   /** Provides publishTo setting for specific repositories */
   object PublishTo {
+
     import Resolvers._
+
+    private val sonatypeUrl = "https://oss.sonatype.org"
+
+    private val sonatypeSnapshots = Resolver.sonatypeRepo("snapshots")
+
+    // Cannot use Resolver.sonatypeRepo("releases") here because it
+    // does not point to the correct publishTo repo.
+    private val sonatypeReleases = "Sonatype Releases" at s"${sonatypeUrl}/service/local/staging/deploy/maven2"
 
     /** Sets publishTo to public Sonatype repo according to isSnapshot value */
     val sonatype = {

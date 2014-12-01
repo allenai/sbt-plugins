@@ -52,7 +52,7 @@ trait CoreDependencies {
   }
 
   // AI2 common libraries
-  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "2014.11.05-0"
+  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "2014.11.25-0"
   val allenAiCommon = common("core")
   val allenAiTestkit = common("testkit")
   val allenAiWebapp = common("webapp")
@@ -64,7 +64,7 @@ trait CoreDependencies {
   // Akka
   val akkaVersion = "2.3.5"
   def akkaModule(id: String): ModuleID = "com.typesafe.akka" %% s"akka-$id" % akkaVersion
-  val akkaActor = akkaModule("actor")
+  val akkaActor = akkaModule("actor") exclude("com.typesafe", "config")
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")
 
@@ -80,8 +80,7 @@ trait CoreDependencies {
   // Spray json (separate from Spray toolkit)
   val sprayJson = "io.spray" %% "spray-json" % "1.2.6"
 
-  val defaultDependencyOverrides = Set(
-    typesafeConfig,
+  val loggingDependencyOverrides = Set(
     Logging.slf4jApi,
     Logging.logbackCore,
     Logging.logbackClassic)
