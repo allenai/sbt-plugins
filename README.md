@@ -18,14 +18,9 @@ Add the following to your project's `project/plugins.sbt`:
 
 ```scala
 addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % VERSION)
-
-// sometimes necessary to avoid weird error that `enablePlugins` is not a
-// member of sbt.Project... The override version you provide should be
-// whatever version of SBT you have defined in build.properties.
-dependencyOverrides += "org.scala-sbt" % "sbt" % "0.13.7"
 ```
 
-where `VERSION` is the current release version (see [our bintray repo](https://bintray.com/allenai/sbt-plugins) to find available versions).
+where `VERSION` is the current release version (see [our bintray repo](https://bintray.com/allenai/sbt-plugins/allenai-sbt-plugins/view) to find available versions).
 
 Our archetype plugins are [`AutoPlugin`](http://www.scala-sbt.org/0.13.6/api/index.html#sbt.AutoPlugin)s. To enable an archetype plugin for a project, do the following:
 
