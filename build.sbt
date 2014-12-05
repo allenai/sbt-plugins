@@ -30,6 +30,9 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
 
 addSbtPlugin("com.danieltrinh" % "sbt-scalariform" % "1.3.0")
 
+// Dependency graph visualiztion in SBT console
+addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")
+
 // Wrapped by WebServicePlugin and WebappPlugin
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 
