@@ -38,7 +38,7 @@ Once you have an keyfile configured, you can run by executing, from your project
 at `conf/deploy.conf` within your project's (or subproject's) root.
 
 This target key must point to an object that has the format documented in
-[`conf/global_deploy.conf`](https://github.com/allenai/tools/blob/master/sbt-plugins/sbt-deploy/conf/global_deploy.conf).
+[`conf/global_deploy.conf`](https://github.com/allenai/sbt-plugins/blob/master/conf/example_rcfile.conf).
 
 You can provide key/value overrides on the commandline through Java-style property definitions:
 
