@@ -23,6 +23,11 @@ object WebappPlugin extends AutoPlugin {
       val logNodeEnvironment = TaskKey[Unit](
         "logNodeEnvironment",
         "Logs the NodeJs build environment to SBT console")
+
+      val reStartWebapp = TaskKey[Unit](
+        "reStartWebapp",
+        "Restarts the service without running npm:build"
+      )
     }
   }
 
@@ -34,15 +39,18 @@ object WebappPlugin extends AutoPlugin {
     log.info(s"[webapp] NODE_ENV = '$env'")
   }
 
+  val reStartWebappTask = WebappKeys.reStartWebapp := {
+    (NodeKeys.build in Npm).value
+    Revolver.reStart.value
+  }
+
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
     logNodeEnvTask,
+    reStartWebappTask,
     UniversalKeys.stage <<= UniversalKeys.stage.dependsOn(WebappKeys.logNodeEnvironment in Webapp),
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
     // Set NODE_ENV to the deploy target (e.g. 'prod', 'staging', etc.)
     NodeKeys.buildEnvironment in Npm := deployEnvironment.value.getOrElse("sbt-dev"),
-    // Print the node environment on stage
-    // Force npm:build when using sbt-revolver re-start to ensure UI is built
-    Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.build in Npm),
     mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map directory,
     mappings in Universal <<= (mappings in Universal).dependsOn(NodeKeys.build in Npm))
 }
