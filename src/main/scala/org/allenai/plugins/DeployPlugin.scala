@@ -61,8 +61,8 @@ object DeployPlugin extends AutoPlugin {
     val deploy = inputKey[Unit](Usage)
 
     /** The reason this is a Setting instead of just including * is that including * in the rsync
-      * command causes files created on the server side (like log files and .pid files) to be deleted
-      * when the rsync runs, which we don't want to happen.
+      * command causes files created on the server side (like log files and .pid files) to be
+      * deleted when the rsync runs, which we don't want to happen.
       */
     val deployDirs = SettingKey[Seq[String]]("deployDirs",
       "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
@@ -72,7 +72,8 @@ object DeployPlugin extends AutoPlugin {
     val deployEnvironment = TaskKey[Option[String]](
       "deployEnvironment", "Returns the current deploy environment")
 
-    val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
+    val gitRepoPresent = TaskKey[Unit]("gitRepoPresent",
+      "Succeeds if a git repository is present in the cwd")
   }
 
   /** Environment variable key that will be set for deployment */
@@ -83,8 +84,8 @@ object DeployPlugin extends AutoPlugin {
   /** sbt.Logger wrapper that prepends [deploy] to log messages */
   case class DeployLogger(sbtLogger: Logger) {
     private def logMsg(msg: String) = s"[deploy] ${msg}"
-    def info(msg: String) = sbtLogger.info(logMsg(msg))
-    def error(msg: String) = sbtLogger.error(logMsg(msg))
+    def info(msg: String): Unit = sbtLogger.info(logMsg(msg))
+    def error(msg: String): Unit = sbtLogger.error(logMsg(msg))
   }
 
   val gitRepoCleanTask = gitRepoClean := {
@@ -228,7 +229,10 @@ object DeployPlugin extends AutoPlugin {
 
     val rsyncDirs = deployDirs.value map (name => s"--include=/${name}")
     val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")) ++ rsyncDirs ++
-    Seq("--exclude=/*", "--delete", universalStagingDir.getPath + "/", deployHost + ":" + deployDirectory)
+      Seq("--exclude=/*", 
+        "--delete",
+        universalStagingDir.getPath + "/",
+        deployHost + ":" + deployDirectory)
 
     // Shell-friendly version of rsync command, with rsh value quoted.
     val quotedRsync = rsyncCommand.patch(
