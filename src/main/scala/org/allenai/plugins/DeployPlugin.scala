@@ -37,9 +37,7 @@ import scala.util.Try
   * be issued to restart the server.
   *
   * There is a special ~/.deployrc config file that is merged into any deploy
-  * target configs as an override. This should contain a
-  * deploy.user.ssh_keyfile value, but may contain other values.  See
-  * example_rcfile.conf for an example.
+  * target configs as an override.
   *
   * Overrides of the deploy target's settings can also be specified on the
   * commandline as Java property overrides (-Dprop.path=propvalue). This is the
@@ -63,8 +61,8 @@ object DeployPlugin extends AutoPlugin {
     val deploy = inputKey[Unit](Usage)
 
     /** The reason this is a Setting instead of just including * is that including * in the rsync
-      * command causes files created on the server side (like log files and .pid files) to be deleted
-      * when the rsync runs, which we don't want to happen.
+      * command causes files created on the server side (like log files and .pid files) to be
+      * deleted when the rsync runs, which we don't want to happen.
       */
     val deployDirs = SettingKey[Seq[String]]("deployDirs",
       "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
@@ -74,7 +72,8 @@ object DeployPlugin extends AutoPlugin {
     val deployEnvironment = TaskKey[Option[String]](
       "deployEnvironment", "Returns the current deploy environment")
 
-    val gitRepoPresent = TaskKey[Unit]("gitRepoPresent", "Succeeds if a git repository is present in the cwd")
+    val gitRepoPresent = TaskKey[Unit]("gitRepoPresent",
+      "Succeeds if a git repository is present in the cwd")
   }
 
   /** Environment variable key that will be set for deployment */
@@ -85,8 +84,8 @@ object DeployPlugin extends AutoPlugin {
   /** sbt.Logger wrapper that prepends [deploy] to log messages */
   case class DeployLogger(sbtLogger: Logger) {
     private def logMsg(msg: String) = s"[deploy] ${msg}"
-    def info(msg: String) = sbtLogger.info(logMsg(msg))
-    def error(msg: String) = sbtLogger.error(logMsg(msg))
+    def info(msg: String): Unit = sbtLogger.info(logMsg(msg))
+    def error(msg: String): Unit = sbtLogger.error(logMsg(msg))
   }
 
   val gitRepoCleanTask = gitRepoClean := {
@@ -220,7 +219,8 @@ object DeployPlugin extends AutoPlugin {
     // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
     // operations.
     val sshCommand = {
-      val sshKeyfile = configMap("deploy.user.ssh_keyfile")
+      val pemEnvVar = "AWS_PEM_FILE"
+      val sshKeyfile = sys.env(pemEnvVar)
       val sshUser = configMap("deploy.user.ssh_username")
       Seq("ssh", "-i", sshKeyfile, "-l", sshUser)
     }
@@ -229,7 +229,10 @@ object DeployPlugin extends AutoPlugin {
 
     val rsyncDirs = deployDirs.value map (name => s"--include=/${name}")
     val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")) ++ rsyncDirs ++
-    Seq("--exclude=/*", "--delete", universalStagingDir.getPath + "/", deployHost + ":" + deployDirectory)
+      Seq("--exclude=/*", 
+        "--delete",
+        universalStagingDir.getPath + "/",
+        deployHost + ":" + deployDirectory)
 
     // Shell-friendly version of rsync command, with rsh value quoted.
     val quotedRsync = rsyncCommand.patch(
@@ -361,9 +364,19 @@ object DeployPlugin extends AutoPlugin {
     * @param targetConfig the config to parse
     */
   def validateAsMap(targetName: String, targetConfig: Config): Map[String, String] = {
+    // Validate that the target has all the required environment variables.
+    val requiredEnv = Seq("AWS_PEM_FILE")
+    for (variable <- requiredEnv) {
+      val value = sys.env.get(variable).getOrElse {
+        throw new IllegalArgumentException(s"Environment variable ${variable} undefined.")
+      }
+
+      require(!value.isEmpty, "Environment variable ${value} is empty.")
+    }
+
     // Validate that the target has all the required keys.
     val requiredKeys = Seq("project.name", "deploy.host", "deploy.directory",
-      "deploy.startup_script", "deploy.user.ssh_keyfile", "deploy.user.ssh_username")
+      "deploy.startup_script", "deploy.user.ssh_username")
     val requiredKeyPairs: Seq[(String, String)] = for {
       key <- requiredKeys
     } yield key -> {
