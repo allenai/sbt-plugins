@@ -37,9 +37,7 @@ import scala.util.Try
   * be issued to restart the server.
   *
   * There is a special ~/.deployrc config file that is merged into any deploy
-  * target configs as an override. This should contain a
-  * deploy.user.ssh_keyfile value, but may contain other values.  See
-  * example_rcfile.conf for an example.
+  * target configs as an override.
   *
   * Overrides of the deploy target's settings can also be specified on the
   * commandline as Java property overrides (-Dprop.path=propvalue). This is the
@@ -220,7 +218,10 @@ object DeployPlugin extends AutoPlugin {
     // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
     // operations.
     val sshCommand = {
-      val sshKeyfile = configMap("deploy.user.ssh_keyfile")
+      val pemEnvVar = "AWS_PEM_FILE"
+      val sshKeyfile = sys.env.get(pemEnvVar).getOrElse {
+        throw new IllegalArgumentException(s"Environment variable ${pemEnvVar} undefined.")
+      }
       val sshUser = configMap("deploy.user.ssh_username")
       Seq("ssh", "-i", sshKeyfile, "-l", sshUser)
     }
@@ -361,9 +362,19 @@ object DeployPlugin extends AutoPlugin {
     * @param targetConfig the config to parse
     */
   def validateAsMap(targetName: String, targetConfig: Config): Map[String, String] = {
+    // Validate that the target has all the required environment variables.
+    val requiredEnv = Seq("AWS_PEM_FILE")
+    for (variable <- requiredEnv) {
+      val value = sys.env.get(variable).getOrElse {
+        throw new IllegalArgumentException(s"Environment variable ${variable} undefined.")
+      }
+
+      require(!value.isEmpty, "Environment variable ${value} is empty.")
+    }
+
     // Validate that the target has all the required keys.
     val requiredKeys = Seq("project.name", "deploy.host", "deploy.directory",
-      "deploy.startup_script", "deploy.user.ssh_keyfile", "deploy.user.ssh_username")
+      "deploy.startup_script", "deploy.user.ssh_username")
     val requiredKeyPairs: Seq[(String, String)] = for {
       key <- requiredKeys
     } yield key -> {
