@@ -219,9 +219,7 @@ object DeployPlugin extends AutoPlugin {
     // operations.
     val sshCommand = {
       val pemEnvVar = "AWS_PEM_FILE"
-      val sshKeyfile = sys.env.get(pemEnvVar).getOrElse {
-        throw new IllegalArgumentException(s"Environment variable ${pemEnvVar} undefined.")
-      }
+      val sshKeyfile = sys.env.get(pemEnvVar).get
       val sshUser = configMap("deploy.user.ssh_username")
       Seq("ssh", "-i", sshKeyfile, "-l", sshUser)
     }
