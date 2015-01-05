@@ -22,11 +22,12 @@ object WebappPlugin extends AutoPlugin {
     object WebappKeys {
       val logNodeEnvironment = TaskKey[Unit](
         "logNodeEnvironment",
-        "Logs the NodeJs build environment to SBT console")
+        "Logs the NodeJs build environment to SBT console"
+      )
 
       val reStartWebapp = TaskKey[Unit](
         "reStartWebapp",
-        "Restarts the service without running npm:build"
+        "Runs re-volover's reStart after running npm:build"
       )
     }
   }
@@ -52,5 +53,6 @@ object WebappPlugin extends AutoPlugin {
     // Set NODE_ENV to the deploy target (e.g. 'prod', 'staging', etc.)
     NodeKeys.buildEnvironment in Npm := deployEnvironment.value.getOrElse("sbt-dev"),
     mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map directory,
-    mappings in Universal <<= (mappings in Universal).dependsOn(NodeKeys.build in Npm))
+    mappings in Universal <<= (mappings in Universal).dependsOn(NodeKeys.build in Npm)
+  )
 }
