@@ -26,13 +26,21 @@ Additionally, the `sbt-webapp` plugin adds the `buildDir` to the `mappings in Un
 You can change any of the settings for `sbt-node-js` and `sbt-deploy` plugins in the following way:
 
 ```scala
-val myProject = project.in(file("."))
-  .enablePlugins(WebappPlugin)
-  .settings(
-    nodeProjectDir in Npm := file("clientapp"),
-    nodeProjectTarget in Npm := file("client-build"),
-    mappings in Universal += ...
-  )
+// in build.sbt
+enablePlugins(WebappPlugin)
+nodeProjectDir in Npm := file("clientapp")
+nodeProjectTarget in Npm := file("client-build")
+mappings in Universal +=
 ```
 
 Note: if you change `nodeProjectDirectory`, the `mappings in Universal` will automatically use the overridden value and package it up during deploy.
+
+
+## Developing with sbt-revolver
+
+The required `WebServicePlugin` includes [`sbt-revolver`](https://github.com/spray/sbt-revolver). For development, you can run the service layer of the web application via:
+
+```shell
+sbt
+> reStart
+```
