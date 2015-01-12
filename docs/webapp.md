@@ -30,7 +30,6 @@ You can change any of the settings for `sbt-node-js` and `sbt-deploy` plugins in
 enablePlugins(WebappPlugin)
 nodeProjectDir in Npm := file("clientapp")
 nodeProjectTarget in Npm := file("client-build")
-mappings in Universal +=
 ```
 
 Note: if you change `nodeProjectDirectory`, the `mappings in Universal` will automatically use the overridden value and package it up during deploy.
