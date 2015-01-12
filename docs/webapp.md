@@ -2,7 +2,7 @@
 
 **Requires**: `WebServicePlugin` && `NodeJsPlugin` ([node plugin doc](node-js.md))
 
-The `sbt-webapp` is a superset of the `WebServicePlugin` adding support for managing a Node.js build from SBT. You enable the plugin for your project. In `build.sbt`:
+The `sbt-webapp` is a superset of the `WebServicePlugin` which adds support for managing a Node.js build from SBT. You enable the plugin for your project. In `build.sbt`:
 
 ```scala
 val myProject = project.in(file(".")).enablePlugins(WebappPlugin)
@@ -30,10 +30,10 @@ You can change any of the settings for `sbt-node-js` and `sbt-deploy` plugins in
 enablePlugins(WebappPlugin)
 nodeProjectDir in Npm := file("clientapp")
 nodeProjectTarget in Npm := file("client-build")
-mappings in Universal += ...
 ```
 
 Note: if you change `nodeProjectDirectory`, the `mappings in Universal` will automatically use the overridden value and package it up during deploy.
+
 
 ## Developing with sbt-revolver
 
@@ -42,11 +42,4 @@ The required `WebServicePlugin` includes [`sbt-revolver`](https://github.com/spr
 ```shell
 sbt
 > reStart
-```
-
-Running `reStart` will _not_ build the NPM frontend application. However, the `WebappPlugin` provides an additional task that will build the NPM frontend application:
-
-```shell
-sbt
-> reStartWebapp
 ```
