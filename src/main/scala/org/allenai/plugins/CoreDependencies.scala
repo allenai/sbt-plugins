@@ -7,7 +7,7 @@ import sbt.Keys._
   * consistency accross projects
   */
 trait CoreDependencies {
-  val defaultScalaVersion = "2.10.4"
+  val defaultScalaVersion = "2.11.5"
 
   object Logging {
     val slf4jVersion = "1.7.7"
@@ -47,7 +47,8 @@ trait CoreDependencies {
       "org.slf4j" % "log4j-over-slf4j" % slf4jVersion,
       // Use logback for the implementation.
       logbackCore,
-      logbackClassic)
+      logbackClassic
+    )
     Seq(cleanedDeps, logbackDeps)
   }
 
@@ -64,7 +65,7 @@ trait CoreDependencies {
   // Akka
   val akkaVersion = "2.3.5"
   def akkaModule(id: String): ModuleID = "com.typesafe.akka" %% s"akka-$id" % akkaVersion
-  val akkaActor = akkaModule("actor") exclude("com.typesafe", "config")
+  val akkaActor = akkaModule("actor") exclude ("com.typesafe", "config")
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")
 
@@ -83,7 +84,8 @@ trait CoreDependencies {
   val loggingDependencyOverrides = Set(
     Logging.slf4jApi,
     Logging.logbackCore,
-    Logging.logbackClassic)
+    Logging.logbackClassic
+  )
 }
 
 object CoreDependencies extends CoreDependencies

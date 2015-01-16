@@ -22,7 +22,8 @@ object CoreRepositories {
     val defaults = Seq(
       spray,
       typesafeReleases,
-      ai2PublicReleases)
+      ai2PublicReleases
+    )
   }
 
   /** Provides publishTo setting for specific repositories */

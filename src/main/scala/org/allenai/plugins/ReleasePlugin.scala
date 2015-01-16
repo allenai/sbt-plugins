@@ -40,5 +40,6 @@ object ReleasePlugin extends AutoPlugin {
       },
       nextVersion := { ver =>
         s"${incrementVersion(ver)}-SNAPSHOT"
-      })
+      }
+    )
 }

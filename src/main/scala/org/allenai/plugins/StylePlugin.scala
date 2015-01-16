@@ -5,7 +5,8 @@ import sbt.Keys._
 
 import com.typesafe.sbt.SbtScalariform._
 import org.scalastyle.sbt.{
-  ScalastylePlugin, Tasks => ScalastyleTasks
+  ScalastylePlugin,
+  Tasks => ScalastyleTasks
 
 }
 import scalariform.formatter.ScalaFormatter
@@ -15,7 +16,8 @@ import scalariform.parser.ScalaParserException
 import java.io.File
 
 /** Plugin wrapping the scalastyle SBT plugin. This uses the configuration resource in this package
-  *  to configure scalastyle, and sets up test and compile to depend on it. */
+  * to configure scalastyle, and sets up test and compile to depend on it.
+  */
 object StylePlugin extends AutoPlugin {
   lazy val formattingPreferences = {
     FormattingPreferences().
@@ -41,24 +43,24 @@ object StylePlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] =
     // Add default scalariform + scalastyle settings.
     defaultScalariformSettings ++
-    ScalastylePlugin.projectSettings ++
-    // Add our default settings to test & compile.
-    inConfig(Compile)(configSettings) ++
-    inConfig(Test)(configSettings) ++
-    // Check format & style on compile.
-    // Putting format second means it gets evaluated first in SBT. Same with the Test checks.
-    Seq(
-      compileInputs in (Test, compile) <<=
-        (compileInputs in (Test, compile)) dependsOn (StyleKeys.styleCheck in Test),
-      compileInputs in (Test, compile) <<=
-        (compileInputs in (Test, compile)) dependsOn (StyleKeys.formatCheck in Test),
-      compileInputs in (Compile, compile) <<=
-        (compileInputs in (Compile, compile)) dependsOn (StyleKeys.styleCheck in Compile),
-      compileInputs in (Compile, compile) <<=
-        (compileInputs in (Compile, compile)) dependsOn (StyleKeys.formatCheck in Compile),
-      // scalariform settings
-      ScalariformKeys.preferences := formattingPreferences
-    )
+      ScalastylePlugin.projectSettings ++
+      // Add our default settings to test & compile.
+      inConfig(Compile)(configSettings) ++
+      inConfig(Test)(configSettings) ++
+      // Check format & style on compile.
+      // Putting format second means it gets evaluated first in SBT. Same with the Test checks.
+      Seq(
+        compileInputs in (Test, compile) <<=
+          (compileInputs in (Test, compile)) dependsOn (StyleKeys.styleCheck in Test),
+        compileInputs in (Test, compile) <<=
+          (compileInputs in (Test, compile)) dependsOn (StyleKeys.formatCheck in Test),
+        compileInputs in (Compile, compile) <<=
+          (compileInputs in (Compile, compile)) dependsOn (StyleKeys.styleCheck in Compile),
+        compileInputs in (Compile, compile) <<=
+          (compileInputs in (Compile, compile)) dependsOn (StyleKeys.formatCheck in Compile),
+        // scalariform settings
+        ScalariformKeys.preferences := formattingPreferences
+      )
 
   // Settings used for a particular configuration (such as Compile).
   def configSettings: Seq[Setting[_]] = Seq(
@@ -114,8 +116,8 @@ object StylePlugin extends AutoPlugin {
   }
 
   /** Copies the resource config file to the local filesystem (in `target`), and returns the new
-    *  location.
-    *  @param targetDir the value of the `target` setting key
+    * location.
+    * @param targetDir the value of the `target` setting key
     */
   def configFile(targetDir: File): File = {
     val destinationFile = new File(scalastyleTarget(targetDir), "scalastyle-config.xml")

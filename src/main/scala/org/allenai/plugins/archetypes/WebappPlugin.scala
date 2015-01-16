@@ -22,7 +22,8 @@ object WebappPlugin extends AutoPlugin {
     object WebappKeys {
       val logNodeEnvironment = TaskKey[Unit](
         "logNodeEnvironment",
-        "Logs the NodeJs build environment to SBT console")
+        "Logs the NodeJs build environment to SBT console"
+      )
     }
   }
 
@@ -44,5 +45,6 @@ object WebappPlugin extends AutoPlugin {
     // Force npm:build when using sbt-revolver re-start to ensure UI is built
     Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.build in Npm),
     mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map directory,
-    mappings in Universal <<= (mappings in Universal).dependsOn(NodeKeys.build in Npm))
+    mappings in Universal <<= (mappings in Universal).dependsOn(NodeKeys.build in Npm)
+  )
 }

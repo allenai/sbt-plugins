@@ -24,5 +24,6 @@ object WebServicePlugin extends AutoPlugin {
         typesafeConfig,
         allenAiCommon,
         allenAiTestkit % "test"
-      ))
+      )
+    )
 }

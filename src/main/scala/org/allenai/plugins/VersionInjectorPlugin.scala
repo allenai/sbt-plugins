@@ -35,7 +35,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     gitCommitDateTask,
     gitSha1Task,
     gitRemotesTask,
-    resourceGenerators in Compile <+= injectVersion)
+    resourceGenerators in Compile <+= injectVersion
+  )
 
   private def executableName(command: String) = {
     val maybeOsName = sys.props.get("os.name").map(_.toLowerCase)
@@ -85,7 +86,7 @@ object VersionInjectorPlugin extends AutoPlugin {
       def quote(s: String) = "\"" + s + "\""
       val gitContents =
         "sha1: " + quote(sha1) + "\n" +
-        "remotes: " + (remotes map quote).mkString("[", ", ", "]") + "\n" +
+          "remotes: " + (remotes map quote).mkString("[", ", ", "]") + "\n" +
           "date: " + quote(date.toString)
       IO.write(gitConfFile, gitContents)
       gitConfFile

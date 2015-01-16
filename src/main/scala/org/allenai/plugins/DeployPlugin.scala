@@ -64,16 +64,21 @@ object DeployPlugin extends AutoPlugin {
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
       */
-    val deployDirs = SettingKey[Seq[String]]("deployDirs",
-      "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/")
+    val deployDirs = SettingKey[Seq[String]](
+      "deployDirs",
+      "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/"
+    )
 
     val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
 
     val deployEnvironment = TaskKey[Option[String]](
-      "deployEnvironment", "Returns the current deploy environment")
+      "deployEnvironment", "Returns the current deploy environment"
+    )
 
-    val gitRepoPresent = TaskKey[Unit]("gitRepoPresent",
-      "Succeeds if a git repository is present in the cwd")
+    val gitRepoPresent = TaskKey[Unit](
+      "gitRepoPresent",
+      "Succeeds if a git repository is present in the cwd"
+    )
   }
 
   /** Environment variable key that will be set for deployment */
@@ -190,15 +195,18 @@ object DeployPlugin extends AutoPlugin {
     val buildProcess = Process(
       Seq("sbt", "project " + projectName, "clean", "stage"),
       None,
-      DeployEnvironment -> deployEnv)
+      DeployEnvironment -> deployEnv
+    )
 
     log.info(s"Building ${projectName} . . .")
     if (buildProcess.! != 0) {
       log.error(s"Error building ${projectName}, exiting.")
     }
 
-    val universalStagingDir = new File(workingDirectory,
-      UniversalStagingSubdir)
+    val universalStagingDir = new File(
+      workingDirectory,
+      UniversalStagingSubdir
+    )
 
     val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
     if (envConfFile.exists) {
@@ -229,14 +237,17 @@ object DeployPlugin extends AutoPlugin {
 
     val rsyncDirs = deployDirs.value map (name => s"--include=/${name}")
     val rsyncCommand = Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")) ++ rsyncDirs ++
-      Seq("--exclude=/*", 
+      Seq(
+        "--exclude=/*",
         "--delete",
         universalStagingDir.getPath + "/",
-        deployHost + ":" + deployDirectory)
+        deployHost + ":" + deployDirectory
+      )
 
     // Shell-friendly version of rsync command, with rsh value quoted.
     val quotedRsync = rsyncCommand.patch(
-      2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1).mkString(" ")
+      2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1
+    ).mkString(" ")
     log.info("Running " + quotedRsync + " . . .")
     if (Process(rsyncCommand).! != 0) {
       throw new IllegalArgumentException("Error running rsync.")
@@ -278,7 +289,8 @@ object DeployPlugin extends AutoPlugin {
       (sourceDirectory.value / "main" / "resources" ** "*" pair
         rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
         (sourceDirectory.value / "main" / "bin" ** "*" pair
-          relativeTo(sourceDirectory.value / "main")))
+          relativeTo(sourceDirectory.value / "main"))
+  )
 
   /** Parses all Java properties-style defines from the argument list, and
     * returns the Config generated from these properties, as well as the updated
