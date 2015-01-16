@@ -17,6 +17,7 @@ scalacOptions := Seq(
   "-language:_",
   "-Xlog-reflective-calls")
 
+// SBT requires 2.10 for now (1/15/15).
 scalaVersion := "2.10.4"
 
 sbtPlugin := true
