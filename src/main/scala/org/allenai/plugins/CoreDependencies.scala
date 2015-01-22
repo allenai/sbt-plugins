@@ -10,7 +10,7 @@ trait CoreDependencies {
   val defaultScalaVersion = "2.11.5"
 
   object Logging {
-    val slf4jVersion = "1.7.7"
+    val slf4jVersion = "1.7.10"
     val logbackVersion = "1.1.2"
     // The logging API to use. This should be the only logging dependency of any API artifact
     // (anything that's going to be depended on outside of this SBT project).
@@ -59,18 +59,18 @@ trait CoreDependencies {
   val allenAiWebapp = common("webapp")
   val allenAiPipeline = common("pipeline")
 
-  val scopt = "com.github.scopt" %% "scopt" % "3.2.0"
-  val typesafeConfig = "com.typesafe" % "config" % "1.2.0"
+  val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
+  val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 
   // Akka
-  val akkaVersion = "2.3.5"
+  val akkaVersion = "2.3.9"
   def akkaModule(id: String): ModuleID = "com.typesafe.akka" %% s"akka-$id" % akkaVersion
   val akkaActor = akkaModule("actor") exclude ("com.typesafe", "config")
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")
 
   // Spray
-  val sprayVersion = "1.3.1"
+  val sprayVersion = "1.3.2"
   def sprayModule(id: String): ModuleID = "io.spray" %% s"spray-$id" % sprayVersion
   val sprayCan = sprayModule("can")
   val sprayRouting = sprayModule("routing")
@@ -79,7 +79,7 @@ trait CoreDependencies {
   val sprayCaching = sprayModule("caching")
 
   // Spray json (separate from Spray toolkit)
-  val sprayJson = "io.spray" %% "spray-json" % "1.2.6"
+  val sprayJson = "io.spray" %% "spray-json" % "1.3.1"
 
   val loggingDependencyOverrides = Set(
     Logging.slf4jApi,
