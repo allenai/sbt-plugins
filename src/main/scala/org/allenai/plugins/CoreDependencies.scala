@@ -39,7 +39,11 @@ trait CoreDependencies {
           exclude ("org.slf4j", "slf4j-simple")
           // We'll explicitly provide the logback version; this avoids having to do an override.
           exclude ("ch.qos.logback", "logback-core")
-          exclude ("ch.qos.logback", "logback-classic"))
+          exclude ("ch.qos.logback", "logback-classic")
+          // We add bridges explicitly as well
+          exclude ("org.slf4j", "log4j-over-slf4j")
+          exclude ("org.slf4j", "jcl-over-slf4j")
+        )
       }
     }
     // Now, add the logging libraries.
