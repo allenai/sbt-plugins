@@ -29,7 +29,9 @@ trait CoreDependencies {
       seq map { module =>
         // Exclude the transitive dependencies that might mess things up for us.
         // slf4j replaces log4j.
-        (module exclude ("log4j", "log4j")
+        (module
+          exclude ("log4j", "log4j")
+          exclude ("commons-logging", "commons-logging")
           // We're using logback as the slf4j implementation, and we're providing it below.
           exclude ("org.slf4j", "slf4j-log4j12")
           exclude ("org.slf4j", "slf4j-jdk14")
@@ -45,6 +47,8 @@ trait CoreDependencies {
       slf4jApi,
       // Bridge log4j logging to slf4j.
       "org.slf4j" % "log4j-over-slf4j" % slf4jVersion,
+      // Bridge jcl logging to slf4j.
+      "org.slf4j" % "jcl-over-slf4j" % slf4jVersion,
       // Use logback for the implementation.
       logbackCore,
       logbackClassic
