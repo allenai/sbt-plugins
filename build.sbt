@@ -1,12 +1,7 @@
 import bintray.{ Keys => BintrayKeys }
 import bintray.{ Plugin => BintrayPlugin }
 
-libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0",
-  // This seems to be required in order to pick up the newer scalariform version; either the exclude
-  // below doesn't work with sbt plugins, or the old version is being brought in through a different
-  // dependency.
-  "com.github.jkinkead" %% "scalariform" % "0.1.6"
-)
+libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0")
 
 organization := "org.allenai.plugins"
 
@@ -35,7 +30,7 @@ addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
 addSbtPlugin(
   ("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
     // Exclude the old scalariform fork - we include a newer version with sbt-scalariform below.
-    .exclude("com.danieltrinh", "scalariform"))
+    .exclude("com.danieltrinh", "scalariform_2.10"))
 
 addSbtPlugin("com.github.jkinkead" % "sbt-scalariform" % "0.1.6")
 
