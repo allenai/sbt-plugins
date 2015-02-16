@@ -28,6 +28,8 @@ object StylePlugin extends AutoPlugin {
 
   object StyleKeys {
     val styleCheck = TaskKey[Unit]("styleCheck", "Check scala file style using scalastyle")
+    val styleCheckStrict = TaskKey[Unit]("styleCheckStrict",
+      "Check scala file style using scalastyle, failing if an unformatted file is found")
     val format = TaskKey[Seq[File]]("format", "Format scala sources using scalariform")
     val formatCheck = TaskKey[Seq[File]]("formatCheck", "Check scala sources using scalariform")
     val formatCheckStrict = TaskKey[Unit](
@@ -77,33 +79,37 @@ object StylePlugin extends AutoPlugin {
     ),
     StyleKeys.formatCheckStrict <<= (StyleKeys.formatCheck) map { files: Seq[File] =>
       if (files.size > 0) {
-        throw new IllegalArgumentException("Unformatted files.")
-
+        throw new IllegalArgumentException(
+          "Scalariform found unformatted files in $files.size files.")
       }
     },
     StyleKeys.styleCheck := {
-      // "q" for "quiet".
-      val args = Seq("q")
-      val configXml = configFile(target.value)
-      // If set to true, the SBT task will treat style warnings as style errors.
-      val warnIsError = false
-      val sourceDir = (scalaSource in StyleKeys.styleCheck).value
-      val outputXml = new File(scalastyleTarget(target.value), "scalastyle-results.xml")
-      val localStreams = streams.value
       ScalastyleTasks.doScalastyle(
-        args,
-        configXml,
-        None, // Config URL; overrides configXml.
-        warnIsError,
-        sourceDir,
-        outputXml,
-        localStreams,
-        0, // How frequently, in hours, to refresh config from URL. Ignored if URL is None.
-        target.value,
-        "/dev/null" // URL cache file. Ignored if URL is None.
-
+        args = Seq("q"), // "q" for "quiet".
+        config = configFile(target.value), // XML configuration file
+        configUrl = None, // Config URL; overrides configXml.
+        failOnError = false, // If true, the SBT task will treat style warnings as style errors.
+        scalaSource = (scalaSource in StyleKeys.styleCheck).value,
+        scalastyleTarget = new File(scalastyleTarget(target.value), "scalastyle-results.xml"),
+        streams = streams.value,
+        refreshHours = 0, // How frequently, in hours, to refresh config from URL. Ignored if None.
+        target = target.value,
+        urlCacheFile = "/dev/null" // URL cache file. Ignored if URL is None.
       )
-
+    },
+    StyleKeys.styleCheckStrict := {
+      ScalastyleTasks.doScalastyle(
+        args = Seq("q"), // "q" for "quiet".
+        config = configFile(target.value), // XML configuration file
+        configUrl = None, // Config URL; overrides configXml.
+        failOnError = true, // If true, the SBT task will treat style warnings as style errors.
+        scalaSource = (scalaSource in StyleKeys.styleCheck).value,
+        scalastyleTarget = new File(scalastyleTarget(target.value), "scalastyle-results.xml"),
+        streams = streams.value,
+        refreshHours = 0, // How frequently, in hours, to refresh config from URL. Ignored if None.
+        target = target.value,
+        urlCacheFile = "/dev/null" // URL cache file. Ignored if URL is None.
+      )
     }
   )
 
