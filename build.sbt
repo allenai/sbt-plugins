@@ -27,9 +27,12 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.7.6")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
 
-addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
+addSbtPlugin(
+  ("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
+    // Exclude the old scalariform fork - we include a newer version with sbt-scalariform below.
+    .exclude("com.danieltrinh", "scalariform_2.10"))
 
-addSbtPlugin("com.danieltrinh" % "sbt-scalariform" % "1.3.0")
+addSbtPlugin("com.github.jkinkead" % "sbt-scalariform" % "0.1.6")
 
 // Dependency graph visualiztion in SBT console
 addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")

@@ -3,10 +3,13 @@ package org.allenai.plugins
 import sbt._
 import sbt.Keys._
 
+import scalariform.formatter.preferences.{ DoubleIndentClassDeclaration, FormattingPreferences }
+import scalariform.sbt.ScalariformPlugin
+
 object CoreSettingsPlugin extends AutoPlugin {
 
   // Automatically add the StylePlugin and VersionInjectorPlugin
-  override def requires: Plugins = StylePlugin && VersionInjectorPlugin
+  override def requires: Plugins = ScalariformPlugin && StylePlugin && VersionInjectorPlugin
 
   // Automatically enable the plugin (no need for projects to `enablePlugins(CoreSettingsPlugin)`)
   override def trigger: PluginTrigger = allRequirements
@@ -27,6 +30,10 @@ object CoreSettingsPlugin extends AutoPlugin {
         conflictManager := ConflictManager.strict,
         resolvers ++= CoreRepositories.Resolvers.defaults,
         dependencyOverrides ++= CoreDependencies.loggingDependencyOverrides,
-        dependencyOverrides += "org.scala-lang" % "scala-library" % scalaVersion.value
+        dependencyOverrides += "org.scala-lang" % "scala-library" % scalaVersion.value,
+        // Override default scalariform settings.
+        ScalariformPlugin.autoImport.scalariformPreferences := {
+          FormattingPreferences().setPreference(DoubleIndentClassDeclaration, true)
+        }
       )
 }
