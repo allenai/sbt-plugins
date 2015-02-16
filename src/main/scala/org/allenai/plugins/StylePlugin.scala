@@ -57,7 +57,7 @@ object StylePlugin extends AutoPlugin {
         args = Seq("q"), // "q" for "quiet".
         config = configFile(target.value), // XML configuration file
         configUrl = None, // Config URL; overrides configXml.
-        failOnError = true, // If true, the SBT task will treat style warnings as style errors.
+        failOnError = true, // If true, the SBT task will treat style errors as build errors.
         scalaSource = (scalaSource in StyleKeys.styleCheck).value,
         scalastyleTarget = new File(scalastyleTarget(target.value), "scalastyle-results.xml"),
         streams = streams.value,

@@ -97,14 +97,14 @@
     <customMessage>Prefer using `L` to postfix long literals instead of `l`</customMessage>
   </check>
 
-  <!-- Disabled checks, kept here for documentation. -->
-
   <!-- Retired Checks -->
 
   <!-- retired because scalariform doesn't remove whitespace from comments. -->
+  <!-- TODO: re-enable when https://github.com/jkinkead/scalariform/issues/3 closed. -->
   <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="false">
     <customMessage>Whitespace at end-of-line</customMessage>
   </check>
+
   <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="false">
     <customMessage>Missing newline at end-of-file</customMessage>
   </check>
@@ -117,6 +117,8 @@
   <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="false">
     <customMessage>Missing return type for public method</customMessage>
   </check>
+
+  <!-- Disabled checks, kept here for documentation. -->
 
   <!-- TODO(jkinkead): Evaluate this checker - it seems useful. -->
   <check level="warning" class="org.scalastyle.scalariform.CyclomaticComplexityChecker" enabled="false">
