@@ -32,11 +32,13 @@
   <!-- Enabled checks. -->
 
   <!-- Error level checks (strictly not allowed). -->
+  <check level="error" class="org.scalastyle.scalariform.IllegalImportsChecker" enabled="true">
+    <parameters>
+      <parameter name="illegalImports">scala.collection.JavaConversions._</parameter>
+    </parameters>
+  </check>
   <check level="error" class="org.scalastyle.file.FileTabChecker" enabled="true">
     <customMessage>Tab in Scala file</customMessage>
-  </check>
-  <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="true">
-    <customMessage>Whitespace at end-of-line</customMessage>
   </check>
   <check level="error" class="org.scalastyle.scalariform.EqualsHashCodeChecker" enabled="true">
     <customMessage>Classes must override both equals and hashCode, not just one</customMessage>
@@ -78,18 +80,9 @@
       <parameter name="tabSize">4</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="true">
-    <customMessage>Missing newline at end-of-file</customMessage>
-  </check>
   <!-- Bad style checks. -->
   <check level="warning" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
     <customMessage>Unusual class name; consider renaming</customMessage>
-    <parameters>
-      <parameter name="regex">^[A-Z][A-Za-z]*</parameter>
-    </parameters>
-  </check>
-  <check level="warning" class="org.scalastyle.scalariform.ObjectNamesChecker" enabled="true">
-    <customMessage>Unusual object name; consider renaming</customMessage>
     <parameters>
       <parameter name="regex">^[A-Z][A-Za-z]*</parameter>
     </parameters>
@@ -100,11 +93,29 @@
       <parameter name="regex">^[a-z][A-Za-z]*$</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="true">
-    <customMessage>Missing return type for public method</customMessage>
-  </check>
   <check level="warning" class="org.scalastyle.scalariform.UppercaseLChecker" enabled="true">
     <customMessage>Prefer using `L` to postfix long literals instead of `l`</customMessage>
+  </check>
+
+  <!-- Retired Checks -->
+
+  <!-- retired because scalariform doesn't remove whitespace from comments. -->
+  <!-- TODO: re-enable when https://github.com/jkinkead/scalariform/issues/3 closed. -->
+  <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="false">
+    <customMessage>Whitespace at end-of-line</customMessage>
+  </check>
+
+  <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="false">
+    <customMessage>Missing newline at end-of-file</customMessage>
+  </check>
+  <check level="warning" class="org.scalastyle.scalariform.ObjectNamesChecker" enabled="false">
+    <customMessage>Unusual object name; consider renaming</customMessage>
+    <parameters>
+      <parameter name="regex">^[A-Z][A-Za-z]*</parameter>
+    </parameters>
+  </check>
+  <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="false">
+    <customMessage>Missing return type for public method</customMessage>
   </check>
 
   <!-- Disabled checks, kept here for documentation. -->
