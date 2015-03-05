@@ -14,8 +14,10 @@ import org.scalastyle.sbt.{
 object StylePlugin extends AutoPlugin {
   object StyleKeys {
     val styleCheck = TaskKey[Unit]("styleCheck", "Check scala file style using scalastyle")
-    val styleCheckStrict = TaskKey[Unit]("styleCheckStrict",
-      "Check scala file style using scalastyle, failing if an unformatted file is found")
+    val styleCheckStrict = TaskKey[Unit](
+      "styleCheckStrict",
+      "Check scala file style using scalastyle, failing if an unformatted file is found"
+    )
   }
 
   override def requires: Plugins = plugins.JvmPlugin

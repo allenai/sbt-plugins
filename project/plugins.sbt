@@ -5,7 +5,7 @@ addSbtPlugin("me.lessis" % "bintray-sbt" % "0.1.2")
 resolvers += Resolver.url("bintray-allenai-sbt-plugin-releases",
   url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % "2014.11.09-0")
+addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % "2015.02.16-0")
 
 // for testing sbt plugins:
 libraryDependencies <+= (sbtVersion) { sv =>

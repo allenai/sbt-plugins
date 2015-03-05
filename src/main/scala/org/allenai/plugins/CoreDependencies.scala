@@ -42,8 +42,7 @@ trait CoreDependencies {
           exclude ("ch.qos.logback", "logback-classic")
           // We add bridges explicitly as well
           exclude ("org.slf4j", "log4j-over-slf4j")
-          exclude ("org.slf4j", "jcl-over-slf4j")
-        )
+          exclude ("org.slf4j", "jcl-over-slf4j"))
       }
     }
     // Now, add the logging libraries.
@@ -61,7 +60,7 @@ trait CoreDependencies {
   }
 
   // AI2 common libraries
-  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "2015.01.23-0"
+  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "2015.02.17-0"
   val allenAiCommon = common("core")
   val allenAiTestkit = common("testkit")
   val allenAiWebapp = common("webapp")
