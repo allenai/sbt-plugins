@@ -37,7 +37,8 @@ object CoreRepositories {
 
     // Cannot use Resolver.sonatypeRepo("releases") here because it
     // does not point to the correct publishTo repo.
-    private val sonatypeReleases = "Sonatype Releases" at s"${sonatypeUrl}/service/local/staging/deploy/maven2"
+    private val sonatypeReleases = "Sonatype Releases" at
+      s"${sonatypeUrl}/service/local/staging/deploy/maven2"
 
     /** Sets publishTo to public Sonatype repo according to isSnapshot value */
     val sonatype = {

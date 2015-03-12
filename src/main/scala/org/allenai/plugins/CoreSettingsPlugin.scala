@@ -25,7 +25,7 @@ object CoreSettingsPlugin extends AutoPlugin {
       fork := true, // Forking for run, test is required sometimes, so fork always.
       scalaVersion := CoreDependencies.defaultScalaVersion,
       scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
-      javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
+      javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
       conflictManager := ConflictManager.strict,
       resolvers ++= CoreRepositories.Resolvers.defaults,
       dependencyOverrides ++= CoreDependencies.loggingDependencyOverrides,

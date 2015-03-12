@@ -66,7 +66,7 @@ object DeployPlugin extends AutoPlugin {
       */
     val deployDirs = SettingKey[Seq[String]](
       "deployDirs",
-      "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/"
+      "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/" // scalastyle:ignore
     )
 
     val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
