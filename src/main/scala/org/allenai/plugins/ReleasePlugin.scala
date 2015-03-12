@@ -14,32 +14,51 @@ object ReleasePlugin extends AutoPlugin {
 
   override def requires: Plugins = plugins.JvmPlugin
 
-  private def todayVersion: String = {
-    val df = new SimpleDateFormat("yyyy.MM.dd")
-    df.format(new Date())
+  object DateVersion {
+    private def todayVersion: String = {
+      val df = new SimpleDateFormat("yyyy.MM.dd")
+      df.format(new Date())
+    }
+
+    val VersionPattern = """(\d+\.\d+\.\d+)-(\d+)(?:-SNAPSHOT)?""".r
+
+    def incrementVersion(prev: String): String = {
+      prev match {
+        case VersionPattern(prefix, num) => s"${prefix}-${num.toInt + 1}"
+        case _ => throw new IllegalStateException(s"Invalid version number: ${prev}")
+      }
+    }
+
+    def releaseVersion(version: String) = {
+      val today = todayVersion
+      if (version.startsWith(today)) {
+        version.replace("-SNAPSHOT", "")
+      } else {
+        s"${today}-0"
+      }
+    }
+
+    def nextVersion(version: String) = {
+      s"${incrementVersion(version)}-SNAPSHOT"
+    }
   }
 
-  val VersionPattern = """(\d+\.\d+\.\d+)-(\d+)(?:-SNAPSHOT)?""".r
-
-  def incrementVersion(prev: String): String = {
-    prev match {
-      case VersionPattern(prefix, num) => s"${prefix}-${num.toInt + 1}"
-      case _ => throw new IllegalStateException(s"Invalid version number: ${prev}")
+  object SemanticVersion {
+    def nextVersion(version: String) = {
+      sbtrelease.Version(version).
+        map(_.bump(Version.Bump.Next).asSnapshot.string).
+        getOrElse(sbtrelease.versionFormatError)
+    }
+    def releaseVersion(version: String) = {
+      sbtrelease.Version(version).
+        map(_.withoutQualifier.string).
+        getOrElse(sbtrelease.versionFormatError)
     }
   }
 
   override lazy val projectSettings: Seq[Def.Setting[_]] =
     WrappedReleasePlugin.releaseSettings ++ Seq(
-      releaseVersion := { ver =>
-        val today = todayVersion
-        if (ver.startsWith(today)) {
-          ver.replace("-SNAPSHOT", "")
-        } else {
-          s"${today}-0"
-        }
-      },
-      nextVersion := { ver =>
-        s"${incrementVersion(ver)}-SNAPSHOT"
-      }
+      releaseVersion := { version => DateVersion.releaseVersion(version) },
+      nextVersion := { version => DateVersion.nextVersion(version) }
     )
 }
