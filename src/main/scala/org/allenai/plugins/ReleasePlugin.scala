@@ -29,7 +29,7 @@ object ReleasePlugin extends AutoPlugin {
       }
     }
 
-    def releaseVersion(version: String) = {
+    def computeReleaseVersion(version: String) = {
       val today = todayVersion
       if (version.startsWith(today)) {
         version.replace("-SNAPSHOT", "")
@@ -38,27 +38,35 @@ object ReleasePlugin extends AutoPlugin {
       }
     }
 
-    def nextVersion(version: String) = {
+    def computeNextVersion(version: String) = {
       s"${incrementVersion(version)}-SNAPSHOT"
     }
+
+    def settings: Seq[Def.Setting[_]] = Seq(
+      releaseVersion := { version => DateVersion.computeReleaseVersion(version) },
+      nextVersion := { version => DateVersion.computeNextVersion(version) }
+    )
   }
 
   object SemanticVersion {
-    def nextVersion(version: String) = {
+    def computeNextVersion(version: String) = {
       sbtrelease.Version(version).
         map(_.bump(Version.Bump.Next).asSnapshot.string).
         getOrElse(sbtrelease.versionFormatError)
     }
-    def releaseVersion(version: String) = {
+
+    def computeReleaseVersion(version: String) = {
       sbtrelease.Version(version).
         map(_.withoutQualifier.string).
         getOrElse(sbtrelease.versionFormatError)
     }
+
+    def settings: Seq[Def.Setting[_]] = Seq(
+      releaseVersion := { version => SemanticVersion.computeReleaseVersion(version) },
+      nextVersion := { version => SemanticVersion.computeNextVersion(version) }
+    )
   }
 
   override lazy val projectSettings: Seq[Def.Setting[_]] =
-    WrappedReleasePlugin.releaseSettings ++ Seq(
-      releaseVersion := { version => DateVersion.releaseVersion(version) },
-      nextVersion := { version => DateVersion.nextVersion(version) }
-    )
+    WrappedReleasePlugin.releaseSettings ++ DateVersion.settings
 }
