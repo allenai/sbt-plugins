@@ -15,17 +15,32 @@ object NodeJsPlugin extends AutoPlugin {
     val Npm = ConfigKey("npm")
 
     object NodeKeys {
-      val build = TaskKey[Seq[File]]("build", "Execution `npm run build` in the Node application directory")
+      val build = TaskKey[Seq[File]](
+        "build",
+        "Execution `npm run build` in the Node application directory"
+      )
       val buildEnvironment = TaskKey[String](
         "buildEnvironment",
         "Returns the build environment which will set the NODE_ENV variable for npm"
       )
-      val install = TaskKey[Unit]("install", "Execution `npm install` in the Node application directory to install dependencies")
-      val nodeProjectDir = SettingKey[File]("nodeProjectDir", "The directory containing the Node application")
-      val environment = TaskKey[Map[String, String]]("environment", "Environment variable names and values to set for npm commands")
+      val install = TaskKey[Unit](
+        "install",
+        "Execution `npm install` in the Node application directory to install dependencies"
+      )
+      val nodeProjectDir = SettingKey[File](
+        "nodeProjectDir",
+        "The directory containing the Node application"
+      )
+      val environment = TaskKey[Map[String, String]](
+        "environment",
+        "Environment variable names and values to set for npm commands"
+      )
 
       // Environment variables that are set for npm commands
-      val nodeProjectTarget = SettingKey[File]("nodeProjectTarget", "Target directory for Node application build")
+      val nodeProjectTarget = SettingKey[File](
+        "nodeProjectTarget",
+        "Target directory for Node application build"
+      )
     }
   }
 
@@ -85,7 +100,9 @@ object NodeJsPlugin extends AutoPlugin {
     commands += npm
   )
 
-  /** Allows user to execute arbitrary npm command from the SBT console with working directory set to nodeProjectDir */
+  /** Allows user to execute arbitrary npm command from the SBT console with working directory set
+    * to nodeProjectDir
+    */
   def npm = Command.args("npm", "<command>") { (state, args) =>
     val extracted = Project.extract(state)
     // we don't care if the command fails here because we are just
