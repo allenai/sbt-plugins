@@ -71,9 +71,15 @@ object NodeJsPlugin extends AutoPlugin {
   }
 
   val npmBuildTask = build in Npm := {
-    // make sure we install dependencies first.
-    // this is necssary for building on a clean repository (e.g. Travis)
+    // In case node_modules have been cached from a prior build, prune out
+    // any modules that we no longer use. This is important as it can cause
+    // dependency conflicts during a build (we've seen this on Shippable, for example).
+    exec("prune", (nodeProjectDir in Npm).value, (environment in Npm).value)
+
+    // Make sure we install dependencies prior to building.
+    // This is necssary for building on a clean repository (e.g. CI server)
     (install in Npm).value
+
     exec("run build", (nodeProjectDir in Npm).value, (environment in Npm).value)
     (nodeProjectTarget in Npm).value.listFiles.toSeq
   }
