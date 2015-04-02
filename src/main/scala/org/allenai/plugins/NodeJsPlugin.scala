@@ -50,6 +50,10 @@ object NodeJsPlugin extends AutoPlugin {
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
   val npmInstallTask = install in Npm := {
+    // In case node_modules have been cached from a prior build, prune out
+    // any modules that we no longer use. This is important as it can cause
+    // dependency conflicts during npm-install (we've seen this on Shippable, for example).
+    exec("prune", (nodeProjectDir in Npm).value, (environment in Npm).value)
     exec("install --quiet", (nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
@@ -71,11 +75,6 @@ object NodeJsPlugin extends AutoPlugin {
   }
 
   val npmBuildTask = build in Npm := {
-    // In case node_modules have been cached from a prior build, prune out
-    // any modules that we no longer use. This is important as it can cause
-    // dependency conflicts during a build (we've seen this on Shippable, for example).
-    exec("prune", (nodeProjectDir in Npm).value, (environment in Npm).value)
-
     // Make sure we install dependencies prior to building.
     // This is necssary for building on a clean repository (e.g. CI server)
     (install in Npm).value
