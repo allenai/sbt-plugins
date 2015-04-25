@@ -19,14 +19,15 @@ object CoreSettingsPlugin extends AutoPlugin {
     val PublishTo = CoreRepositories.PublishTo
   }
 
+  override val projectConfigurations = Seq(Configurations.IntegrationTest)
+
   // These settings will be automatically applied to projects
   override def projectSettings: Seq[Setting[_]] =
-    Seq(
+    Defaults.itSettings ++ Seq(
       fork := true, // Forking for run, test is required sometimes, so fork always.
       scalaVersion := CoreDependencies.defaultScalaVersion,
       scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
       javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-      conflictManager := ConflictManager.strict,
       resolvers ++= CoreRepositories.Resolvers.defaults,
       dependencyOverrides ++= CoreDependencies.loggingDependencyOverrides,
       dependencyOverrides += "org.scala-lang" % "scala-library" % scalaVersion.value,
