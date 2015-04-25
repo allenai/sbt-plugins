@@ -22,8 +22,7 @@ scalaVersion := "2.10.4"
 
 sbtPlugin := true
 
-// We wrap some 3rd party plugins:
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.7.6")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
 

@@ -69,8 +69,16 @@ trait CoreDependencies {
   val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 
   // Akka
-  val akkaVersion = "2.3.9"
-  def akkaModule(id: String): ModuleID = "com.typesafe.akka" %% s"akka-$id" % akkaVersion
+
+  val defaultAkkaVersion = "2.3.10"
+
+  /** Generates an akka module dependency
+    * @param id The akka module ID. E.g. `actor` or `cluster`
+    * @param version Specific akka version. Defaults to `defaultAkkaVersion`
+    */
+  def akkaModule(id: String, version: String = defaultAkkaVersion): ModuleID =
+    "com.typesafe.akka" %% s"akka-$id" % version
+
   val akkaActor = akkaModule("actor") exclude ("com.typesafe", "config")
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")

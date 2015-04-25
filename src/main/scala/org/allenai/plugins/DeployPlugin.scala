@@ -3,11 +3,12 @@ package org.allenai.plugins
 import sbt._
 import sbt.Keys._
 
-import com.typesafe.sbt.SbtNativePackager._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+import com.typesafe.sbt.SbtNativePackager._
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 
 import java.io.File
 
@@ -50,7 +51,7 @@ import scala.util.Try
   */
 object DeployPlugin extends AutoPlugin {
 
-  override def requires: Plugins = plugins.JvmPlugin
+  override def requires: Plugins = plugins.JvmPlugin && JavaAppPackaging
 
   object autoImport {
     /** Static usage string. */
@@ -264,7 +265,7 @@ object DeployPlugin extends AutoPlugin {
     log.info("Deploy complete. Validate your server!")
   }
 
-  override def projectSettings: Seq[Def.Setting[_]] = packageArchetype.java_application ++ Seq(
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
     gitRepoCleanTask,
     gitRepoPresentTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),

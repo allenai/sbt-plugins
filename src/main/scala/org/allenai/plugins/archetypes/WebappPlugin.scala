@@ -4,9 +4,9 @@ import org.allenai.plugins.NodeJsPlugin
 import org.allenai.plugins.NodeJsPlugin.autoImport._
 import org.allenai.plugins.DeployPlugin.autoImport._
 
-import com.typesafe.sbt.SbtNativePackager._
-import com.typesafe.sbt.SbtNativePackager.NativePackagerHelper._
-import com.typesafe.sbt.packager.universal.{ Keys => UniversalKeys }
+import com.typesafe.sbt.packager
+import com.typesafe.sbt.SbtNativePackager.Universal
+import com.typesafe.sbt.packager.MappingsHelper
 import spray.revolver.RevolverPlugin.Revolver
 
 import sbt._
@@ -37,14 +37,14 @@ object WebappPlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
     logNodeEnvTask,
-    UniversalKeys.stage <<= UniversalKeys.stage.dependsOn(WebappKeys.logNodeEnvironment in Webapp),
+    packager.Keys.stage <<= packager.Keys.stage.dependsOn(WebappKeys.logNodeEnvironment in Webapp),
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
     // Set NODE_ENV to the deploy target (e.g. 'prod', 'staging', etc.)
     NodeKeys.buildEnvironment in Npm := deployEnvironment.value.getOrElse("sbt-dev"),
     // Print the node environment on stage
     // Force npm:build when using sbt-revolver re-start to ensure UI is built
     Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.build in Npm),
-    mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map directory,
+    mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map MappingsHelper.directory,
     mappings in Universal <<= (mappings in Universal).dependsOn(NodeKeys.build in Npm)
   )
 }
