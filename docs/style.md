@@ -18,7 +18,7 @@ To disable the line-length check in a project, update the `StylePlugin.enableLin
 
 ```scala
 // In your project's build.sbt file.
-StylePlugin.enableLineLength := false
+StylePlugin.enableLineLimit := false
 ```
 
 ## Disabling warnings within code
