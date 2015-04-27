@@ -72,8 +72,11 @@
   <!--
     Line length warning only because scalariform won't auto-fix this, and will in fact break this
     rule if you're not careful.
+
+    We use a custom ID to enable easy disabling.
     -->
-  <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="true">
+  <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="true"
+      customId="line.length">
     <customMessage>Line is more than 100 characters long</customMessage>
     <parameters>
       <parameter name="maxLineLength">100</parameter>
