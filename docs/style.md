@@ -12,7 +12,16 @@ sbt-style
 
 Enabling this plugin will make a project's `compile` task depend on the format and style checker.
 
-## Disabling warnings
+## Disabling line-length check
+
+To disable the line-length check in a project, update the `StylePlugin.enableLineLength` key:
+
+```scala
+// In your project's build.sbt file.
+StylePlugin.enableLineLength := false
+```
+
+## Disabling warnings within code
 To disable format warnings and auto-formatting for a block of code, bound it in these special comments:
 ```
 // format: OFF

@@ -3,6 +3,7 @@ package org.allenai.plugins
 import sbt._
 import sbt.Keys._
 
+import org.scalastyle.ScalastyleConfiguration
 import org.scalastyle.sbt.{
   ScalastylePlugin,
   Tasks => ScalastyleTasks
@@ -20,6 +21,11 @@ object StylePlugin extends AutoPlugin {
     )
   }
 
+  lazy val enableLineLimit = SettingKey[Boolean](
+    "enableLineLimit",
+    "If true, enable the line length check in Scalastyle"
+  )
+
   override def requires: Plugins = plugins.JvmPlugin
 
   override def trigger: PluginTrigger = allRequirements
@@ -27,6 +33,7 @@ object StylePlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] =
     // Add scalastyle settings.
     ScalastylePlugin.projectSettings ++
+      Seq(enableLineLimit := true) ++
       // Add our default settings to test & compile.
       inConfig(Compile)(configSettings) ++
       inConfig(Test)(configSettings) ++
@@ -43,7 +50,7 @@ object StylePlugin extends AutoPlugin {
     StyleKeys.styleCheck := {
       ScalastyleTasks.doScalastyle(
         args = Seq("q"), // "q" for "quiet".
-        config = configFile(target.value), // XML configuration file
+        config = configFile(target.value, enableLineLimit.value), // Configuration file
         configUrl = None, // Config URL; overrides configXml.
         failOnError = false, // If true, the SBT task will treat style warnings as style errors.
         scalaSource = (scalaSource in StyleKeys.styleCheck).value,
@@ -57,7 +64,7 @@ object StylePlugin extends AutoPlugin {
     StyleKeys.styleCheckStrict := {
       ScalastyleTasks.doScalastyle(
         args = Seq("q"), // "q" for "quiet".
-        config = configFile(target.value), // XML configuration file
+        config = configFile(target.value, enableLineLimit.value), // Configuration file
         configUrl = None, // Config URL; overrides configXml.
         failOnError = true, // If true, the SBT task will treat style errors as build errors.
         scalaSource = (scalaSource in StyleKeys.styleCheck).value,
@@ -78,22 +85,38 @@ object StylePlugin extends AutoPlugin {
 
   }
 
-  /** Copies the resource config file to the local filesystem (in `target`), and returns the new
-    * location.
-    * @param targetDir the value of the `target` setting key
-    */
-  def configFile(targetDir: File): File = {
-    val destinationFile = new File(scalastyleTarget(targetDir), "scalastyle-config.xml")
-
-    if (!destinationFile.exists) {
-      val resourceName = "allenai-style-config.xml"
-      Option(getClass.getClassLoader.getResourceAsStream(resourceName)) match {
-        case None => throw new NullPointerException(s"Failed to find $resourceName in resources")
-        case Some(sourceStream) => IO.write(destinationFile, IO.readStream(sourceStream))
-
-      }
-
+  /** @return the configuration object with the given line limit check status */
+  def configWithLineCheck(enableLineLimit: Boolean): ScalastyleConfiguration = {
+    val baseConfig = embeddedConfig
+    if (!enableLineLimit) {
+      // Filter out the line length rule (with a custom ID).
+      val filteredChecks = baseConfig.checks.filterNot { _.customId == Some("line.length") }
+      baseConfig.copy(checks = filteredChecks)
+    } else {
+      baseConfig
     }
+  }
+
+  /** @return the configuration file embedded with the plugin */
+  def embeddedConfig: ScalastyleConfiguration = {
+    val resourceName = "allenai-style-config.xml"
+    val configString = Option(getClass.getClassLoader.getResourceAsStream(resourceName)) match {
+      case None => throw new NullPointerException(s"Failed to find $resourceName in resources")
+      case Some(sourceStream) => IO.readStream(sourceStream)
+    }
+    ScalastyleConfiguration.readFromString(configString)
+  }
+
+  /** Creates a config file in the target directory with the correct contents, and returns the
+    * location of the file.
+    * @param targetDir the value of the `target` setting key
+    * @param enableLineLimit if true, enable the line length check
+    */
+  def configFile(targetDir: File, enableLineLimit: Boolean): File = {
+    val config = configWithLineCheck(enableLineLimit)
+    // TODO(jkinkead): Update our plugin to just call scalastyle directly; this is dumb.
+    val destinationFile = new File(scalastyleTarget(targetDir), "scalastyle-config.xml")
+    IO.write(destinationFile, ScalastyleConfiguration.toXmlString(config, 0, 0))
     destinationFile
   }
 }
