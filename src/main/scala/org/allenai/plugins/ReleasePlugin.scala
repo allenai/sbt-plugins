@@ -4,8 +4,9 @@ import sbt._
 import sbt.Keys._
 
 import sbtrelease.{ ReleasePlugin => WrappedReleasePlugin, _ }
+import sbtrelease.ReleaseStep
 import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.ReleasePlugin.ReleaseKeys._
+import sbtrelease.ReleasePlugin.ReleaseKeys
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -43,8 +44,8 @@ object ReleasePlugin extends AutoPlugin {
     }
 
     def settings: Seq[Def.Setting[_]] = Seq(
-      releaseVersion := { version => DateVersion.computeReleaseVersion(version) },
-      nextVersion := { version => DateVersion.computeNextVersion(version) }
+      ReleaseKeys.releaseVersion := { version => DateVersion.computeReleaseVersion(version) },
+      ReleaseKeys.nextVersion := { version => DateVersion.computeNextVersion(version) }
     )
   }
 
@@ -62,11 +63,43 @@ object ReleasePlugin extends AutoPlugin {
     }
 
     def settings: Seq[Def.Setting[_]] = Seq(
-      releaseVersion := { version => SemanticVersion.computeReleaseVersion(version) },
-      nextVersion := { version => SemanticVersion.computeNextVersion(version) }
+      ReleaseKeys.releaseVersion := { version => SemanticVersion.computeReleaseVersion(version) },
+      ReleaseKeys.nextVersion := { version => SemanticVersion.computeNextVersion(version) }
     )
   }
 
-  override lazy val projectSettings: Seq[Def.Setting[_]] =
-    WrappedReleasePlugin.releaseSettings ++ DateVersion.settings
+  val checkBranchIsNotMaster = { st: State =>
+    val vcs = Project.extract(st).get(ReleaseKeys.versionControlSystem).getOrElse {
+      sys.error("Aborting release. Working directory is not a repository of a recognized VCS.")
+    }
+
+    if (vcs.currentBranch == "master") {
+      sys.error("Current branch is master.  At AI2, releases are done from another branch and " +
+        "then merged into master via pull request.  Shippable, our continuous build system does " +
+        "the actual publishing of the artifacts.")
+    }
+
+    st
+  }
+
+  override lazy val projectSettings: Seq[Def.Setting[_]] = {
+    WrappedReleasePlugin.releaseSettings ++
+      SemanticVersion.settings ++
+      bintray.Plugin.bintrayPublishSettings ++ Seq(
+        bintray.Keys.repository in bintray.Keys.bintray in ThisBuild := "maven",
+        bintray.Keys.bintrayOrganization in bintray.Keys.bintray in ThisBuild := Some("allenai"),
+        ReleaseKeys.releaseProcess in ThisBuild := Seq[ReleaseStep](
+          checkBranchIsNotMaster,
+          checkSnapshotDependencies,
+          inquireVersions,
+          runTest,
+          setReleaseVersion,
+          commitReleaseVersion,
+          tagRelease,
+          setNextVersion,
+          commitNextVersion,
+          pushChanges
+        )
+      )
+  }
 }
