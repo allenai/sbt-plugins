@@ -262,6 +262,7 @@ object DeployPlugin extends AutoPlugin {
       throw new IllegalArgumentException("Error running restart command.")
     }
     log.info("")
+    // TODO(jkinkead): Run an automated "/info/name" check here to see if service is running.
     log.info("Deploy complete. Validate your server!")
   }
 
@@ -273,15 +274,16 @@ object DeployPlugin extends AutoPlugin {
       sys.env.get(DeployEnvironment)
     },
     deployTask,
-
-    // TODO(jkinkead): Run an automated "/info/name" check here to see if services are running.
-
     resourceGenerators in Compile <+= generateRunClassTask,
 
     // Add root run script.
     mappings in Universal += {
       (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
     },
+
+    // Don't create garbage start scripts; we use our own wrappers that call run-class.
+    JavaAppPackaging.autoImport.makeBashScript := None,
+    JavaAppPackaging.autoImport.makeBatScript := None,
 
     // Map src/main/resources => conf and src/main/bin => bin.
     // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
