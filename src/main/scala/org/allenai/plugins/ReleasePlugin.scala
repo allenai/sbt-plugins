@@ -88,7 +88,7 @@ object ReleasePlugin extends AutoPlugin {
       bintray.Plugin.bintrayPublishSettings ++ Seq(
         bintray.Keys.repository in bintray.Keys.bintray in ThisBuild := "maven",
         bintray.Keys.bintrayOrganization in bintray.Keys.bintray in ThisBuild := Some("allenai"),
-        ReleaseKeys.releaseProcess in ThisBuild := Seq[ReleaseStep](
+        ReleaseKeys.releaseProcess := Seq[ReleaseStep](
           checkBranchIsNotMaster,
           checkSnapshotDependencies,
           inquireVersions,
