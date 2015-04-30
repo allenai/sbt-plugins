@@ -1,4 +1,4 @@
-addSbtPlugin("me.lessis" % "bintray-sbt" % "0.1.2")
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.2.1")
 
 // This is required until our allenai-sbt-plugins is added
 // to https://bintray.com/sbt/sbt-plugin-releases (request pending)

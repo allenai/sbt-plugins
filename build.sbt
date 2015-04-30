@@ -22,6 +22,8 @@ scalaVersion := "2.10.4"
 
 sbtPlugin := true
 
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.2.1")
+
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
