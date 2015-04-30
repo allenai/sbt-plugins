@@ -68,7 +68,7 @@ object ReleasePlugin extends AutoPlugin {
     )
   }
 
-  val checkBranchIsNotMaster = { st: State =>
+  val checkBranchIsNotMaster: State=>State = { st: State =>
     val vcs = Project.extract(st).get(ReleaseKeys.versionControlSystem).getOrElse {
       sys.error("Aborting release. Working directory is not a repository of a recognized VCS.")
     }
@@ -84,8 +84,7 @@ object ReleasePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = {
     WrappedReleasePlugin.releaseSettings ++
-      SemanticVersion.settings ++
-      bintray.Plugin.bintrayPublishSettings ++ Seq(
+      SemanticVersion.settings ++ Seq(
         bintray.Keys.repository in bintray.Keys.bintray in ThisBuild := "maven",
         bintray.Keys.bintrayOrganization in bintray.Keys.bintray in ThisBuild := Some("allenai"),
         ReleaseKeys.releaseProcess := Seq[ReleaseStep](
