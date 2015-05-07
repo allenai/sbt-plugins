@@ -1,89 +1,81 @@
 package org.allenai.plugins
 
+import org.allenai.plugins.NodeJsPlugin.autoImport.{ NodeKeys, Npm }
+import com.typesafe.config.{ Config, ConfigException, ConfigFactory, ConfigValueFactory }
+import com.typesafe.sbt.SbtNativePackager._
+import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
+import com.typesafe.sbt.packager.universal.UniversalPlugin
 import sbt._
 import sbt.Keys._
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigException
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.sbt.SbtNativePackager._
-import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-
 import java.io.File
 
-import scala.collection.JavaConversions
-import scala.sys.process.Process
-import scala.sys.process.ProcessLogger
+import scala.collection.JavaConverters._
+import scala.sys.process.{ Process, ProcessLogger }
 import scala.util.Try
 
-/** Plugin to deploy a project to an ec2 instance. Handles copying binaries and
-  * config files, including setting up the correct per-environment override
-  * file, but does not handle restarting the remote application.
+/** Plugin to deploy a project to an ec2 instance. Handles copying binaries and config files,
+  * generating a basic startup script, copying over an environment-specific config file if it
+  * exists, and restarting the service.
   *
-  * This takes a path to a deploy configuration file as an argument, as well as
-  * a target within that configuration file to deploy. See global_deploy.conf
-  * for the list of required configuration values, and what they do.
+  * This looks for a file called `conf/deploy.conf` in your project's root directory for
+  * configuration. This should be a typesafe config file with any number of deploy environments
+  * configured.
   *
-  * This will deploy from the current project in sbt.
+  * This builds from the currently active git branch unless a version is specified, in which case it
+  * will check out that tag/branch/commit before building.
   *
-  * This builds from the currently active git branch unless a version is
-  * specified, in which case it will check out that tag/branch/commit before
-  * building.
+  * This will replace _completely_ the contents of the remote {bin,conf,lib,public} directories with
+  * the contents from the build. All other directories and files (such as pid and log files) will be
+  * left intact.  After the new binaries are pushed, "${deploy.startup_script} restart" will be
+  * issued to restart the server.
   *
-  * This will replace _completely_ the contents of the remote
-  * {bin,conf,lib,public} directories with the contents from the build. All other
-  * directories and files (such as pid and log files) will be left intact.
-  * After the new binaries are pushed, "${deploy.startup_script} restart" will
-  * be issued to restart the server.
+  * There is a special ~/.deployrc config file that is merged into any deploy target configs as an
+  * override.
   *
-  * There is a special ~/.deployrc config file that is merged into any deploy
-  * target configs as an override.
+  * Overrides of the deploy target's settings can also be specified as arguments to the `deploy`
+  * task via Java property overrides (-Dprop.path=propvalue). This is the easiest way to specify a
+  * version (project.version) or any other variable info. These key/value pairs are imported into
+  * the deploy target's scope.  For example, "project.version" will override the current target's
+  * version; specifying "target.path.project.version" will not work.
   *
-  * Overrides of the deploy target's settings can also be specified on the
-  * commandline as Java property overrides (-Dprop.path=propvalue). This is the
-  * easiest way to specify a version (project.version) or any other variable
-  * info. These key/value pairs are imported into the deploy target's scope.
-  * For example, "project.version" will override the current target's version;
-  * specifying "target.path.project.version" will not work.
-  *
-  * Command-line overrides have precedence over .deployrc overrides.
+  * Argument overrides have precedence over .deployrc overrides.
   */
 object DeployPlugin extends AutoPlugin {
 
-  override def requires: Plugins = plugins.JvmPlugin && JavaAppPackaging
+  // JavaAppPackaging gives us the `stage` command, and NodeJsPlugin lets us deploy webapps.
+  override def requires: Plugins = plugins.JvmPlugin && JavaAppPackaging && NodeJsPlugin
+
+  /** Static usage string. */
+  val Usage = "Usage: deploy <overrides> [deploy target]";
 
   object autoImport {
-    /** Static usage string. */
-    val Usage = "Usage: deploy <overrides> [deploy target]";
-    /** Project subdirectory that the universal sbt plugin's 'stage' command writes to. */
-    val UniversalStagingSubdir = "target/universal/stage"
 
     val deploy = inputKey[Unit](Usage)
+
+    val nodeEnv = settingKey[String]("The value to use for NODE_ENV during deploy builds.")
+
+    val cleanStage = taskKey[Unit](
+      "Cleans the staging directory. This is not done by default by the universal packager."
+    )
+
+    val generateRunClass = taskKey[File](
+      "creates the run-class.sh script in the managed resources directory"
+    )
 
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
       */
-    val deployDirs = SettingKey[Seq[String]](
-      "deployDirs",
-      "subdirectories from the stage task to copy during deploy, defaults to bin/, conf/, lib/, and public/" // scalastyle:ignore
+    val deployDirs = settingKey[Seq[String]](
+      "subdirectories from the stage task to copy during deploy. " +
+        "defaults to bin/, conf/, lib/, and public/"
     )
 
-    val gitRepoClean = TaskKey[Unit]("gitRepoClean", "Succeeds if the git repository is clean")
+    val gitRepoClean = taskKey[Unit]("Succeeds if the git repository is clean")
 
-    val deployEnvironment = TaskKey[Option[String]](
-      "deployEnvironment", "Returns the current deploy environment"
-    )
-
-    val gitRepoPresent = TaskKey[Unit](
-      "gitRepoPresent",
-      "Succeeds if a git repository is present in the cwd"
-    )
+    val gitRepoPresent = taskKey[Unit]("Succeeds if a git repository is present in the cwd")
   }
-
-  /** Environment variable key that will be set for deployment */
-  val DeployEnvironment = "deploy.env"
 
   import autoImport._
 
@@ -125,7 +117,11 @@ object DeployPlugin extends AutoPlugin {
     DeployLogger(streams.value.log).info("Git repository present.")
   }
 
-  val generateRunClassTask = Def.task {
+  val cleanStageTask = cleanStage := {
+    IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
+  }
+
+  val generateRunClassTask = generateRunClass := {
     val log = DeployLogger(streams.value.log)
     log.info("Generating run-class.sh")
     val file = (resourceManaged in Compile).value / "run-class.sh"
@@ -144,7 +140,25 @@ object DeployPlugin extends AutoPlugin {
     IO.write(file, contents)
     log.info(s"Wrote ${contents.size} characters to ${file.getPath}.")
 
-    Seq(file)
+    file
+  }
+
+  lazy val npmBuildTask = Def.taskDyn {
+    if ((nodeEnv in thisProject).value == "dev") {
+      Def.task {
+        NodeJsPlugin.execBuild(
+          (NodeKeys.nodeProjectDir in Npm).value,
+          NodeJsPlugin.getEnvironment("dev", (NodeKeys.nodeProjectTarget in Npm).value)
+        )
+      }
+    } else {
+      Def.task {
+        NodeJsPlugin.execBuild(
+          (NodeKeys.nodeProjectDir in Npm).value,
+          NodeJsPlugin.getEnvironment("prod", (NodeKeys.nodeProjectTarget in Npm).value)
+        )
+      }
+    }
   }
 
   lazy val deployTask = deploy := {
@@ -183,9 +197,6 @@ object DeployPlugin extends AutoPlugin {
       }
     }
 
-    // Build the target specified.
-    val projectName = configMap("project.name")
-
     // Copy over the per-env config file, if it exists.
     val deployEnv = if (deployTarget.lastIndexOf('.') >= 0) {
       deployTarget.substring(deployTarget.lastIndexOf('.') + 1)
@@ -193,28 +204,14 @@ object DeployPlugin extends AutoPlugin {
       deployTarget
     }
 
-    val buildProcess = Process(
-      Seq("sbt", "project " + projectName, "clean", "stage"),
-      None,
-      DeployEnvironment -> deployEnv
-    )
+    log.info(s"Building ${(name in thisProject).value} . . .")
 
-    log.info(s"Building ${projectName} . . .")
-    if (buildProcess.! != 0) {
-      log.error(s"Error building ${projectName}, exiting.")
-    }
-
-    val universalStagingDir = new File(
-      workingDirectory,
-      UniversalStagingSubdir
-    )
+    val universalStagingDir = (UniversalPlugin.autoImport.stage in thisProject).value
 
     val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
     if (envConfFile.exists) {
       log.info(s"Copying config for ${deployEnv} . . .")
       val destConfFile = new File(universalStagingDir, "conf/env.conf")
-      // Copy via commandline, because it's annoying to do filewise in Scala /
-      // Java.
       IO.copyFile(envConfFile, destConfFile)
     } else {
       log.info("")
@@ -269,12 +266,17 @@ object DeployPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     gitRepoCleanTask,
     gitRepoPresentTask,
+    generateRunClassTask,
+    cleanStageTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
-    deployEnvironment := {
-      sys.env.get(DeployEnvironment)
-    },
+    nodeEnv := "prod",
     deployTask,
-    resourceGenerators in Compile <+= generateRunClassTask,
+    // Clean up anything leftover in the staging directory before re-staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
+    // Create the required run-class.sh script before staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(generateRunClass),
 
     // Add root run script.
     mappings in Universal += {
@@ -351,7 +353,7 @@ object DeployPlugin extends AutoPlugin {
       println(s"Error: No configuration found for target '$deployKey'.")
       println("Possible root targets are:")
       val keys = for {
-        key <- JavaConversions.iterableAsScalaIterable(deployConfig.root.keySet)
+        key <- deployConfig.root.keySet.asScala
       } yield key
       println(s"    ${keys.mkString(" ")}")
       throw new IllegalArgumentException(s"Error: No configuration found for target '$deployKey'.")
@@ -390,7 +392,7 @@ object DeployPlugin extends AutoPlugin {
     }
 
     // Validate that the target has all the required keys.
-    val requiredKeys = Seq("project.name", "deploy.host", "deploy.directory",
+    val requiredKeys = Seq("deploy.host", "deploy.directory",
       "deploy.startup_script", "deploy.user.ssh_username")
     val requiredKeyPairs: Seq[(String, String)] = for {
       key <- requiredKeys

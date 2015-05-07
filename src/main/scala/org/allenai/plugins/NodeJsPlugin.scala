@@ -15,32 +15,23 @@ object NodeJsPlugin extends AutoPlugin {
     val Npm = ConfigKey("npm")
 
     object NodeKeys {
-      val build = TaskKey[Seq[File]](
-        "build",
-        "Execution `npm run build` in the Node application directory"
-      )
-      val buildEnvironment = TaskKey[String](
-        "buildEnvironment",
-        "Returns the build environment which will set the NODE_ENV variable for npm"
-      )
-      val install = TaskKey[Unit](
-        "install",
+      val build = taskKey[Seq[File]]("Execution `npm run build` in the Node application directory")
+
+      val install = taskKey[Unit](
         "Execution `npm install` in the Node application directory to install dependencies"
       )
-      val nodeProjectDir = SettingKey[File](
-        "nodeProjectDir",
+
+      val nodeProjectDir = settingKey[File](
         "The directory containing the Node application"
       )
-      val environment = TaskKey[Map[String, String]](
-        "environment",
+
+      val nodeEnv = settingKey[String]("The value to use for NODE_ENV during development builds.")
+
+      val environment = settingKey[Map[String, String]](
         "Environment variable names and values to set for npm commands"
       )
 
-      // Environment variables that are set for npm commands
-      val nodeProjectTarget = SettingKey[File](
-        "nodeProjectTarget",
-        "Target directory for Node application build"
-      )
+      val nodeProjectTarget = settingKey[File]("Target directory for Node application build")
     }
   }
 
@@ -50,11 +41,7 @@ object NodeJsPlugin extends AutoPlugin {
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
   val npmInstallTask = install in Npm := {
-    // In case node_modules have been cached from a prior build, prune out
-    // any modules that we no longer use. This is important as it can cause
-    // dependency conflicts during npm-install (we've seen this on Shippable, for example).
-    exec("prune", (nodeProjectDir in Npm).value, (environment in Npm).value)
-    exec("install --quiet", (nodeProjectDir in Npm).value, (environment in Npm).value)
+    execInstall((nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
   val npmTestTask = test in Npm := {
@@ -66,20 +53,12 @@ object NodeJsPlugin extends AutoPlugin {
     exec("run clean", (nodeProjectDir in Npm).value, (environment in Npm).value)
   }
 
-  val npmEnvironmentTask = environment in Npm := {
-    Map(
-      "NODE_ENV" -> (buildEnvironment in Npm).value,
-      "NODE_API_HOST" -> "/api",
-      "NODE_BUILD_DIR" -> (nodeProjectTarget in Npm).value.getAbsolutePath
-    )
+  val npmEnvironmentSetting = environment in Npm := {
+    getEnvironment((nodeEnv in Npm).value, (nodeProjectTarget in Npm).value)
   }
 
   val npmBuildTask = build in Npm := {
-    // Make sure we install dependencies prior to building.
-    // This is necssary for building on a clean repository (e.g. CI server)
-    (install in Npm).value
-
-    exec("run build", (nodeProjectDir in Npm).value, (environment in Npm).value)
+    execBuild((nodeProjectDir in Npm).value, (environment in Npm).value)
     (nodeProjectTarget in Npm).value.listFiles.toSeq
   }
 
@@ -94,8 +73,8 @@ object NodeJsPlugin extends AutoPlugin {
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
     nodeProjectDir in Npm := baseDirectory.value / "webclient",
     nodeProjectTarget in Npm := baseDirectory.value / "public",
-    buildEnvironment in Npm := "prod",
-    npmEnvironmentTask,
+    nodeEnv in Npm := "dev",
+    npmEnvironmentSetting,
     npmTestTask,
     npmCleanTask,
     npmBuildTask,
@@ -113,26 +92,56 @@ object NodeJsPlugin extends AutoPlugin {
     // we don't care if the command fails here because we are just
     // passing through to the local `npm`
     try {
-      val (newState, env) = extracted.runTask(environment in Npm, state)
+      val env = extracted.getOpt(environment in Npm).get
       exec(args.mkString(" "), extracted.getOpt(nodeProjectDir in Npm).get, env)
-      newState
+      state
     } catch {
       case NpmMissingException => state.fail
       case t: Throwable => state
     }
   }
 
+  /** @returns the node build environment variables, with the given NODE_ENV and NODE_BUILD_DIR set
+    */
+  def getEnvironment(nodeEnv: String, buildDir: File): Map[String, String] = {
+    Map(
+      "NODE_ENV" -> nodeEnv,
+      "NODE_API_HOST" -> "/api",
+      "NODE_BUILD_DIR" -> buildDir.getAbsolutePath
+    )
+  }
+
+  /** Execute the prune and install commands with the given root + env.
+    * This is used within the plugin, but exposed for other tasks to use as well.
+    */
+  def execInstall(root: File, env: Map[String, String]): Unit = {
+    // In case node_modules have been cached from a prior build, prune out
+    // any modules that we no longer use. This is important as it can cause
+    // dependency conflicts during npm-install (we've seen this on Shippable, for example).
+    exec("prune", root, env)
+    exec("install --quiet", root, env)
+  }
+
+  /** Execute the build command with the given root + env.
+    * This is used within the plugin, but exposed for other tasks to use as well.
+    */
+  def execBuild(root: File, env: Map[String, String]): Unit = {
+    // Make sure we install dependencies prior to building.
+    // This is necssary for building on a clean repository (e.g. CI server)
+    execInstall(root, env)
+    exec("run build", root, env)
+  }
+
   /** Execute `cmd` with `npm` setting `root` as the working directory */
-  private def exec(cmd: String, root: File, env: Map[String, String]) = {
+  private def exec(cmd: String, root: File, env: Map[String, String]): Unit = {
 
-    val isTravis = sys.env.get("TRAVIS") match {
-      case Some(_) => true
-      case None => false
-    }
+    val isTravis = sys.env.contains("TRAVIS")
 
-    def npmInstalled = Process("which npm").! match {
+    def npmInstalled: Boolean = Process("which npm").! match {
       case 0 => true
-      case x => println("`which npm` had a nonzero exit code: " + x); false
+      case x =>
+        println("`which npm` had a nonzero exit code: " + x)
+        false
     }
 
     if (isTravis || npmInstalled) {
