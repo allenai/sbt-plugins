@@ -79,8 +79,6 @@ object NodeJsPlugin extends AutoPlugin {
     npmCleanTask,
     npmBuildTask,
     npmInstallTask,
-    test in Test <<= (test in Test).dependsOn(test in Npm),
-    cleanFiles += (nodeProjectTarget in Npm).value,
     commands += npm
   )
 
