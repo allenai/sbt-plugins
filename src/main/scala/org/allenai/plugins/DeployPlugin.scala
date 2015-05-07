@@ -47,7 +47,7 @@ object DeployPlugin extends AutoPlugin {
   override def requires: Plugins = plugins.JvmPlugin && JavaAppPackaging && NodeJsPlugin
 
   /** Static usage string. */
-  val Usage = "Usage: deploy <overrides> [deploy target]";
+  val Usage = "Usage: deploy [overrides] [deploy target]";
 
   object autoImport {
 
