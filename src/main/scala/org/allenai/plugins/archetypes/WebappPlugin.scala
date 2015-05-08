@@ -23,8 +23,10 @@ object WebappPlugin extends AutoPlugin {
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
     // Expect the node project in a "webapp" subdirectory.
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
-    // Force npm:build when using sbt-revolver re-start to ensure UI is built
-    Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.build in Npm),
+    // Run "npm watch" when we run a re-start.
+    Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.nwatch in Npm),
+    // Kill background watches on re-stop.
+    Revolver.reStop <<= Revolver.reStop.dependsOn(NodeKeys.unwatch in Npm),
     // Run client-side tests when tests are run.
     test in Test <<= (test in Test).dependsOn(test in Npm),
     // Clean node files on clean.
