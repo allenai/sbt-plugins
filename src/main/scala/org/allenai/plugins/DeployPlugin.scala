@@ -410,7 +410,7 @@ object DeployPlugin extends AutoPlugin {
       }
     }
     // Coerce optional keys into strings.
-    val optionalKeys = Seq("project.subdirectory", "project.version")
+    val optionalKeys = Seq("project.version")
     val optionalKeyPairs: Seq[(String, String)] = for {
       key <- optionalKeys
       valueTry: Try[String] = Try(targetConfig.getString(key))
