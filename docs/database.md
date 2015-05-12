@@ -5,7 +5,7 @@ DatabasePlugin
 
 **Requires**: CoreSettings
 
-The `DatabasePlugin` provides [Slick](http://slick.typesafe.com/) dependencies and [Flyway](http://flywaydb.org/) database migration.
+The `DatabasePlugin` provides [Slick](http://slick.typesafe.com/) dependencies and [Flyway](http://flywaydb.org/) for database migration.
 
 ## Usage
 
