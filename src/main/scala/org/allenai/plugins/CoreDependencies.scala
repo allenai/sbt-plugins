@@ -70,7 +70,7 @@ trait CoreDependencies {
 
   // Akka
 
-  val defaultAkkaVersion = "2.3.10"
+  val defaultAkkaVersion = "2.3.11"
 
   /** Generates an akka module dependency
     * @param id The akka module ID. E.g. `actor` or `cluster`
