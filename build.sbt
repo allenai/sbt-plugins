@@ -41,6 +41,11 @@ addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")
 // Wrapped by WebServicePlugin and WebappPlugin
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 
+// Wrapped by the DatabasePlugin
+resolvers += "Flyway" at "http://flywaydb.org/repo"
+
+addSbtPlugin("org.flywaydb" % "flyway-sbt" % "3.2.1")
+
 // Allows us to test our plugins via the sbt-scripted plugin:
 scriptedSettings
 
@@ -53,5 +58,3 @@ BintrayKeys.repository in BintrayKeys.bintray := "sbt-plugins"
 BintrayKeys.bintrayOrganization in BintrayKeys.bintray := Some("allenai")
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
-
-// TODO(markschaake): sbtCliApp and other archetype plugins

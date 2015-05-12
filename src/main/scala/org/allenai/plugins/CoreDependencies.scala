@@ -95,6 +95,20 @@ trait CoreDependencies {
   // Spray json (separate from Spray toolkit)
   val sprayJson = "io.spray" %% "spray-json" % "1.3.1"
 
+  // Slick for database integration
+  // TODO consider upgrading to slick 3.0. All of our existing projects use
+  // slick 2.1.0, but we should considering migrating to 3.0.
+  val defaultSlickVersion = "2.1.0"
+
+  /** Generates a slick module dependency */
+  def slickModule(id: String, version: String = defaultSlickVersion): ModuleID =
+    "com.typesafe.slick" %% id % version
+
+  val slick = slickModule("slick")
+  val slickCodegen = slickModule("slick-codegen")
+
+  val postgresDriver = "org.postgresql" % "postgresql" % "9.4-1201-jdbc41"
+
   val loggingDependencyOverrides = Set(
     Logging.slf4jApi,
     Logging.logbackCore,
