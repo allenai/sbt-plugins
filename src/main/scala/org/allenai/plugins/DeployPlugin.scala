@@ -55,6 +55,11 @@ object DeployPlugin extends AutoPlugin {
 
     val nodeEnv = settingKey[String]("The value to use for NODE_ENV during deploy builds.")
 
+    val makeDefaultBashScript = settingKey[Boolean](
+      "If true, will create executable bash script per JavaAppPackaging defaults. " +
+        "Defaults to false"
+    )
+
     val cleanStage = taskKey[Unit](
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
@@ -284,7 +289,10 @@ object DeployPlugin extends AutoPlugin {
     },
 
     // Don't create garbage start scripts; we use our own wrappers that call run-class.
-    JavaAppPackaging.autoImport.makeBashScript := None,
+    makeDefaultBashScript := false,
+    JavaAppPackaging.autoImport.makeBashScript := {
+      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
+    },
     JavaAppPackaging.autoImport.makeBatScript := None,
 
     // Map src/main/resources => conf and src/main/bin => bin.
