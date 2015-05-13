@@ -288,7 +288,11 @@ object DeployPlugin extends AutoPlugin {
       (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
     },
 
-    // Don't create garbage start scripts; we use our own wrappers that call run-class.
+    // JavaAppPackaging creates non-daemon start scripts by default. Since we
+    // provide our own run-class.sh script meant for running a daemon process,
+    // we disable the creation of these scripts by default.
+    // You can opt-in by setting `makeDefaultBashScript := true` in your
+    // build.sbt
     makeDefaultBashScript := false,
     JavaAppPackaging.autoImport.makeBashScript := {
       if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None

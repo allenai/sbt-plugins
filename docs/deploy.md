@@ -18,11 +18,21 @@ deploy
 
 ### configuration
 Enable the deploy plugin, which will provide default settings:
-```
+```scala
 // In your project's build.sbt
 val myProject = project.in(file(".")).enablePlugins(DeployPlugin).settings(
   // Add any additonal directories you need synced from the universal staging dir
   deployDirs += "some_other_dir")
+```
+
+By default, we disable the underlying JavaAppPackaging plugin's generation of bash
+start scripts. This is to avoid confusion with the `run-class.sh` start script
+we generate - which should be used for starting an application as a service. You can opt-in
+to having the JavaAppPackaging also generate a non-daemon start script if that is something
+you need. To opt-in, add the following line to your build.sbt:
+
+```scala
+makeDefaultBashScript := true
 ```
 
 ### running
