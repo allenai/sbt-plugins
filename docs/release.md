@@ -6,6 +6,14 @@ AutoPlugin that provides a custom versioning scheme.
 
 **Wraps**: [sbt-release](https://github.com/sbt/sbt-release)
 
+The release plugin's default configuration is for releases that are made by the
+continuous build system to BinTray.  Specifically, the plugin configures the
+`sbt release` command to make commits and tags only--it does not actually
+publish.  It's expected that the CI system is configured to recognize the tag
+and kick off a publish.
+
+For an example, please look at [common](https://github.com/allenai/common).
+
 ## Installation
 
 Enable the plugin for your **root** project in `build.sbt`:
@@ -31,8 +39,8 @@ lazy val root = project.in(file(".")).settings(
     publishLocal := { })
    .enablePlugins(ReleasePlugin)
    .aggregate(core, service)
-   
-// The core subproject will be released when you issue the release SBT command   
+
+// The core subproject will be released when you issue the release SBT command
 lazy val core = project.in(file("core")).enablePlugins(ReleasePlugin)
 
 // The service subproject will not be released because the ReleasePlugin is not enabled
