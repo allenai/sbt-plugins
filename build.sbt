@@ -41,11 +41,6 @@ addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")
 // Wrapped by WebServicePlugin and WebappPlugin
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 
-// Wrapped by the DatabasePlugin
-resolvers += "Flyway" at "http://flywaydb.org/repo"
-
-addSbtPlugin("org.flywaydb" % "flyway-sbt" % "3.2.1")
-
 // Allows us to test our plugins via the sbt-scripted plugin:
 scriptedSettings
 
