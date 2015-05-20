@@ -17,6 +17,31 @@ object CoreSettingsPlugin extends AutoPlugin {
   object autoImport {
     val CoreResolvers = CoreRepositories.Resolvers
     val PublishTo = CoreRepositories.PublishTo
+
+    val generateRunClass = taskKey[File](
+      "creates the run-class.sh script in the managed resources directory"
+    )
+  }
+
+  val generateRunClassTask = autoImport.generateRunClass := {
+    val logger = streams.value.log
+    logger.info("Generating run-class.sh")
+    val file = (resourceManaged in Compile).value / "run-class.sh"
+    // Read the plugin's resource file.
+    val contents = {
+      val is = this.getClass.getClassLoader.getResourceAsStream("run-class.sh")
+      try {
+        IO.readBytes(is)
+      } finally {
+        is.close()
+      }
+    }
+
+    // Copy the contents to the clients managed resources.
+    IO.write(file, contents)
+    logger.info(s"Wrote ${contents.size} bytes to ${file.getPath}.")
+
+    file
   }
 
   override val projectConfigurations = Seq(Configurations.IntegrationTest)
@@ -24,6 +49,7 @@ object CoreSettingsPlugin extends AutoPlugin {
   // These settings will be automatically applied to projects
   override def projectSettings: Seq[Setting[_]] =
     Defaults.itSettings ++ Seq(
+      generateRunClassTask,
       fork := true, // Forking for run, test is required sometimes, so fork always.
       scalaVersion := CoreDependencies.defaultScalaVersion,
       scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
