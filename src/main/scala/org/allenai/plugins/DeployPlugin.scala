@@ -64,10 +64,6 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
-    val generateRunClass = taskKey[File](
-      "creates the run-class.sh script in the managed resources directory"
-    )
-
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
@@ -124,28 +120,6 @@ object DeployPlugin extends AutoPlugin {
 
   val cleanStageTask = cleanStage := {
     IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
-  }
-
-  val generateRunClassTask = generateRunClass := {
-    val log = DeployLogger(streams.value.log)
-    log.info("Generating run-class.sh")
-    val file = (resourceManaged in Compile).value / "run-class.sh"
-    // Read the plugin's resource file.
-    val contents = {
-      val is = this.getClass.getClassLoader.getResourceAsStream("run-class.sh")
-      val source = scala.io.Source.fromInputStream(is)
-      try {
-        source.getLines.mkString("\n")
-      } finally {
-        source.close()
-      }
-    }
-
-    // Copy the contents to the clients managed resources.
-    IO.write(file, contents)
-    log.info(s"Wrote ${contents.size} characters to ${file.getPath}.")
-
-    file
   }
 
   lazy val npmBuildTask = Def.taskDyn {
@@ -271,7 +245,6 @@ object DeployPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     gitRepoCleanTask,
     gitRepoPresentTask,
-    generateRunClassTask,
     cleanStageTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
     nodeEnv := "prod",
@@ -281,7 +254,7 @@ object DeployPlugin extends AutoPlugin {
       UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
     // Create the required run-class.sh script before staging.
     UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(generateRunClass),
+      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
 
     // Add root run script.
     mappings in Universal += {
