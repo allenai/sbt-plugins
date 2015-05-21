@@ -21,6 +21,7 @@ object CoreRepositories {
     /** Default set of resolvers that will be added via CoreSettings */
     val defaults = Seq(
       spray,
+      Resolver.jcenterRepo,
       typesafeReleases,
       ai2PublicReleases
     )
