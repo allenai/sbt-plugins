@@ -127,14 +127,16 @@ object DeployPlugin extends AutoPlugin {
       Def.task {
         NodeJsPlugin.execBuild(
           (NodeKeys.nodeProjectDir in Npm).value,
-          NodeJsPlugin.getEnvironment("dev", (NodeKeys.nodeProjectTarget in Npm).value)
+          NodeJsPlugin.getEnvironment("dev", (NodeKeys.nodeProjectTarget in Npm).value),
+          (NodeKeys.npmLogLevel in Npm).value
         )
       }
     } else {
       Def.task {
         NodeJsPlugin.execBuild(
           (NodeKeys.nodeProjectDir in Npm).value,
-          NodeJsPlugin.getEnvironment("prod", (NodeKeys.nodeProjectTarget in Npm).value)
+          NodeJsPlugin.getEnvironment("prod", (NodeKeys.nodeProjectTarget in Npm).value),
+          (NodeKeys.npmLogLevel in Npm).value
         )
       }
     }

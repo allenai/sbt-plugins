@@ -15,8 +15,12 @@ libraryDependencies ++= Seq(
 
 // Install the NodeJsPlugin settings, providing the relative client directory path
 
-val tester = project.in(file(".")).enablePlugins(NodeJsPlugin)
-  .settings(
-    NodeKeys.nodeProjectDir in Npm := file("node-app"),
-    products in Compile <<= (products in Compile).dependsOn(NodeKeys.build in Npm))
-  .settings(Revolver.settings: _*)
+enablePlugins(NodeJsPlugin)
+
+products in Compile <<= (products in Compile).dependsOn(NodeKeys.build in Npm)
+
+Revolver.settings
+
+NodeKeys.nodeProjectDir in Npm := file("node-app")
+
+NodeKeys.npmLogLevel in Npm := NpmLogLevel.Info
