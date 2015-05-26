@@ -12,8 +12,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 object ReleasePlugin extends AutoPlugin {
-
   override def requires: Plugins = plugins.JvmPlugin
+
+  val blacklistedBranches = SettingKey[Seq[String]](
+    "blacklistedBranches",
+    "Branches that cannot be released from"
+  )
 
   object DateVersion {
     private def todayVersion: String = {
@@ -68,15 +72,18 @@ object ReleasePlugin extends AutoPlugin {
     )
   }
 
-  val checkBranchIsNotMaster: State=>State = { st: State =>
+  def checkBranchNotBlacklisted(blacklist: Set[String]): State=>State = { st: State =>
     val vcs = Project.extract(st).get(ReleaseKeys.versionControlSystem).getOrElse {
       sys.error("Aborting release. Working directory is not a repository of a recognized VCS.")
     }
 
-    if (vcs.currentBranch == "master") {
-      sys.error("Current branch is master.  At AI2, releases are done from another branch and " +
-        "then merged into master via pull request.  Shippable, our continuous build system does " +
-        "the actual publishing of the artifacts.")
+    val branch = vcs.currentBranch
+    println(branch)
+    println(blacklist)
+    if (blacklist(vcs.currentBranch)) {
+      sys.error(s"Current branch ${branch} is blacklisted.  At AI2, releases are done from " +
+        "another branch and then merged via pull request.  Shippable, our continuous build " +
+        "system does the actual publishing of the artifacts.")
     }
 
     st
@@ -85,10 +92,11 @@ object ReleasePlugin extends AutoPlugin {
   override lazy val projectSettings: Seq[Def.Setting[_]] = {
     WrappedReleasePlugin.releaseSettings ++
       SemanticVersion.settings ++ Seq(
+        blacklistedBranches := Seq("master"),
         bintray.Keys.repository in bintray.Keys.bintray in ThisBuild := "maven",
         bintray.Keys.bintrayOrganization in bintray.Keys.bintray in ThisBuild := Some("allenai"),
         ReleaseKeys.releaseProcess := Seq[ReleaseStep](
-          checkBranchIsNotMaster,
+          checkBranchNotBlacklisted(blacklistedBranches.value.toSet),
           checkSnapshotDependencies,
           inquireVersions,
           runTest,
