@@ -27,6 +27,9 @@ object NodeJsPlugin extends AutoPlugin {
     })
   )
 
+  // from npm docs https://docs.npmjs.com/misc/config#loglevel
+  val ValidLogLevels = Set("silent", "error", "warn", "http", "info", "verbose", "silly")
+
   object autoImport {
     val Npm = ConfigKey("npm")
 
@@ -55,12 +58,11 @@ object NodeJsPlugin extends AutoPlugin {
 
       val nodeProjectTarget = settingKey[File]("Target directory for Node application build")
 
-      val npmLogLevel = settingKey[String]("Log level for npm commands. Valid levels:`warn`, `info`, `verbose`")
+      val npmLogLevel = settingKey[String](
+        s"""Log level for npm commands. Valid levels are: {${ValidLogLevels.mkString(",")}}"""
+      )
     }
   }
-
-  // from npm docs https://docs.npmjs.com/misc/config#loglevel
-  val ValidLogLevels = Set("silent", "error", "warn", "http", "info", "verbose", "silly")
 
   import autoImport._
   import NodeKeys._
