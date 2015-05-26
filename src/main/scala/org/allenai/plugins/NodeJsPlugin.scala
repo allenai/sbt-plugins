@@ -59,6 +59,9 @@ object NodeJsPlugin extends AutoPlugin {
     }
   }
 
+  // from npm docs https://docs.npmjs.com/misc/config#loglevel
+  val ValidLogLevels = Set("silent", "error", "warn", "http", "info", "verbose", "silly")
+
   import autoImport._
   import NodeKeys._
 
@@ -237,6 +240,10 @@ object NodeJsPlugin extends AutoPlugin {
     * @throws Exception if the process returns an non-zero exit code
     */
   private def exec(cmd: String, root: File, env: Map[String, String], npmLogLevel: String): Unit = {
+    require(
+      ValidLogLevels.contains(npmLogLevel),
+      s"""Invalid npmLogLevel value: $npmLogLevel. Must be one of {${ValidLogLevels.mkString(",")}}"""
+    )
     fork(s"$cmd --loglevel $npmLogLevel", root, env).exitValue() match {
       case 0 => // we're good
       case _ => throw new Exception(s"Failed process call `npm ${cmd}`")
