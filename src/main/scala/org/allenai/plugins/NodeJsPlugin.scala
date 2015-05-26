@@ -27,11 +27,22 @@ object NodeJsPlugin extends AutoPlugin {
     })
   )
 
-  // from npm docs https://docs.npmjs.com/misc/config#loglevel
-  val ValidLogLevels = Set("silent", "error", "warn", "http", "info", "verbose", "silly")
-
   object autoImport {
     val Npm = ConfigKey("npm")
+
+    // Valid log levels for npm command from docs at: https://docs.npmjs.com/misc/config#loglevel
+    sealed abstract class NpmLogLevel(level: String) {
+      override def toString: String = level
+    }
+    object NpmLogLevel {
+      case object Silent extends NpmLogLevel("silent")
+      case object Error extends NpmLogLevel("error")
+      case object Warn extends NpmLogLevel("warn")
+      case object Http extends NpmLogLevel("http")
+      case object Info extends NpmLogLevel("info")
+      case object Verbose extends NpmLogLevel("verbose")
+      case object Silly extends NpmLogLevel("silly")
+    }
 
     object NodeKeys {
       val build = taskKey[Seq[File]]("Execution `npm run build` in the Node application directory")
@@ -58,9 +69,7 @@ object NodeJsPlugin extends AutoPlugin {
 
       val nodeProjectTarget = settingKey[File]("Target directory for Node application build")
 
-      val npmLogLevel = settingKey[String](
-        s"""Log level for npm commands. Valid levels are: {${ValidLogLevels.mkString(",")}}"""
-      )
+      val npmLogLevel = settingKey[NpmLogLevel]("Log level for npm commands.")
     }
   }
 
@@ -154,7 +163,7 @@ object NodeJsPlugin extends AutoPlugin {
     nodeProjectDir in Npm := baseDirectory.value / "webclient",
     nodeProjectTarget in Npm := baseDirectory.value / "public",
     nodeEnv in Npm := "dev",
-    npmLogLevel in Npm := "warn",
+    npmLogLevel in Npm := NpmLogLevel.Warn,
     npmEnvironmentSetting,
     npmTestTask,
     npmCleanTask,
@@ -196,7 +205,7 @@ object NodeJsPlugin extends AutoPlugin {
   /** Execute the prune and install commands with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
     */
-  def execInstall(root: File, env: Map[String, String], npmLogLevel: String): Unit = {
+  def execInstall(root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
     // In case node_modules have been cached from a prior build, prune out
     // any modules that we no longer use. This is important as it can cause
     // dependency conflicts during npm-install (we've seen this on Shippable, for example).
@@ -207,7 +216,7 @@ object NodeJsPlugin extends AutoPlugin {
   /** Execute the build command with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
     */
-  def execBuild(root: File, env: Map[String, String], npmLogLevel: String): Unit = {
+  def execBuild(root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
     // Make sure we install dependencies prior to building.
     // This is necssary for building on a clean repository (e.g. CI server)
     execInstall(root, env, npmLogLevel)
@@ -241,12 +250,8 @@ object NodeJsPlugin extends AutoPlugin {
   /** Execute `cmd` with `npm` setting `root` as the working directory.
     * @throws Exception if the process returns an non-zero exit code
     */
-  private def exec(cmd: String, root: File, env: Map[String, String], npmLogLevel: String): Unit = {
-    require(
-      ValidLogLevels.contains(npmLogLevel),
-      s"""Invalid npmLogLevel value: $npmLogLevel. Must be one of {${ValidLogLevels.mkString(",")}}"""
-    )
-    fork(s"$cmd --loglevel $npmLogLevel", root, env).exitValue() match {
+  private def exec(cmd: String, root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
+    fork(s"$cmd --loglevel ${npmLogLevel}", root, env).exitValue() match {
       case 0 => // we're good
       case _ => throw new Exception(s"Failed process call `npm ${cmd}`")
     }

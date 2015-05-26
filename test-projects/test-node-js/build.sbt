@@ -23,4 +23,4 @@ Revolver.settings
 
 NodeKeys.nodeProjectDir in Npm := file("node-app")
 
-NodeKeys.npmLogLevel in Npm := "info"
+NodeKeys.npmLogLevel in Npm := NpmLogLevel.Info
