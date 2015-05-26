@@ -210,7 +210,7 @@ object NodeJsPlugin extends AutoPlugin {
     // any modules that we no longer use. This is important as it can cause
     // dependency conflicts during npm-install (we've seen this on Shippable, for example).
     exec("prune", root, env, npmLogLevel)
-    exec(s"install", root, env, npmLogLevel)
+    exec("install", root, env, npmLogLevel)
   }
 
   /** Execute the build command with the given root + env.
