@@ -54,6 +54,8 @@ object NodeJsPlugin extends AutoPlugin {
       )
 
       val nodeProjectTarget = settingKey[File]("Target directory for Node application build")
+
+      val npmLogLevel = settingKey[String]("Log level for npm commands. Valid levels:`warn`, `info`, `verbose`")
     }
   }
 
@@ -63,16 +65,30 @@ object NodeJsPlugin extends AutoPlugin {
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
   val npmInstallTask = install in Npm := {
-    execInstall((nodeProjectDir in Npm).value, (environment in Npm).value)
+    execInstall(
+      (nodeProjectDir in Npm).value,
+      (environment in Npm).value,
+      (npmLogLevel in Npm).value
+    )
   }
 
   val npmTestTask = test in Npm := {
     (install in Npm).value
-    exec("run test", (nodeProjectDir in Npm).value, (environment in Npm).value)
+    exec(
+      "run test",
+      (nodeProjectDir in Npm).value,
+      (environment in Npm).value,
+      (npmLogLevel in Npm).value
+    )
   }
 
   val npmCleanTask = clean in Npm := {
-    exec("run clean", (nodeProjectDir in Npm).value, (environment in Npm).value)
+    exec(
+      "run clean",
+      (nodeProjectDir in Npm).value,
+      (environment in Npm).value,
+      (npmLogLevel in Npm).value
+    )
   }
 
   val npmEnvironmentSetting = environment in Npm := {
@@ -80,7 +96,11 @@ object NodeJsPlugin extends AutoPlugin {
   }
 
   val npmBuildTask = build in Npm := {
-    execBuild((nodeProjectDir in Npm).value, (environment in Npm).value)
+    execBuild(
+      (nodeProjectDir in Npm).value,
+      (environment in Npm).value,
+      (npmLogLevel in Npm).value
+    )
     (nodeProjectTarget in Npm).value.listFiles.toSeq
   }
 
@@ -90,11 +110,12 @@ object NodeJsPlugin extends AutoPlugin {
     val projectRef = thisProjectRef.value
     val dir = (nodeProjectDir in Npm).value
     val env = (environment in Npm).value
+    val logLev = (npmLogLevel in Npm).value
 
     // Check for a running process, and start one if it doesn't exist.
     val newProcessOption = watches.synchronized {
       if (!watches.contains(projectRef)) {
-        execInstall(dir, env)
+        execInstall(dir, env, logLev)
         val process = fork("run watch", dir, env)
         watches(projectRef) = process
         Some(process)
@@ -128,6 +149,7 @@ object NodeJsPlugin extends AutoPlugin {
     nodeProjectDir in Npm := baseDirectory.value / "webclient",
     nodeProjectTarget in Npm := baseDirectory.value / "public",
     nodeEnv in Npm := "dev",
+    npmLogLevel in Npm := "warn",
     npmEnvironmentSetting,
     npmTestTask,
     npmCleanTask,
@@ -147,7 +169,8 @@ object NodeJsPlugin extends AutoPlugin {
     // passing through to the local `npm`
     try {
       val env = extracted.getOpt(environment in Npm).get
-      exec(args.mkString(" "), extracted.getOpt(nodeProjectDir in Npm).get, env)
+      val logLev = extracted.getOpt(npmLogLevel in Npm).get
+      exec(args.mkString(" "), extracted.getOpt(nodeProjectDir in Npm).get, env, logLev)
       state
     } catch {
       case NpmMissingException => state.fail
@@ -168,22 +191,22 @@ object NodeJsPlugin extends AutoPlugin {
   /** Execute the prune and install commands with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
     */
-  def execInstall(root: File, env: Map[String, String]): Unit = {
+  def execInstall(root: File, env: Map[String, String], npmLogLevel: String): Unit = {
     // In case node_modules have been cached from a prior build, prune out
     // any modules that we no longer use. This is important as it can cause
     // dependency conflicts during npm-install (we've seen this on Shippable, for example).
-    exec("prune", root, env)
-    exec("install --quiet", root, env)
+    exec("prune", root, env, npmLogLevel)
+    exec(s"install", root, env, npmLogLevel)
   }
 
   /** Execute the build command with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
     */
-  def execBuild(root: File, env: Map[String, String]): Unit = {
+  def execBuild(root: File, env: Map[String, String], npmLogLevel: String): Unit = {
     // Make sure we install dependencies prior to building.
     // This is necssary for building on a clean repository (e.g. CI server)
-    execInstall(root, env)
-    exec("run build", root, env)
+    execInstall(root, env, npmLogLevel)
+    exec("run build", root, env, npmLogLevel)
   }
 
   // TODO(jkinkead): Make the below take logs instead of prinlning.
@@ -213,8 +236,8 @@ object NodeJsPlugin extends AutoPlugin {
   /** Execute `cmd` with `npm` setting `root` as the working directory.
     * @throws Exception if the process returns an non-zero exit code
     */
-  private def exec(cmd: String, root: File, env: Map[String, String]): Unit = {
-    fork(cmd, root, env).exitValue() match {
+  private def exec(cmd: String, root: File, env: Map[String, String], npmLogLevel: String): Unit = {
+    fork(s"$cmd --loglevel $npmLogLevel", root, env).exitValue() match {
       case 0 => // we're good
       case _ => throw new Exception(s"Failed process call `npm ${cmd}`")
     }
