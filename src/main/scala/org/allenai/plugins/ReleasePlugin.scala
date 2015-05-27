@@ -68,7 +68,7 @@ object ReleasePlugin extends AutoPlugin {
     )
   }
 
-  val checkBranchIsNotMaster: State=>State = { st: State =>
+  val checkBranchIsNotMaster: State => State = { st: State =>
     val vcs = Project.extract(st).get(ReleaseKeys.versionControlSystem).getOrElse {
       sys.error("Aborting release. Working directory is not a repository of a recognized VCS.")
     }
