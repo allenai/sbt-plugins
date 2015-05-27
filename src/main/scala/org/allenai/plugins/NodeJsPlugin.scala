@@ -204,14 +204,17 @@ object NodeJsPlugin extends AutoPlugin {
 
   /** Execute the prune and install commands with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
+    * Note: this method is synchronized to prevent weird npm concurrecny issues that we've
+    * experienced in CI when there are multiple subprojects executing `npm install` in parallel.
     */
-  def execInstall(root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
-    // In case node_modules have been cached from a prior build, prune out
-    // any modules that we no longer use. This is important as it can cause
-    // dependency conflicts during npm-install (we've seen this on Shippable, for example).
-    exec("prune", root, env, npmLogLevel)
-    exec("install", root, env, npmLogLevel)
-  }
+  def execInstall(root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit =
+    synchronized {
+      // In case node_modules have been cached from a prior build, prune out
+      // any modules that we no longer use. This is important as it can cause
+      // dependency conflicts during npm-install (we've seen this on Shippable, for example).
+      exec("prune", root, env, npmLogLevel)
+      exec("install", root, env, npmLogLevel)
+    }
 
   /** Execute the build command with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
