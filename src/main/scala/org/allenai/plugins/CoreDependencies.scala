@@ -84,7 +84,7 @@ trait CoreDependencies {
   val akkaTestkit = akkaModule("testkit")
 
   // Spray
-  val sprayVersion = "1.3.2"
+  val sprayVersion = "1.3.3"
   def sprayModule(id: String): ModuleID = "io.spray" %% s"spray-$id" % sprayVersion
   val sprayCan = sprayModule("can")
   val sprayRouting = sprayModule("routing")
@@ -93,7 +93,7 @@ trait CoreDependencies {
   val sprayCaching = sprayModule("caching")
 
   // Spray json (separate from Spray toolkit)
-  val sprayJson = "io.spray" %% "spray-json" % "1.3.1"
+  val sprayJson = "io.spray" %% "spray-json" % "1.3.2"
 
   // Slick for database integration
   // TODO consider upgrading to slick 3.0. All of our existing projects use
