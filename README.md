@@ -10,7 +10,7 @@ The AI2 SBT plugins are intended to minimize build boilerplate accross projects.
 
 It is fine to enable more than one plugin, including more than one archetype plugin. However, if we find the need to do so it could be an indicator that we have a new archetype to define.
 
-All plugins also enable the `CoreSettings` plugin ([docs](docs/core-settings.md)), which contains AI2-wide common settings. In particular, this enables the `StylePlugin` ([docs](docs/core-settings.md)) to help with code formatting & style.
+All plugins also enable the `CoreSettings` plugin ([docs](docs/core-settings.md)), which contains AI2-wide common settings. In particular, this enables the `StylePlugin` ([docs](docs/style.md)) to help with code formatting & style.
 
 More documentation for individual plugins can be found in the [docs](docs/) directory.
 
