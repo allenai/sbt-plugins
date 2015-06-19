@@ -3,28 +3,27 @@ package org.allenai.plugins
 import sbt._
 import sbt.Keys._
 
-import org.scalastyle.ScalastyleConfiguration
+import org.scalastyle.{ Output => ScalastyleOutput, _ }
 import org.scalastyle.sbt.{
   ScalastylePlugin,
   Tasks => ScalastyleTasks
 }
+import com.typesafe.config.ConfigFactory
 
 /** Plugin wrapping the scalastyle SBT plugin. This uses the configuration resource in this package
   * to configure scalastyle, and sets up test and compile to depend on it.
   */
 object StylePlugin extends AutoPlugin {
   object StyleKeys {
-    val styleCheck = TaskKey[Unit]("styleCheck", "Check scala file style using scalastyle")
-    val styleCheckStrict = TaskKey[Unit](
-      "styleCheckStrict",
+    val styleCheck = taskKey[OutputResult]("Check scala file style using scalastyle")
+    val styleCheckStrict = taskKey[Unit](
       "Check scala file style using scalastyle, failing if an unformatted file is found"
     )
   }
 
-  lazy val enableLineLimit = SettingKey[Boolean](
-    "enableLineLimit",
-    "If true, enable the line length check in Scalastyle"
-  )
+  lazy val enableLineLimit = {
+    settingKey[Boolean]("If true, enable the line length check in Scalastyle")
+  }
 
   override def requires: Plugins = plugins.JvmPlugin
 
@@ -45,45 +44,25 @@ object StylePlugin extends AutoPlugin {
           (compileInputs in (Compile, compile)) dependsOn (StyleKeys.styleCheck in Compile)
       )
 
-  // Settings used for a particular configuration (such as Compile).
-  def configSettings: Seq[Setting[_]] = Seq(
-    StyleKeys.styleCheck := {
-      ScalastyleTasks.doScalastyle(
-        args = Seq("q"), // "q" for "quiet".
-        config = configFile(target.value, enableLineLimit.value), // Configuration file
-        configUrl = None, // Config URL; overrides configXml.
-        failOnError = false, // If true, the SBT task will treat style warnings as style errors.
-        scalaSource = (scalaSource in StyleKeys.styleCheck).value,
-        scalastyleTarget = new File(scalastyleTarget(target.value), "scalastyle-results.xml"),
-        streams = streams.value,
-        refreshHours = 0, // How frequently, in hours, to refresh config from URL. Ignored if None.
-        target = target.value,
-        urlCacheFile = "/dev/null" // URL cache file. Ignored if URL is None.
-      )
-    },
-    StyleKeys.styleCheckStrict := {
-      ScalastyleTasks.doScalastyle(
-        args = Seq("q"), // "q" for "quiet".
-        config = configFile(target.value, enableLineLimit.value), // Configuration file
-        configUrl = None, // Config URL; overrides configXml.
-        failOnError = true, // If true, the SBT task will treat style errors as build errors.
-        scalaSource = (scalaSource in StyleKeys.styleCheck).value,
-        scalastyleTarget = new File(scalastyleTarget(target.value), "scalastyle-results.xml"),
-        streams = streams.value,
-        refreshHours = 0, // How frequently, in hours, to refresh config from URL. Ignored if None.
-        target = target.value,
-        urlCacheFile = "/dev/null" // URL cache file. Ignored if URL is None.
-      )
-    }
-  )
+  val styleCheckTask = StyleKeys.styleCheck := {
+    val configuration = configWithLineCheck(enableLineLimit.value)
 
-  /** @return a `scalastyle` directory in `targetDir`, creating it if needed */
-  def scalastyleTarget(targetDir: File): File = {
-    val dir = new File(targetDir, "scalastyle")
-    IO.createDirectory(dir)
-    dir
+    val messages = new ScalastyleChecker()
+      .checkFiles(configuration, Directory.getFiles(None, List(scalaSource.value)))
 
+    new SbtLogOutput(streams.value.log).output(messages)
   }
+
+  val styleCheckStrictTask = StyleKeys.styleCheckStrict := {
+    val outputResult = StyleKeys.styleCheck.value
+
+    if (outputResult.errors > 0) {
+      sys.error("Style check failed.")
+    }
+  }
+
+  // Settings used for a particular configuration (such as Compile).
+  def configSettings: Seq[Setting[_]] = Seq(styleCheckTask, styleCheckStrictTask)
 
   /** @return the configuration object with the given line limit check status */
   def configWithLineCheck(enableLineLimit: Boolean): ScalastyleConfiguration = {
@@ -106,17 +85,37 @@ object StylePlugin extends AutoPlugin {
     }
     ScalastyleConfiguration.readFromString(configString)
   }
+}
 
-  /** Creates a config file in the target directory with the correct contents, and returns the
-    * location of the file.
-    * @param targetDir the value of the `target` setting key
-    * @param enableLineLimit if true, enable the line length check
-    */
-  def configFile(targetDir: File, enableLineLimit: Boolean): File = {
-    val config = configWithLineCheck(enableLineLimit)
-    // TODO(jkinkead): Update our plugin to just call scalastyle directly; this is dumb.
-    val destinationFile = new File(scalastyleTarget(targetDir), "scalastyle-config.xml")
-    IO.write(destinationFile, ScalastyleConfiguration.toXmlString(config, 0, 0))
-    destinationFile
+/** Message handler for Scalastyle. Adapted from the scalastyle plugin, where the equivalent class
+  * is private.
+  */
+class SbtLogOutput[T <: FileSpec](logger: Logger) extends ScalastyleOutput[T] {
+  private val messageHelper = new MessageHelper(ConfigFactory.empty)
+
+  override def message(m: Message[T]): Unit = m match {
+    case StartWork() => logger.verbose("Starting scalastyle")
+    case EndWork() =>
+    case StartFile(file) => logger.verbose("start file " + file)
+    case EndFile(file) => logger.verbose("end file " + file)
+    case StyleError(file, clazz, key, level, args, line, column, customMessage) => {
+      plevel(level)(location(file, line, column) + ": " +
+          ScalastyleOutput.findMessage(messageHelper, key, args, customMessage))
+    }
+    case StyleException(file, clazz, message, stacktrace, line, column) =>
+      logger.error(location(file, line, column) + ": " + message)
   }
+
+  private[this]
+  def plevel(level: Level)(msg: => String): Unit = level match {
+    case ErrorLevel => logger.error(msg)
+    case WarningLevel => logger.warn(msg)
+    case InfoLevel => logger.info(msg)
+  }
+
+  private[this]
+  def location(file: T, line: Option[Int], column: Option[Int]): String =
+    (file.name +
+     line.map(n => ":" + n + column.map(":" + _).getOrElse(""))
+         .getOrElse(""))
 }
