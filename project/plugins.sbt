@@ -1,11 +1,6 @@
-addSbtPlugin("me.lessis" % "bintray-sbt" % "0.2.1")
-
-// This is required until our allenai-sbt-plugins is added
-// to https://bintray.com/sbt/sbt-plugin-releases (request pending)
-resolvers += Resolver.url("bintray-allenai-sbt-plugin-releases",
-  url("http://dl.bintray.com/content/allenai/sbt-plugins"))(Resolver.ivyStylePatterns)
-
-addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % "2015.02.16-0")
+// These should match the version in build.sbt.
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")
 
 // for testing sbt plugins:
 libraryDependencies <+= (sbtVersion) { sv =>

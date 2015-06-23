@@ -1,3 +1,3 @@
-val test = project.in(file(".")).enablePlugins(ReleasePlugin)
+val test = project.in(file(".")).enablePlugins(Ai2ReleasePlugin)
 
 publishTo := Some("foo" at "bar")

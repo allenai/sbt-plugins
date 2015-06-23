@@ -21,7 +21,7 @@ For an example, please look at [common](https://github.com/allenai/common).
 Enable the plugin for your **root** project in `build.sbt`:
 
 ```scala
-val myProject = project.in(file(".")).enablePlugins(ReleasePlugin)
+val myProject = project.in(file(".")).enablePlugins(Ai2ReleasePlugin)
 ```
 
 **NOTE FOR OLDER PROJECTS**: If you're migrating an older project (one using a date-based versioning
@@ -29,7 +29,7 @@ scheme), you'll also need to update your `version.sbt` file to contain a semanti
 
 ### Multi-project builds
 If your project consists of subprojects, you must create an aggregate project that:
-- has the `ReleasePlugin` enabled
+- has the `Ai2ReleasePlugin` enabled
 - has stubbed-out publishing settings
 - aggregates all subprojects that will be released
 
@@ -40,7 +40,7 @@ lazy val releaseProject = project.in(file(".")).settings(
     publish := { },
     publishTo := Some("bogus" at "http://nowhere.com"),
     publishLocal := { })
-   .enablePlugins(ReleasePlugin)
+   .enablePlugins(Ai2ReleasePlugin)
    .aggregate(api)
 
 // The project you wish to release

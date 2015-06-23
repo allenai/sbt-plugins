@@ -3,17 +3,19 @@ package org.allenai.plugins
 import sbt._
 import sbt.Keys._
 
-import sbtrelease.{ ReleasePlugin => WrappedReleasePlugin, _ }
-import sbtrelease.ReleaseStep
+import bintray.BintrayKeys
+
+import sbtrelease.ReleasePlugin
 import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.ReleasePlugin.ReleaseKeys
+import sbtrelease.ReleasePlugin.autoImport._
+import sbtrelease.Version
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-object ReleasePlugin extends AutoPlugin {
+object Ai2ReleasePlugin extends AutoPlugin {
 
-  override def requires: Plugins = plugins.JvmPlugin
+  override def requires: Plugins = plugins.JvmPlugin && ReleasePlugin
 
   object DateVersion {
     private def todayVersion: String = {
@@ -44,32 +46,32 @@ object ReleasePlugin extends AutoPlugin {
     }
 
     def settings: Seq[Def.Setting[_]] = Seq(
-      ReleaseKeys.releaseVersion := { version => DateVersion.computeReleaseVersion(version) },
-      ReleaseKeys.nextVersion := { version => DateVersion.computeNextVersion(version) }
+      releaseVersion := { version => DateVersion.computeReleaseVersion(version) },
+      releaseNextVersion := { version => DateVersion.computeNextVersion(version) }
     )
   }
 
   object SemanticVersion {
     def computeNextVersion(version: String) = {
-      sbtrelease.Version(version).
+      Version(version).
         map(_.bump(Version.Bump.Next).asSnapshot.string).
         getOrElse(sbtrelease.versionFormatError)
     }
 
     def computeReleaseVersion(version: String) = {
-      sbtrelease.Version(version).
+      Version(version).
         map(_.withoutQualifier.string).
         getOrElse(sbtrelease.versionFormatError)
     }
 
     def settings: Seq[Def.Setting[_]] = Seq(
-      ReleaseKeys.releaseVersion := { version => SemanticVersion.computeReleaseVersion(version) },
-      ReleaseKeys.nextVersion := { version => SemanticVersion.computeNextVersion(version) }
+      releaseVersion := { version => SemanticVersion.computeReleaseVersion(version) },
+      releaseNextVersion := { version => SemanticVersion.computeNextVersion(version) }
     )
   }
 
   val checkBranchIsNotMaster: State => State = { st: State =>
-    val vcs = Project.extract(st).get(ReleaseKeys.versionControlSystem).getOrElse {
+    val vcs = Project.extract(st).get(releaseVcs).getOrElse {
       sys.error("Aborting release. Working directory is not a repository of a recognized VCS.")
     }
 
@@ -83,22 +85,21 @@ object ReleasePlugin extends AutoPlugin {
   }
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = {
-    WrappedReleasePlugin.releaseSettings ++
-      SemanticVersion.settings ++ Seq(
-        bintray.Keys.repository in bintray.Keys.bintray in ThisBuild := "maven",
-        bintray.Keys.bintrayOrganization in bintray.Keys.bintray in ThisBuild := Some("allenai"),
-        ReleaseKeys.releaseProcess := Seq[ReleaseStep](
-          checkBranchIsNotMaster,
-          checkSnapshotDependencies,
-          inquireVersions,
-          runTest,
-          setReleaseVersion,
-          commitReleaseVersion,
-          tagRelease,
-          setNextVersion,
-          commitNextVersion,
-          pushChanges
-        )
+    SemanticVersion.settings ++ Seq(
+      BintrayKeys.bintrayRepository in ThisBuild := "maven",
+      BintrayKeys.bintrayOrganization in ThisBuild := Some("allenai"),
+      releaseProcess := Seq[ReleaseStep](
+        checkBranchIsNotMaster,
+        checkSnapshotDependencies,
+        inquireVersions,
+        runTest,
+        setReleaseVersion,
+        commitReleaseVersion,
+        tagRelease,
+        setNextVersion,
+        commitNextVersion,
+        pushChanges
       )
+    )
   }
 }

@@ -4,7 +4,7 @@ AI2 SBT Plugins
 The AI2 SBT plugins are intended to minimize build boilerplate accross projects. It is recommended to only enable "Archetype" plugins, which currently include:
 
 - `CliPlugin` - for command line applications using the [scopt](https://github.com/scopt/scopt) library.
-- `LibraryPlugin` - for libraries to be released / published using our `ReleasePlugin`
+- `LibraryPlugin` - for libraries to be released / published using our `Ai2ReleasePlugin`
 - `WebServicePlugin` - for web service applications built on spray, akka, and spray-json
 - `WebappPlugin` ([docs](docs/webapp.md)) - for web applications that have a service layer and a Node.js built web client.
 
@@ -83,8 +83,6 @@ Where `[API Key]` is the API key for the ai2-dev account (or your account if usi
 4. Click on `API Key` in navigation list
 
 ### Releasing
-
-We dogfood our own `ReleasePlugin` for releasing new plugin versions. To issue a release, do the following:
 
 1. Checkout the `master` branch of the repository
 2. Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins
