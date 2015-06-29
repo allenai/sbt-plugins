@@ -1,13 +1,10 @@
-import bintray.{ Keys => BintrayKeys }
-import bintray.{ Plugin => BintrayPlugin }
-
 libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0")
 
 organization := "org.allenai.plugins"
 
 name := "allenai-sbt-plugins"
 
-lazy val ai2Plugins = project.in(file(".")).enablePlugins(ReleasePlugin)
+lazy val ai2Plugins = project.in(file("."))
 
 scalacOptions := Seq(
   "-encoding", "utf8",
@@ -22,11 +19,11 @@ scalaVersion := "2.10.4"
 
 sbtPlugin := true
 
-addSbtPlugin("me.lessis" % "bintray-sbt" % "0.2.1")
-
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.0")
 
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")
+
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
 
 addSbtPlugin(
   ("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
@@ -44,12 +41,12 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 // Allows us to test our plugins via the sbt-scripted plugin:
 scriptedSettings
 
-BintrayPlugin.bintrayPublishSettings
+// Publication settings.
 
 publishMavenStyle := false
 
-BintrayKeys.repository in BintrayKeys.bintray := "sbt-plugins"
+bintrayRepository := "sbt-plugins"
 
-BintrayKeys.bintrayOrganization in BintrayKeys.bintray := Some("allenai")
+bintrayOrganization := Some("allenai")
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
