@@ -1,6 +1,6 @@
 # allenai-sbt-release
 
-AutoPlugin that provides a custom versioning scheme.
+AutoPlugin that provides a custom release process.
 
 **Required by**: `LibraryPlugin`
 
@@ -10,9 +10,7 @@ The release plugin's default configuration is for releases that are made by the
 continuous build system to BinTray.  Specifically, the plugin configures the
 `sbt release` command to make commits and tags only--it does not actually
 publish.  It's expected that the CI system is configured to recognize the tag
-and kick off a publish.
-
-For an example, please look at [common](https://github.com/allenai/common).
+and kick off a publish. See the section below for instructions.
 
 ## Installation
 
@@ -57,11 +55,9 @@ lazy val internalApi = project.in(file("internal-api"))
   .settings(PublishTo.ai2Private)
   .enablePlugins(LibraryPlugin)
 ```
-For open-sourced (public) projects, you should use Bintray:
+For open-sourced (public) projects, you should use Bintray. This is the default, so you don't have to configure anything extra to make it work:
 ```scala
-lazy val externalApi = project.in(file("external-api"))
-  .settings(bintray.Plugin.bintrayPublishSettings: _*)
-  .enablePlugins(LibraryPlugin)
+lazy val externalApi = project.in(file("external-api")).enablePlugins(LibraryPlugin)
 ```
 
 ## Configure your continuous integration system
