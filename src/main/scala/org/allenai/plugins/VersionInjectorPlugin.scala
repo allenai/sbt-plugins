@@ -14,7 +14,7 @@ object VersionInjectorPlugin extends AutoPlugin {
   object autoImport {
     val injectVersion = TaskKey[Seq[File]](
       "injectVersion",
-      "Generates both the artifact.conf and git.conf version files"
+      "Generates the artifact.conf, git.conf, and cacheKey.conf version files"
     )
     val injectArtifact = TaskKey[File](
       "injectArtifact",
@@ -23,6 +23,10 @@ object VersionInjectorPlugin extends AutoPlugin {
     val injectGit = TaskKey[File](
       "injectGit",
       "Generate the git.conf resource"
+    )
+    val injectCacheKey = TaskKey[File](
+      "injectCacheKey",
+      "Generate the cacheKey.conf resource"
     )
     val gitCommitDate = TaskKey[Long](
       "gitCommitDate",
@@ -129,6 +133,8 @@ object VersionInjectorPlugin extends AutoPlugin {
         IO.write(gitConfFile, gitContents)
         gitConfFile
     }
+
+  val injectCacheKeyTask = injectCacheKey
 
   val stageChecksumTask = stageChecksum := {
     import java.io.{ File => JFile }
