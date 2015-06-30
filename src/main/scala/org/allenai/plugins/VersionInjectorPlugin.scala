@@ -40,6 +40,14 @@ object VersionInjectorPlugin extends AutoPlugin {
       "gitDescribe",
       "The description of the current git commit"
     )
+    val gitMostRecentCommit = TaskKey[String](
+      "gitMostRecentCommit",
+      "The sha of the most recent git commit in this projects src directory"
+    )
+    val stageChecksum = TaskKey[String](
+      "stageChecksum",
+      "checksum of stage dir - locally generated jars"
+    )
   }
 
   import autoImport._
@@ -70,6 +78,11 @@ object VersionInjectorPlugin extends AutoPlugin {
   // Git tasks
   val gitDescribeTask = gitDescribe := {
     (gitCommand("describe").!!).trim
+  }
+
+  val gitMostRecentCommitTask = gitMostRecentCommit := {
+    val path = sourceDirectory.value.getAbsolutePath
+    gitCommand("log", "-1", "--format=%H", path).!!.trim
   }
 
   val gitCommitDateTask =
@@ -116,6 +129,34 @@ object VersionInjectorPlugin extends AutoPlugin {
         IO.write(gitConfFile, gitContents)
         gitConfFile
     }
+
+  val stageChecksumTask = stageChecksum := {
+    import java.io.{ File => JFile }
+
+    def getFileList(dir: String): Seq[JFile] = new JFile(dir) match {
+      case f if f.exists && f.isDirectory => f.listFiles.filter(_.isFile).toSeq
+      case _ => List[JFile]()
+    }
+
+    val stageDir = baseDirectory.value + "/target/universal/stage"
+    val allFiles: Seq[JFile] = DeployPlugin.autoImport.deployDirs.value
+      .map { dir => stageDir + "/" + dir }
+      .flatMap(getFileList)
+
+    val (filesToGetGitSha, filesToHash) = allFiles.partition {
+      f: JFile =>
+        val fileName = f.getName
+        fileName.startsWith("org.allenai.ari-api") ||
+          fileName.startsWith("org.allenai.solvers-") ||
+          fileName.startsWith("org.allenai.ari-solvers-")
+    }
+
+    val hashes = filesToHash.map(Hash.apply)
+    val gitShas = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
+      (gitDescribe in item.project).value
+    }.mkString
+    hashes.mkString + gitShas.mkString
+  }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
 
