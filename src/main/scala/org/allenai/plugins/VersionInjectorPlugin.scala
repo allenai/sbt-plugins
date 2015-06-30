@@ -48,11 +48,11 @@ object VersionInjectorPlugin extends AutoPlugin {
       "gitMostRecentCommit",
       "The sha of the most recent git commit in this projects src directory"
     )
-    val stageChecksum = TaskKey[String](
-      "stageChecksum",
-      "checksum of stage dir - locally generated jars"
+    val cacheKey = TaskKey[String](
+      "cacheKey"
+      "cacheKey of project"
     )
-  }
+}
 
   import autoImport._
 
@@ -63,11 +63,14 @@ object VersionInjectorPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     injectVersionTask,
     injectArtifactTask,
+    injectCacheKeyTask,
     injectGitTask,
     gitDescribeTask,
     gitCommitDateTask,
     gitSha1Task,
     gitRemotesTask,
+    gitMostRecentCommitTask,
+    cacheKeyTask,
     resourceGenerators in Compile <+= injectVersion
   )
 
@@ -135,37 +138,38 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
 
   val injectCacheKeyTask =
-    injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, gitMostRecentCommit) map { // scalastyle: ignore
-      (resourceManaged, org, name, version, s, gitMRC) =>
-        val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) /
+    injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, cacheKey) map { // scalastyle: ignore
+      (resourceManaged, org, name, version, s, cacheKeyFile) =>
+        val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) / "cacheKey.conf"
+        val cacheKeyContents = "cacheKey: " + "\"" + cacheKey + "\""
+        IO.write(cacheKeyConfFile, cacheKeyContents)
+        cacheKeyConfFile
     }
 
-  val stageChecksumTask = stageChecksum := {
+  val cacheKeyTask = cacheKey := {
     import java.io.{ File => JFile }
 
     def getFileList(dir: String): Seq[JFile] = new JFile(dir) match {
       case f if f.exists && f.isDirectory => f.listFiles.filter(_.isFile).toSeq
-      case _ => List[JFile]()
+      case _ => Seq.empty
     }
 
     val stageDir = baseDirectory.value + "/target/universal/stage"
     val allFiles: Seq[JFile] = DeployPlugin.autoImport.deployDirs.value
-      .map { dir => stageDir + "/" + dir }
+      map { dir => stageDir + "/" + dir }
       .flatMap(getFileList)
 
-    val (filesToGetGitSha, filesToHash) = allFiles.partition {
-      f: JFile =>
+    val (filesToGetGitSha, filesToHash) = allFiles partition { f: JFile =>
         val fileName = f.getName
         fileName.startsWith("org.allenai.ari-api") ||
           fileName.startsWith("org.allenai.solvers-") ||
           fileName.startsWith("org.allenai.ari-solvers-")
     }
-
-    val hashes = filesToHash.map(Hash.apply)
-    val gitShas = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
-      (gitDescribe in item.project).value
-    }.mkString
-    hashes.mkString + gitShas.mkString
+    val hashes = filesToHash.map(Hash.apply).mkstring
+    val gitMRCs = thisProject.value.dependencies.map { item: ClassPathDep[ProjectRef] =>
+      (gitMostRecentCommit in item.project).value
+    }.mkstring
+    hashes + gitMRCs
   }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
