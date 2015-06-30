@@ -100,8 +100,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
   }
 
-  val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile) map {
-    (artifactFile, gitFile) => Seq(artifactFile, gitFile)
+  val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile, injectCacheKey in Compile) map {
+    (artifactFile, gitFile, cacheKeyFile) => Seq(artifactFile, gitFile, cacheKeyFile)
   }
 
   val injectArtifactTask =
@@ -134,7 +134,11 @@ object VersionInjectorPlugin extends AutoPlugin {
         gitConfFile
     }
 
-  val injectCacheKeyTask = injectCacheKey
+  val injectCacheKeyTask =
+    injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, gitMostRecentCommit) map { // scalastyle: ignore
+      (resourceManaged, org, name, version, s, gitMRC) =>
+        val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) /
+    }
 
   val stageChecksumTask = stageChecksum := {
     import java.io.{ File => JFile }
