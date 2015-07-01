@@ -124,7 +124,10 @@ object DeployPlugin extends AutoPlugin {
     IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
   }
 
-  val stageAndCacheKeyTask = stageAndCacheKey := VersionInjectorPlugin.injectCacheKeyTask
+  val stageAndCacheKeyTask = stageAndCacheKey := {
+    VersionInjectorPlugin.injectCacheKeyTask
+    println("") // so that we can be a Task[Unit]
+  }
 
   lazy val npmBuildTask = Def.taskDyn {
     if ((nodeEnv in thisProject).value == "dev") {
@@ -262,6 +265,7 @@ object DeployPlugin extends AutoPlugin {
     // Create the required run-class.sh script before staging.
     UniversalPlugin.autoImport.stage <<=
       UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
+    stageAndCacheKeyTask,
 
     // Add root run script.
     mappings in Universal += {

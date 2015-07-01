@@ -44,15 +44,19 @@ object VersionInjectorPlugin extends AutoPlugin {
       "gitDescribe",
       "The description of the current git commit"
     )
-    val gitMostRecentCommit = TaskKey[String](
-      "gitMostRecentCommit",
-      "The sha of the most recent git commit in this projects src directory"
+    val gitMRC = TaskKey[String](
+      "gitMRC",
+      "Most recent commit in src"
     )
     val cacheKey = TaskKey[String](
-      "cacheKey"
+      "cacheKey",
       "cacheKey of project"
     )
-}
+    val mTask = TaskKey[Seq[String]](
+      "fucksbt",
+      "it'sterrible"
+    )
+  }
 
   import autoImport._
 
@@ -66,10 +70,10 @@ object VersionInjectorPlugin extends AutoPlugin {
     injectCacheKeyTask,
     injectGitTask,
     gitDescribeTask,
+    gitMRCTask,
     gitCommitDateTask,
     gitSha1Task,
     gitRemotesTask,
-    gitMostRecentCommitTask,
     cacheKeyTask,
     resourceGenerators in Compile <+= injectVersion
   )
@@ -87,9 +91,12 @@ object VersionInjectorPlugin extends AutoPlugin {
     (gitCommand("describe").!!).trim
   }
 
-  val gitMostRecentCommitTask = gitMostRecentCommit := {
-    val path = sourceDirectory.value.getAbsolutePath
+  def gitMostRecentCommit(path: File) = {
     gitCommand("log", "-1", "--format=%H", path).!!.trim
+  }
+
+  val gitMRCTask = gitMRC := {
+    gitMostRecentCommit(sourceDirectory.value)
   }
 
   val gitCommitDateTask =
@@ -138,13 +145,22 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
 
   val injectCacheKeyTask =
-    injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, cacheKey) map { // scalastyle: ignore
+    injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, cacheKey) map {
+      // scalastyle: ignore
       (resourceManaged, org, name, version, s, cacheKeyFile) =>
         val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) / "cacheKey.conf"
         val cacheKeyContents = "cacheKey: " + "\"" + cacheKey + "\""
         IO.write(cacheKeyConfFile, cacheKeyContents)
         cacheKeyConfFile
     }
+
+  lazy val gitMRCs = Def.taskDyn {
+    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
+
+    val filter = ScopeFilter(inProjects(MRCs: _*))
+    val k = gitMRC.all(filter)
+    k
+  }
 
   val cacheKeyTask = cacheKey := {
     import java.io.{ File => JFile }
@@ -155,21 +171,41 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
 
     val stageDir = baseDirectory.value + "/target/universal/stage"
-    val allFiles: Seq[JFile] = DeployPlugin.autoImport.deployDirs.value
+    val allFiles: Seq[JFile] = Seq("bin", "conf", "lib", "public")
       .map { dir => stageDir + "/" + dir }
       .flatMap(getFileList)
 
     val (filesToGetGitSha, filesToHash) = allFiles partition { f: JFile =>
-        val fileName = f.getName
-        fileName.startsWith("org.allenai.ari-api") ||
-          fileName.startsWith("org.allenai.solvers-") ||
-          fileName.startsWith("org.allenai.ari-solvers-")
+      val fileName = f.getName
+      fileName.startsWith("org.allenai.ari-api") ||
+        fileName.startsWith("org.allenai.solvers-") ||
+        fileName.startsWith("org.allenai.ari-solvers-")
     }
     val hashes = filesToHash.map(Hash.apply).map(Hash.toHex).mkString
-    val gitMRCs = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
-      (gitMostRecentCommit in item.project).value
-    }.mkString
-    hashes + gitMRCs
+    //
+    //    val MRCs = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
+    //      Def.taskDyn{
+    //        Def.task {
+    //          (gitMostRecentCommit in item.project).value
+    //        }
+    //      }
+    //    }
+
+    //    val tes = gitMostRecentCommit.all(ScopeFilter(inProjects(thisProject.value.dependencies.map(_.project): _*))).value
+
+    //    gitMRCs.map(_.value).mkString
+
+    //   val gitMRCs = Def.taskDyn{
+    //      Def.task {
+    //        thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
+    //          (gitMostRecentCommit in item.project).value
+    //        }
+    //      }
+    //    }.value.mkString
+    //    val gitMRCs = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
+    //      (gitMostRecentCommit in item.project).value
+    //    }.mkString
+    hashes + gitMRCs.value.mkString + gitMRC.value
   }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
