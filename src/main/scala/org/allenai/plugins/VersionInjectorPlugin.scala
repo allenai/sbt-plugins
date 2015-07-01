@@ -103,8 +103,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
   }
 
-  val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile, injectCacheKey in Compile) map {
-    (artifactFile, gitFile, cacheKeyFile) => Seq(artifactFile, gitFile, cacheKeyFile)
+  val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile) map {
+    (artifactFile, gitFile) => Seq(artifactFile, gitFile)
   }
 
   val injectArtifactTask =
@@ -156,7 +156,7 @@ object VersionInjectorPlugin extends AutoPlugin {
 
     val stageDir = baseDirectory.value + "/target/universal/stage"
     val allFiles: Seq[JFile] = DeployPlugin.autoImport.deployDirs.value
-      map { dir => stageDir + "/" + dir }
+      .map { dir => stageDir + "/" + dir }
       .flatMap(getFileList)
 
     val (filesToGetGitSha, filesToHash) = allFiles partition { f: JFile =>
@@ -165,10 +165,10 @@ object VersionInjectorPlugin extends AutoPlugin {
           fileName.startsWith("org.allenai.solvers-") ||
           fileName.startsWith("org.allenai.ari-solvers-")
     }
-    val hashes = filesToHash.map(Hash.apply).mkstring
-    val gitMRCs = thisProject.value.dependencies.map { item: ClassPathDep[ProjectRef] =>
+    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex).mkString
+    val gitMRCs = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
       (gitMostRecentCommit in item.project).value
-    }.mkstring
+    }.mkString
     hashes + gitMRCs
   }
 

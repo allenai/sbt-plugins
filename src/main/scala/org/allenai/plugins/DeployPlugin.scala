@@ -64,6 +64,8 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
+    val stageAndCacheKey = taskKey[Unit]("Checksums non-local jars in stage, & uses git commits to store cacheKey")
+
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
@@ -122,6 +124,8 @@ object DeployPlugin extends AutoPlugin {
     IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
   }
 
+  val stageAndCacheKeyTask = stageAndCacheKey := VersionInjectorPlugin.injectCacheKeyTask
+
   lazy val npmBuildTask = Def.taskDyn {
     if ((nodeEnv in thisProject).value == "dev") {
       Def.task {
@@ -145,6 +149,7 @@ object DeployPlugin extends AutoPlugin {
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
+    stageAndCacheKey.value
 
     val log = DeployLogger(streams.value.log)
 
