@@ -51,6 +51,8 @@ lazy val service = project.in(file("util")).enablePlugins(LibraryPlugin)
 You also need to configure your publication destination. For internal projects, you probably want
 to use Nexus:
 ```scala
+import org.allenai.plugins.CoreRepositories.PublishTo
+
 lazy val internalApi = project.in(file("internal-api"))
   .settings(PublishTo.ai2Private)
   .enablePlugins(LibraryPlugin)
