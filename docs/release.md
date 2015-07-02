@@ -99,7 +99,10 @@ Where `$AI2_DEV_KEY` is the actual dev key for the ai2-dev user.
 
 #### Build script
 
-Add the following script to your build steps:
+In addition to the build settings above, you need to have a script that does the publication. Copy the following
+to a location in your project (e.g. `bin/publish.sh`), and add a build step that runs the script
+(e.g. `bash bin/publish.sh`).
+
 ```shell
 #!/bin/bash
 
