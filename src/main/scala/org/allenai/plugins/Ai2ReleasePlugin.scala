@@ -84,6 +84,17 @@ object Ai2ReleasePlugin extends AutoPlugin {
     st
   }
 
+  object autoImport {
+    /** Disable Bintray's publication tasks. These settings should be used if you're publishing to a
+      * non-Bintray location.
+      */
+    def disableBintray(): Seq[Def.Setting[_]] = Seq(
+      BintrayKeys.bintrayRelease := {},
+      BintrayKeys.bintrayEnsureBintrayPackageExists := {},
+      BintrayKeys.bintrayEnsureLicenses := {}
+    )
+  }
+
   override lazy val projectSettings: Seq[Def.Setting[_]] = {
     SemanticVersion.settings ++ Seq(
       BintrayKeys.bintrayRepository in ThisBuild := "maven",
