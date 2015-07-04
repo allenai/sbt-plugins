@@ -49,12 +49,13 @@ lazy val service = project.in(file("util")).enablePlugins(LibraryPlugin)
 ```
 
 You also need to configure your publication destination. For internal projects, you probably want
-to use Nexus:
+to use Nexus. Note that you also have to disable Bintray:
 ```scala
 import org.allenai.plugins.CoreRepositories.PublishTo
 
 lazy val internalApi = project.in(file("internal-api"))
   .settings(PublishTo.ai2Private)
+  .settings(disableBintray(): _*)
   .enablePlugins(LibraryPlugin)
 ```
 For open-sourced (public) projects, you should use Bintray. This is the default, so you don't have to configure anything extra to make it work:
