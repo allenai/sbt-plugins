@@ -124,10 +124,7 @@ object DeployPlugin extends AutoPlugin {
     IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
   }
 
-  val stageAndCacheKeyTask = stageAndCacheKey := {
-    VersionInjectorPlugin.injectCacheKeyTask
-    println("") // so that we can be a Task[Unit]
-  }
+  val stageAndCacheKeyTask = stageAndCacheKey := VersionInjectorPlugin.injectCacheKeyTask
 
   lazy val npmBuildTask = Def.taskDyn {
     if ((nodeEnv in thisProject).value == "dev") {
@@ -152,7 +149,7 @@ object DeployPlugin extends AutoPlugin {
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
-    stageAndCacheKey.value
+    VersionInjectorPlugin.injectCacheKeyTask.value
 
     val log = DeployLogger(streams.value.log)
 

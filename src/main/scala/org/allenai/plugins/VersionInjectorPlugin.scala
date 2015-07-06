@@ -14,7 +14,7 @@ object VersionInjectorPlugin extends AutoPlugin {
   object autoImport {
     val injectVersion = TaskKey[Seq[File]](
       "injectVersion",
-      "Generates the artifact.conf, git.conf, and cacheKey.conf version files"
+      "Generates the artifact.conf and git.conf version files"
     )
     val injectArtifact = TaskKey[File](
       "injectArtifact",
@@ -44,17 +44,13 @@ object VersionInjectorPlugin extends AutoPlugin {
       "gitDescribe",
       "The description of the current git commit"
     )
-    val gitMRC = TaskKey[String](
-      "gitMRC",
+    val gitLocalSha1 = TaskKey[String](
+      "gitLocalSha1",
       "Most recent commit in src"
     )
     val cacheKey = TaskKey[String](
       "cacheKey",
       "cacheKey of project"
-    )
-    val mTask = TaskKey[Seq[String]](
-      "fucksbt",
-      "it'sterrible"
     )
   }
 
@@ -70,7 +66,7 @@ object VersionInjectorPlugin extends AutoPlugin {
     injectCacheKeyTask,
     injectGitTask,
     gitDescribeTask,
-    gitMRCTask,
+    gitLocalSha1Task,
     gitCommitDateTask,
     gitSha1Task,
     gitRemotesTask,
@@ -91,12 +87,12 @@ object VersionInjectorPlugin extends AutoPlugin {
     (gitCommand("describe").!!).trim
   }
 
-  def gitMostRecentCommit(path: File) = {
+  def gitMostRecentCommit(path: File): String = {
     gitCommand("log", "-1", "--format=%H", path).!!.trim
   }
 
-  val gitMRCTask = gitMRC := {
-    gitMostRecentCommit(sourceDirectory.value)
+  val gitLocalSha1Task = gitLocalSha1 := {
+    gitMostRecentCommit(baseDirectory.value)
   }
 
   val gitCommitDateTask =
@@ -149,16 +145,18 @@ object VersionInjectorPlugin extends AutoPlugin {
       // scalastyle: ignore
       (resourceManaged, org, name, version, s, cacheKeyResult) =>
         val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) / "cacheKey.conf"
-        val cacheKeyContents = "cacheKey: " + "\"" + cacheKeyResult + "\""
+        val cacheKeyContents = s"""cacheKey: "$cacheKeyResult""""
         IO.write(cacheKeyConfFile, cacheKeyContents)
         cacheKeyConfFile
     }
 
-  lazy val gitMRCs = Def.taskDyn {
-    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
-
-    val filter = ScopeFilter(inProjects(MRCs: _*))
-    gitMRC.all(filter)
+  //Gives us the git most recent commits for all the local projects that this project depends on
+  lazy val gitMRCs = Def.taskDyn { // We have to use a dynamic task because generating tasks based on project dependencies
+    // necessarily alters the task graph
+    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value).sorted // get the local dependencies
+    val filter = ScopeFilter(inProjects(MRCs: _*)) // this is weird, we create a scopefilter on the dependencies
+    gitLocalSha1.all(filter) // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
+    //applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
   }
 
   val cacheKeyTask = cacheKey := {
@@ -173,14 +171,17 @@ object VersionInjectorPlugin extends AutoPlugin {
       .map { dir => stageDir + "/" + dir }
       .flatMap(getFileList)
 
-    val (filesToGetGitSha, filesToHash) = allFiles partition { f: JFile =>
+    val filesToHash = allFiles filterNot { f: JFile =>
+      //TODO: make this a setting
       val fileName = f.getName
       fileName.startsWith("org.allenai.ari-api") ||
         fileName.startsWith("org.allenai.solvers-") ||
         fileName.startsWith("org.allenai.ari-solvers-")
     }
-    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex).mkString
-    Hash.toHex(Hash(hashes + gitMRCs.value.mkString + gitMRC.value))
+    val hashes = filesToHash.sorted
+      .map(Hash.apply)
+      .map(Hash.toHex)
+    Hash.toHex(Hash((hashes ++ gitMRCs.value :+ gitLocalSha1.value).sorted.mkString))
   }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
