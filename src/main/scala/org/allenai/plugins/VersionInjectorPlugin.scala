@@ -144,7 +144,6 @@ object VersionInjectorPlugin extends AutoPlugin {
     val values = ((resourceManaged in Compile).value.absolutePath, organization.value, name.value, streams.value, cacheKey.value)
     val (resourceManagedPath, org, nameValue, s, cacheKeyResult) = values
     val cacheKeyConfFile = new java.io.File(s"$resourceManagedPath/$org/${cleanArtifactName(nameValue)}/cacheKey.conf")
-
     s.log.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKeyResult)")
 
     val cacheKeyContents = s"""cacheKey: "$cacheKeyResult""""
