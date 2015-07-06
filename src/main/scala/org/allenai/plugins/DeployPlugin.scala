@@ -64,8 +64,6 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
-    val stageAndCacheKey = taskKey[Unit]("Checksums non-local jars in stage, & uses git commits to store cacheKey")
-
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
@@ -123,8 +121,6 @@ object DeployPlugin extends AutoPlugin {
   val cleanStageTask = cleanStage := {
     IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
   }
-
-  val stageAndCacheKeyTask = stageAndCacheKey := VersionInjectorPlugin.injectCacheKeyTask
 
   lazy val npmBuildTask = Def.taskDyn {
     if ((nodeEnv in thisProject).value == "dev") {
@@ -262,7 +258,6 @@ object DeployPlugin extends AutoPlugin {
     // Create the required run-class.sh script before staging.
     UniversalPlugin.autoImport.stage <<=
       UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
-    stageAndCacheKeyTask,
 
     // Add root run script.
     mappings in Universal += {
