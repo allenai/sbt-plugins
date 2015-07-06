@@ -147,9 +147,9 @@ object VersionInjectorPlugin extends AutoPlugin {
   val injectCacheKeyTask =
     injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, cacheKey) map {
       // scalastyle: ignore
-      (resourceManaged, org, name, version, s, cacheKeyFile) =>
+      (resourceManaged, org, name, version, s, cacheKeyResult) =>
         val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) / "cacheKey.conf"
-        val cacheKeyContents = "cacheKey: " + "\"" + cacheKey + "\""
+        val cacheKeyContents = "cacheKey: " + "\"" + cacheKeyResult + "\""
         IO.write(cacheKeyConfFile, cacheKeyContents)
         cacheKeyConfFile
     }
@@ -158,8 +158,7 @@ object VersionInjectorPlugin extends AutoPlugin {
     val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
 
     val filter = ScopeFilter(inProjects(MRCs: _*))
-    val k = gitMRC.all(filter)
-    k
+    gitMRC.all(filter)
   }
 
   val cacheKeyTask = cacheKey := {
@@ -169,7 +168,6 @@ object VersionInjectorPlugin extends AutoPlugin {
       case f if f.exists && f.isDirectory => f.listFiles.filter(_.isFile).toSeq
       case _ => Seq.empty
     }
-
     val stageDir = baseDirectory.value + "/target/universal/stage"
     val allFiles: Seq[JFile] = Seq("bin", "conf", "lib", "public")
       .map { dir => stageDir + "/" + dir }
@@ -182,30 +180,7 @@ object VersionInjectorPlugin extends AutoPlugin {
         fileName.startsWith("org.allenai.ari-solvers-")
     }
     val hashes = filesToHash.map(Hash.apply).map(Hash.toHex).mkString
-    //
-    //    val MRCs = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
-    //      Def.taskDyn{
-    //        Def.task {
-    //          (gitMostRecentCommit in item.project).value
-    //        }
-    //      }
-    //    }
-
-    //    val tes = gitMostRecentCommit.all(ScopeFilter(inProjects(thisProject.value.dependencies.map(_.project): _*))).value
-
-    //    gitMRCs.map(_.value).mkString
-
-    //   val gitMRCs = Def.taskDyn{
-    //      Def.task {
-    //        thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
-    //          (gitMostRecentCommit in item.project).value
-    //        }
-    //      }
-    //    }.value.mkString
-    //    val gitMRCs = thisProject.value.dependencies.map { item: ClasspathDep[ProjectRef] =>
-    //      (gitMostRecentCommit in item.project).value
-    //    }.mkString
-    hashes + gitMRCs.value.mkString + gitMRC.value
+    Hash.toHex(Hash(hashes + gitMRCs.value.mkString + gitMRC.value))
   }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
