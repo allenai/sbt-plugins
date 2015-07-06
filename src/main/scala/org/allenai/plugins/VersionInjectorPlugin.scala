@@ -140,15 +140,17 @@ object VersionInjectorPlugin extends AutoPlugin {
         gitConfFile
     }
 
-  val injectCacheKeyTask =
-    injectCacheKey <<= (resourceManaged in Compile, organization, name, version, streams, cacheKey) map {
-      // scalastyle: ignore
-      (resourceManaged, org, name, version, s, cacheKeyResult) =>
-        val cacheKeyConfFile = resourceManaged / org / cleanArtifactName(name) / "cacheKey.conf"
-        val cacheKeyContents = s"""cacheKey: "$cacheKeyResult""""
-        IO.write(cacheKeyConfFile, cacheKeyContents)
-        cacheKeyConfFile
-    }
+  val injectCacheKeyTask = injectCacheKey := {
+    val values = ((resourceManaged in Compile).value.absolutePath, organization.value, name.value, streams.value, cacheKey.value)
+    val (resourceManagedPath, org, nameValue, s, cacheKeyResult) = values
+    val cacheKeyConfFile = new java.io.File(s"$resourceManagedPath/$org/${cleanArtifactName(nameValue)}/cacheKey.conf")
+
+    s.log.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKeyResult)")
+
+    val cacheKeyContents = s"""cacheKey: "$cacheKeyResult""""
+    IO.write(cacheKeyConfFile, cacheKeyContents)
+    cacheKeyConfFile
+  }
 
   //Gives us the git most recent commits for all the local projects that this project depends on
   lazy val gitMRCs = Def.taskDyn { // We have to use a dynamic task because generating tasks based on project dependencies
