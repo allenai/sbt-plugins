@@ -46,11 +46,11 @@ object VersionInjectorPlugin extends AutoPlugin {
     )
     val gitLocalSha1 = TaskKey[String](
       "gitLocalSha1",
-      "Most recent commit in src"
+      "Most recent commit in src directory of current project"
     )
     val cacheKey = TaskKey[String](
       "cacheKey",
-      "cacheKey of project"
+      "CacheKey for current project - changes on new commits to src directory and dependency changes"
     )
   }
 
