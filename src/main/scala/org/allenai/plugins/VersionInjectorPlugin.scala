@@ -87,12 +87,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     (gitCommand("describe").!!).trim
   }
 
-  def gitMostRecentCommit(path: File): String = {
-    gitCommand("log", "-1", "--format=%H", path).!!.trim
-  }
-
   val gitLocalSha1Task = gitLocalSha1 := {
-    gitMostRecentCommit(baseDirectory.value)
+    gitCommand("log", "-1", "--format=%H", baseDirectory.value).!!.trim // gets git commit of latest commit in basedir
   }
 
   val gitCommitDateTask =
@@ -141,10 +137,14 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
 
   val injectCacheKeyTask = injectCacheKey := {
-    val values = ((resourceManaged in Compile).value.absolutePath, organization.value, name.value, streams.value, cacheKey.value)
-    val (resourceManagedPath, org, nameValue, s, cacheKeyResult) = values
-    val cacheKeyConfFile = new java.io.File(s"$resourceManagedPath/$org/${cleanArtifactName(nameValue)}/cacheKey.conf")
-    s.log.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKeyResult)")
+    val resourceManagedPath = (resourceManaged in Compile).value.absolutePath
+    val org = organization.value
+    val cleanName = cleanArtifactName(name.value)
+    val logger = streams.value.log
+    val cacheKeyResult = cacheKey.value
+    val cacheKeyConfFile = new java.io.File(s"$resourceManagedPath/$org/$cleanName/cacheKey.conf")
+    
+    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKeyResult)")
 
     val cacheKeyContents = s"""cacheKey: "$cacheKeyResult""""
     IO.write(cacheKeyConfFile, cacheKeyContents)
@@ -152,37 +152,33 @@ object VersionInjectorPlugin extends AutoPlugin {
   }
 
   //Gives us the git most recent commits for all the local projects that this project depends on
-  lazy val gitMRCs = Def.taskDyn { // We have to use a dynamic task because generating tasks based on project dependencies
+  // We have to use a dynamic task because generating tasks based on project dependencies
+  lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]] = Def.taskDyn {
     // necessarily alters the task graph
-    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value).sorted // get the local dependencies
+    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)// get the local dependencies
     val filter = ScopeFilter(inProjects(MRCs: _*)) // this is weird, we create a scopefilter on the dependencies
     gitLocalSha1.all(filter) // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
-    //applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
+    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
   }
 
   val cacheKeyTask = cacheKey := {
-    import java.io.{ File => JFile }
 
-    def getFileList(dir: String): Seq[JFile] = new JFile(dir) match {
-      case f if f.exists && f.isDirectory => f.listFiles.filter(_.isFile).toSeq
-      case _ => Seq.empty
-    }
-    val stageDir = baseDirectory.value + "/target/universal/stage"
-    val allFiles: Seq[JFile] = Seq("bin", "conf", "lib", "public")
-      .map { dir => stageDir + "/" + dir }
-      .flatMap(getFileList)
+    val stageDir = baseDirectory.value / "target/universal/stage"
+    val allFiles = ((stageDir / "bin" +++ stageDir / "conf" +++ stageDir / "lib" +++ stageDir / "public") * ".jar").get
 
-    val filesToHash = allFiles filterNot { f: JFile =>
+    val filesToHash = allFiles filterNot { f: File =>
       //TODO: make this a setting
       val fileName = f.getName
       fileName.startsWith("org.allenai.ari-api") ||
         fileName.startsWith("org.allenai.solvers-") ||
         fileName.startsWith("org.allenai.ari-solvers-")
     }
-    val hashes = filesToHash.sorted
+    val hashes = filesToHash
       .map(Hash.apply)
       .map(Hash.toHex)
-    Hash.toHex(Hash((hashes ++ gitMRCs.value :+ gitLocalSha1.value).sorted.mkString))
+    // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
+    // to not change
+    Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
   }
 
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
