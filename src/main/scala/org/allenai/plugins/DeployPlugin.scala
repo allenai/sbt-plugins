@@ -145,6 +145,7 @@ object DeployPlugin extends AutoPlugin {
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
+    VersionInjectorPlugin.autoImport.injectCacheKey.value
 
     val log = DeployLogger(streams.value.log)
 

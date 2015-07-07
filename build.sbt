@@ -33,7 +33,7 @@ addSbtPlugin(
 addSbtPlugin("com.github.jkinkead" % "sbt-scalariform" % "0.1.6")
 
 // Dependency graph visualiztion in SBT console
-addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")
+addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4444")
 
 // Wrapped by WebServicePlugin and WebappPlugin
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
