@@ -64,6 +64,8 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
+    val stageAndChecksum = TaskKey[File]("stages and calculates cacheKey of this roject")
+
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
@@ -145,8 +147,6 @@ object DeployPlugin extends AutoPlugin {
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
-    VersionInjectorPlugin.autoImport.injectCacheKey.value
-
     val log = DeployLogger(streams.value.log)
 
     val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
@@ -188,7 +188,7 @@ object DeployPlugin extends AutoPlugin {
 
     log.info(s"Building ${(name in thisProject).value} . . .")
 
-    val universalStagingDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    val universalStagingDir = stageAndChecksum.value
 
     val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
     if (envConfFile.exists) {
@@ -243,6 +243,12 @@ object DeployPlugin extends AutoPlugin {
     log.info("")
     // TODO(jkinkead): Run an automated "/info/name" check here to see if service is running.
     log.info("Deploy complete. Validate your server!")
+  }
+
+  val stageAndChecksumTask = stageAndChecksum := {
+    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    VersionInjectorPlugin.autoImport.injectCacheKey.value
+    stageDir
   }
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
