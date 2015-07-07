@@ -151,10 +151,10 @@ object VersionInjectorPlugin extends AutoPlugin {
     cacheKeyConfFile
   }
 
-  //Gives us the git most recent commits for all the local projects that this project depends on
+  // Gives us the git most recent commits for all the local projects that this project depends on
   // We have to use a dynamic task because generating tasks based on project dependencies
+  // necessarily alters the task graph.
   lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]] = Def.taskDyn {
-    // necessarily alters the task graph
     val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)// get the local dependencies
     val filter = ScopeFilter(inProjects(MRCs: _*)) // this is weird, we create a scopefilter on the dependencies
     gitLocalSha1.all(filter) // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
