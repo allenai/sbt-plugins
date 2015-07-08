@@ -64,7 +64,7 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
-    val stageAndChecksum = TaskKey[File]("stages and calculates cacheKey of this roject")
+    val stageAndCacheKey = TaskKey[File]("stages and calculates cacheKey of this project")
 
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
@@ -73,6 +73,11 @@ object DeployPlugin extends AutoPlugin {
     val deployDirs = settingKey[Seq[String]](
       "subdirectories from the stage task to copy during deploy. " +
         "defaults to bin/, conf/, lib/, and public/"
+    )
+
+    val cacheKey = TaskKey[String](
+      "cacheKey",
+      "CacheKey for current project - changes on new commits to src directory and dependency changes"
     )
 
     val gitRepoClean = taskKey[Unit]("Succeeds if the git repository is clean")
@@ -188,7 +193,7 @@ object DeployPlugin extends AutoPlugin {
 
     log.info(s"Building ${(name in thisProject).value} . . .")
 
-    val universalStagingDir = stageAndChecksum.value
+    val universalStagingDir = stageAndCacheKey.value
 
     val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
     if (envConfFile.exists) {
@@ -245,9 +250,34 @@ object DeployPlugin extends AutoPlugin {
     log.info("Deploy complete. Validate your server!")
   }
 
-  val stageAndChecksumTask = stageAndChecksum := {
+  // we stage and generate the cache key in the same task so that stage only runs once
+  val stageAndCacheKeyTask = stageAndCacheKey := {
+    import VersionInjectorPlugin.autoImport.{ gitLocalSha1 }
     val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
-    VersionInjectorPlugin.autoImport.injectCacheKey.value
+    val logger = streams.value.log
+    val allFiles = ((stageDir / "bin" +++ stageDir / "conf" +++ stageDir / "lib" +++ stageDir / "public") * ".jar").get
+    val filesToHash = allFiles filterNot { f: File =>
+      //TODO: make this a setting
+      val fileName = f.getName
+      fileName.startsWith("org.allenai.ari-api") ||
+        fileName.startsWith("org.allenai.solvers-") ||
+        fileName.startsWith("org.allenai.ari-solvers-")
+    }
+
+    val hashes = filesToHash
+      .map(Hash.apply)
+      .map(Hash.toHex)
+    // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
+    // to not change
+    val cacheKey = Hash.toHex(Hash((hashes ++ VersionInjectorPlugin.dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
+
+    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.conf")
+
+    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
+
+    val cacheKeyContents = s"""cacheKey: "$cacheKey""""
+    IO.write(cacheKeyConfFile, cacheKeyContents)
+    // return the stageDirectory so that others can depend on stage having happened via us
     stageDir
   }
 
