@@ -75,11 +75,6 @@ object DeployPlugin extends AutoPlugin {
         "defaults to bin/, conf/, lib/, and public/"
     )
 
-    val cacheKey = TaskKey[String](
-      "cacheKey",
-      "CacheKey for current project - changes on new commits to src directory and dependency changes"
-    )
-
     val gitRepoClean = taskKey[Unit]("Succeeds if the git repository is clean")
 
     val gitRepoPresent = taskKey[Unit]("Succeeds if a git repository is present in the cwd")
