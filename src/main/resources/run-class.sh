@@ -97,12 +97,18 @@ CONF_FILE="-Dconfig.file=conf/application.conf"
 if [ -e conf/env.conf ]; then
   CONF_FILE="-Dconfig.file=conf/env.conf"
 fi
+
 #Add a cache-key config, user tests for existence
-CACHEKEY_CONF_FILE="-Dconfig.file=conf/cacheKey.conf"
+CACHEKEY="NONE"
+if [ -e conf/cacheKey.conf ]; then
+  CACHEKEY_FILE_CONTENTS = $(<cacheKey.conf)
+  CACHEKEY=${CACHEKEY_FILE_CONTENTS##*: }
+  ADD_CACHEKEY="-DApplication.cacheKey=$CACHEKEY"
+fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
 JAVA_CMD=(java $JVM_ARGS -classpath $CLASSPATH $CONF_FILE
-  ${LOGBACK_CONF[@]} $CACHEKEY_CONF_FILE)
+  ${LOGBACK_CONF[@]} $ADDCACHEKEY)
 
 # Run java.
 echo "running in `pwd` ..."
