@@ -245,12 +245,23 @@ object DeployPlugin extends AutoPlugin {
     log.info("Deploy complete. Validate your server!")
   }
 
+  lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
+    // get the local dependencies
+    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
+    // this is weird, we create a scopefilter on the dependencies
+    val filter = ScopeFilter(inProjects(MRCs: _*))
+    // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
+    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
+    gitLocalSha1.all(filter)
+  }
+
   // we stage and generate the cache key in the same task so that stage only runs once
   val stageAndCacheKeyTask = stageAndCacheKey := {
-    import VersionInjectorPlugin.autoImport.{ gitLocalSha1 }
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
     val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
     val logger = streams.value.log
-    val allFiles = ((stageDir / "bin" +++ stageDir / "conf" +++ stageDir / "lib" +++ stageDir / "public") * ".jar").get
+    val allFiles = ((stageDir / "lib")).get
     val filesToHash = allFiles filterNot { f: File =>
       //TODO: make this a setting
       val fileName = f.getName
@@ -264,7 +275,7 @@ object DeployPlugin extends AutoPlugin {
       .map(Hash.toHex)
     // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
     // to not change
-    val cacheKey = Hash.toHex(Hash((hashes ++ VersionInjectorPlugin.dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
+    val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
 
     val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.conf")
 

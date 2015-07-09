@@ -130,16 +130,6 @@ object VersionInjectorPlugin extends AutoPlugin {
   // We have to use a dynamic task because generating tasks based on project dependencies
   // necessarily alters the task graph.
 
-  lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
-    // get the local dependencies
-    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
-    // this is weird, we create a scopefilter on the dependencies
-    val filter = ScopeFilter(inProjects(MRCs: _*))
-    // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
-    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
-    gitLocalSha1.all(filter)
-  }
-
   private def cleanArtifactName(string: String) = string.replaceAll("-", "")
 
 }
