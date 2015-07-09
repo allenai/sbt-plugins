@@ -99,7 +99,7 @@ if [ -e conf/env.conf ]; then
 fi
 
 #Add a cache-key config, user tests for existence
-CACHEKEY="NONE"
+ADD_CACHE_KEY=""
 if [ -e conf/cacheKey.conf ]; then
   CACHEKEY_FILE_CONTENTS = $(<cacheKey.conf)
   CACHEKEY=${CACHEKEY_FILE_CONTENTS##*: }
