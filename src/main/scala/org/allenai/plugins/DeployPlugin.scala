@@ -64,6 +64,8 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
+    val stageAndCacheKey = TaskKey[File]("stages and calculates cacheKey of this project")
+
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
       * deleted when the rsync runs, which we don't want to happen.
@@ -145,8 +147,6 @@ object DeployPlugin extends AutoPlugin {
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
-    VersionInjectorPlugin.autoImport.injectCacheKey.value
-
     val log = DeployLogger(streams.value.log)
 
     val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
@@ -188,7 +188,7 @@ object DeployPlugin extends AutoPlugin {
 
     log.info(s"Building ${(name in thisProject).value} . . .")
 
-    val universalStagingDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    val universalStagingDir = stageAndCacheKey.value
 
     val envConfFile = new File(universalStagingDir, s"conf/${deployEnv}.conf")
     if (envConfFile.exists) {
@@ -243,6 +243,48 @@ object DeployPlugin extends AutoPlugin {
     log.info("")
     // TODO(jkinkead): Run an automated "/info/name" check here to see if service is running.
     log.info("Deploy complete. Validate your server!")
+  }
+
+  lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
+    // get the local dependencies
+    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
+    // this is weird, we create a scopefilter on the dependencies
+    val filter = ScopeFilter(inProjects(MRCs: _*))
+    // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
+    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
+    gitLocalSha1.all(filter)
+  }
+
+  // we stage and generate the cache key in the same task so that stage only runs once
+  val stageAndCacheKeyTask = stageAndCacheKey := {
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
+    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    val logger = streams.value.log
+    val allFiles = ((stageDir / "lib")).get
+    val filesToHash = allFiles filterNot { f: File =>
+      //TODO: make this a setting
+      val fileName = f.getName
+      fileName.startsWith("org.allenai.ari-api") ||
+        fileName.startsWith("org.allenai.solvers-") ||
+        fileName.startsWith("org.allenai.ari-solvers-")
+    }
+
+    val hashes = filesToHash
+      .map(Hash.apply)
+      .map(Hash.toHex)
+    // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
+    // to not change
+    val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
+
+    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.conf")
+
+    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
+
+    val cacheKeyContents = s"""cacheKey: "$cacheKey""""
+    IO.write(cacheKeyConfFile, cacheKeyContents)
+    // return the stageDirectory so that others can depend on stage having happened via us
+    stageDir
   }
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
