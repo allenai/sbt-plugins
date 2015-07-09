@@ -103,7 +103,7 @@ ADD_CACHE_KEY=""
 if [ -e conf/cacheKey.conf ]; then
   CACHEKEY_FILE_CONTENTS = $(<cacheKey.conf)
   CACHEKEY=${CACHEKEY_FILE_CONTENTS##*: }
-  ADD_CACHEKEY="-DApplication.cacheKey=$CACHEKEY"
+  ADD_CACHEKEY="-Dapplication.cacheKey=$CACHEKEY"
 fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
