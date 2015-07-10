@@ -100,15 +100,14 @@ fi
 
 #Add a cache-key config, user tests for existence
 ADD_CACHE_KEY=""
-if [ -e conf/cacheKey.conf ]; then
-  CACHEKEY_FILE_CONTENTS = $(<cacheKey.conf)
-  CACHEKEY=${CACHEKEY_FILE_CONTENTS##*: }
-  ADD_CACHEKEY="-Dapplication.cacheKey=$CACHEKEY"
+if [ -e conf/cacheKey.Sha1 ]; then
+  CACHEKEY = $(<cacheKey.conf)
+  ADD_CACHE_KEY="-Dapplication.cacheKey=$"CACHEKEY""
 fi
 
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
 JAVA_CMD=(java $JVM_ARGS -classpath $CLASSPATH $CONF_FILE
-  ${LOGBACK_CONF[@]} $ADDCACHEKEY)
+  ${LOGBACK_CONF[@]} $ADD_CACHE_KEY)
 
 # Run java.
 echo "running in `pwd` ..."
