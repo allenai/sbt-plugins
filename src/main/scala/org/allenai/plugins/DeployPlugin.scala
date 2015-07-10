@@ -89,6 +89,17 @@ object DeployPlugin extends AutoPlugin {
     def error(msg: String): Unit = sbtLogger.error(logMsg(msg))
   }
 
+  lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
+    // get the local dependencies
+    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
+    // this is weird, we create a scopefilter on the dependencies
+    val filter = ScopeFilter(inProjects(MRCs: _*))
+    // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
+    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
+    gitLocalSha1.all(filter)
+  }
+
   val gitRepoCleanTask = gitRepoClean := {
     // Dependencies
     gitRepoPresent.value
@@ -243,17 +254,6 @@ object DeployPlugin extends AutoPlugin {
     log.info("")
     // TODO(jkinkead): Run an automated "/info/name" check here to see if service is running.
     log.info("Deploy complete. Validate your server!")
-  }
-
-  lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
-    import VersionInjectorPlugin.autoImport.gitLocalSha1
-    // get the local dependencies
-    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
-    // this is weird, we create a scopefilter on the dependencies
-    val filter = ScopeFilter(inProjects(MRCs: _*))
-    // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
-    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
-    gitLocalSha1.all(filter)
   }
 
   // we stage and generate the cache key in the same task so that stage only runs once
