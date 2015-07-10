@@ -277,11 +277,11 @@ object DeployPlugin extends AutoPlugin {
     // to not change
     val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
 
-    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.conf")
+    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.Sha1")
 
     logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
 
-    val cacheKeyContents = s"""cacheKey: "$cacheKey""""
+    val cacheKeyContents = s"$cacheKey"
     IO.write(cacheKeyConfFile, cacheKeyContents)
     // return the stageDirectory so that others can depend on stage having happened via us
     stageDir
