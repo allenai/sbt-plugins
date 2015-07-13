@@ -281,8 +281,7 @@ object DeployPlugin extends AutoPlugin {
 
     logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
 
-    val cacheKeyContents = s"$cacheKey"
-    IO.write(cacheKeyConfFile, cacheKeyContents)
+    IO.write(cacheKeyConfFile, cacheKey)
     // return the stageDirectory so that others can depend on stage having happened via us
     stageDir
   }
