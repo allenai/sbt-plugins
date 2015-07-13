@@ -84,6 +84,12 @@ A simple configuration using `global_deploy.conf` could look like:
 
 The `ari-core` project has a more complicated example using more features of the [HOCON language](https://github.com/typesafehub/config/blob/master/HOCON.md).
 
+### caching
+By Default, the deployTask generates a cacheKey for the subproject that changes on dependency changes or new git commits to the subproject src directory.
+run-class.sh injects it into the VM in the application variable `application.cacheKey`.
+
+If you want the cacheKey to be generated locally, running the `stageAndCacheKey` task from Sbt will spit a cacheKey into stage/conf/cacheKey.Sha1
+
 run-class.sh
 ------------
 
