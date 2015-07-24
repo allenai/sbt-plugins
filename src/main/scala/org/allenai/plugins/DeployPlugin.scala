@@ -64,7 +64,7 @@ object DeployPlugin extends AutoPlugin {
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
 
-    val stageAndCacheKey = TaskKey[File]("stages and calculates cacheKey of this project")
+    val stageAndCacheKey = taskKey[File]("stages and calculates cacheKey of this project")
 
     /** The reason this is a Setting instead of just including * is that including * in the rsync
       * command causes files created on the server side (like log files and .pid files) to be
@@ -293,6 +293,7 @@ object DeployPlugin extends AutoPlugin {
     deployDirs := Seq("bin", "conf", "lib", "public"),
     nodeEnv := "prod",
     deployTask,
+    stageAndCacheKeyTask,
     // Clean up anything leftover in the staging directory before re-staging.
     UniversalPlugin.autoImport.stage <<=
       UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
