@@ -1,4 +1,8 @@
-libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0")
+resolvers += "Sonatype-Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
+libraryDependencies ++= Seq(
+  "com.typesafe" % "config" % "1.2.0",
+  "info.cukes" % "cucumber-scala_2.10" % "1.1.5" % "test")
 
 organization := "org.allenai.plugins"
 
@@ -12,18 +16,13 @@ scalacOptions := Seq(
   "-unchecked",
   "-deprecation",
   "-language:_",
+
   "-Xlog-reflective-calls")
 
 // SBT requires 2.10 for now (1/15/15).
 scalaVersion := "2.10.4"
 
 sbtPlugin := true
-
-resolvers += "Templemore Repository" at "http://templemore.co.uk/repo"
-
-addSbtPlugin("templemore" % "sbt-cucumber-plugin" % "0.8.0")
-
-seq(cucumberSettingsWithTestPhaseIntegration : _*)
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.0")
 
@@ -46,6 +45,13 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 
 // Allows us to test our plugins via the sbt-scripted plugin:
 scriptedSettings
+
+//Allows us to test our plugins via cucumber:
+cucumberSettings
+
+cucumberFeaturesLocation := "./test/features"
+
+cucumberStepsBasePackage := "features.steps"
 
 // Publication settings.
 
