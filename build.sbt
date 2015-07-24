@@ -19,6 +19,12 @@ scalaVersion := "2.10.4"
 
 sbtPlugin := true
 
+resolvers += "Templemore Repository" at "http://templemore.co.uk/repo"
+
+addSbtPlugin("templemore" % "sbt-cucumber-plugin" % "0.8.0")
+
+seq(cucumberSettingsWithTestPhaseIntegration : _*)
+
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.0")
 
 addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")
