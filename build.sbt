@@ -49,7 +49,7 @@ scriptedSettings
 //Allows us to test our plugins via cucumber:
 cucumberSettings
 
-cucumberFeaturesLocation := "./test/features"
+cucumberFeaturesLocation := "./src/test/features"
 
 cucumberStepsBasePackage := "features.steps"
 
