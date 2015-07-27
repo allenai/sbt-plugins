@@ -1,8 +1,5 @@
-resolvers += Resolver.sonatypeRepo("snapshots")
-
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  "info.cukes" %% "cucumber" % "1.2.3" % "test",
   "org.scalatest" % "scalatest_2.10" % "2.1.6" % "test"
 )
 
@@ -48,14 +45,6 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 // Allows us to test our plugins via the sbt-scripted plugin:
 scriptedSettings
 
-//Allows us to test our plugins via cucumber by running sbt cucumber:
-// Cucumber is a test framework where you write your tests in an english-like DSL called Gherkin in .feature files,
-// and then write the steps to execute those tests in whatever supported language you please (here, scala)
-// www.cucumber.io
-// plugin used is here: github.com/skipoleschris/xsbt-cucumber-plugin
-cucumberSettings
-
-cucumberFeaturesLocation := "./src/test/features"
 
 // Publication settings.
 
