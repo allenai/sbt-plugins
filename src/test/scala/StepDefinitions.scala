@@ -10,16 +10,15 @@ class StepDefinitions extends ScalaDsl with EN with MustMatchers {
   private var cacheKey2 = Option("cacheKey2")
 
   def runStageAndCacheKey(): Boolean = {
-    print(new java.io.File(".").getCanonicalPath)
-    Seq("sbt", "stageAndCacheKey").!
+    Process(Seq("sbt", ";clean", ";stageAndCacheKey"), new java.io.File("./test-projects/test-deploy")).!!
     true
   }
 
   def getCacheKey(): Option[String] = {
     import scala.io.Source
-    val filename = "."
-    val fileContents = Source.fromFile(filename).getLines.mkString
-    None
+    try {
+      Some(Source.fromFile("./test-projects/test-deploy/service/target/universal/stage/conf/cacheKey.Sha1").getLines.mkString)
+    } catch { case _ => None }
   }
 
   def generateCacheKey(): Option[String] = {
@@ -31,7 +30,10 @@ class StepDefinitions extends ScalaDsl with EN with MustMatchers {
 
   def makeGitCommit(): Unit = {}
 
-  def cleanUp(): Unit = {}
+  def cleanUp(): Unit = {
+    // Remove dependency that was added (sed remove last line from file)
+    Seq("sed", "-i", "$ d", "build.sbt")!
+  }
 
   Given("""^we have run the stageAndCacheKey task$""") { () => runStageAndCacheKey() }
 
