@@ -2,7 +2,7 @@ resolvers += "Sonatype-Snapshots" at "https://oss.sonatype.org/content/repositor
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  "info.cukes" % "cucumber-scala_2.10" % "1.2.3" % "test",
+  "info.cukes" %% "cucumber" % "1.2.3" % "test",
   "org.scalatest" % "scalatest_2.10" % "2.1.6" % "test"
 )
 
