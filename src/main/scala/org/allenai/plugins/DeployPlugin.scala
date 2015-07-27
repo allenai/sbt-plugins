@@ -261,7 +261,7 @@ object DeployPlugin extends AutoPlugin {
     import VersionInjectorPlugin.autoImport.gitLocalSha1
     val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
     val logger = streams.value.log
-    val allFiles = ((stageDir / "lib")).get
+    val allFiles = (((stageDir / "lib")) * ".jar").get
     val filesToHash = allFiles filterNot { f: File =>
       //TODO: make this a setting
       val fileName = f.getName
