@@ -26,13 +26,21 @@ class StepDefinitions extends ScalaDsl with EN with MustMatchers {
     getCacheKey()
   }
 
-  def changeDependencies(): Unit = {}
+  def addADependency(): Unit = {
+    Seq("bash", "-c", "echo libraryDependencies += \\\"org.apache.derby\\\" % \\\"derby\\\" % \\\"10.4.1.3\\\" > build.sbt").!!
+  }
 
-  def makeGitCommit(): Unit = {}
+  def makeGitCommit(): Unit = {
+    Seq("bash", "-c", "echo forTheCommit > src/test-projects/test-deploy/service/src/main/scala/forCommit.txt",
+      "git add src/test-projects/test-deploy/service/src/main/scala/forCommit.txt",
+      "git commit -m \" commit for testing \"").!!
+  }
 
   def cleanUp(): Unit = {
     // Remove dependency that was added (sed remove last line from file)
-    Seq("sed", "-i", "$ d", "build.sbt")!
+    Seq("sed", "-i", "$ d", "build.sbt").!!
+    // Remove git commit that was added (git remove last commit & reset file state)
+    Seq("git", "reset", "--hard", "HEAD~1").!!
   }
 
   Given("""^we have run the stageAndCacheKey task$""") { () => runStageAndCacheKey() }
@@ -45,7 +53,7 @@ class StepDefinitions extends ScalaDsl with EN with MustMatchers {
 
   Then("""^the cachekeys should be the same$""") { () => cacheKey1 == cacheKey2 }
 
-  When("""^we change the dependencies$""") { () => changeDependencies() }
+  When("""^we change the dependencies$""") { () => addADependency() }
 
   Then("""^the cachekeys should be different$""") { () => cacheKey1 != cacheKey2 }
 
