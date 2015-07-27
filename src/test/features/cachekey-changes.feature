@@ -1,5 +1,5 @@
 Feature: Generating Cachekeys that change only on dependency changes and git commits
-        Scenario: Cachekeys are injected properly
+	Scenario: Cachekeys are injected properly
 		Given we have run the stageAndCacheKey task
 		Then the cachekey should exist in the right location
 

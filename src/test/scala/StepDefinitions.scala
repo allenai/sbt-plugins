@@ -27,13 +27,13 @@ class StepDefinitions extends ScalaDsl with EN with MustMatchers {
   }
 
   def addADependency(): Unit = {
-    Seq("bash", "-c", "echo libraryDependencies += \\\"org.apache.derby\\\" % \\\"derby\\\" % \\\"10.4.1.3\\\" > build.sbt").!!
+    Seq("bash", "-c", "echo libraryDependencies += \\\"org.apache.derby\\\" % \\\"derby\\\" % \\\"10.4.1.3\\\" >> build.sbt").!!
   }
 
   def makeGitCommit(): Unit = {
-    Seq("bash", "-c", "echo forTheCommit > src/test-projects/test-deploy/service/src/main/scala/forCommit.txt",
-      "git add src/test-projects/test-deploy/service/src/main/scala/forCommit.txt",
-      "git commit -m \" commit for testing \"").!!
+    Seq("bash", "-c", "echo \"something\" >> test-projects/test-deploy/service/src/main/resources/forCommit.txt").!!
+    Seq("git", "add", "test-projects/test-deploy/service/src/main/resources/forCommit.txt").!!
+    Seq("git", "commit", "-m", "\"commit for testing \"").!!
   }
 
   def cleanUp(): Unit = {
