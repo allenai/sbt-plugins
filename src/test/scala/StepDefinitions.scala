@@ -1,17 +1,26 @@
-package features.steps
 
-import org.scalatest.Matchers
+
 import cucumber.api.scala.{ ScalaDsl, EN }
-import cucumber.api.DataTable
+import org.scalatest.matchers.MustMatchers
 import cucumber.api.PendingException
 
-class StepDefinitions extends ScalaDsl with EN with Matchers {
-  private var cacheKey1 = "cacheKey1"
-  private var cacheKey2 = "cacheKey2"
+import scala.sys.process._
+class StepDefinitions extends ScalaDsl with EN with MustMatchers {
+  private var cacheKey1 = Option("cacheKey1")
+  private var cacheKey2 = Option("cacheKey2")
 
-  def runStageAndCacheKey(): Boolean = false
+  def runStageAndCacheKey(): Boolean = {
+    print(new java.io.File(".").getCanonicalPath)
+    Seq("sbt", "stageAndCacheKey").!
+    true
+  }
 
-  def getCacheKey(): Option[String] = None
+  def getCacheKey(): Option[String] = {
+    import scala.io.Source
+    val filename = "."
+    val fileContents = Source.fromFile(filename).getLines.mkString
+    None
+  }
 
   def generateCacheKey(): Option[String] = {
     runStageAndCacheKey()
@@ -26,7 +35,7 @@ class StepDefinitions extends ScalaDsl with EN with Matchers {
 
   Given("""^we have run the stageAndCacheKey task$""") { () => runStageAndCacheKey() }
 
-  Then("""^the cachekey should exist in the right location$""") { () => generateCacheKey() != None }
+  Then("""^the cachekey should exist in the right location$""") { () => getCacheKey() != None }
 
   Given("""^we have generated a cachekey$""") { () => cacheKey1 = generateCacheKey() }
 

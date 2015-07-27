@@ -2,7 +2,9 @@ resolvers += "Sonatype-Snapshots" at "https://oss.sonatype.org/content/repositor
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  "info.cukes" % "cucumber-scala_2.10" % "1.1.5" % "test")
+  "info.cukes" % "cucumber-scala_2.10" % "1.2.3" % "test",
+  "org.scalatest" % "scalatest_2.10" % "2.1.6" % "test"
+)
 
 organization := "org.allenai.plugins"
 
@@ -51,7 +53,7 @@ cucumberSettings
 
 cucumberFeaturesLocation := "./src/test/features"
 
-cucumberStepsBasePackage := "features.steps"
+//cucumberStepsBasePackage := "features.steps"
 
 // Publication settings.
 
