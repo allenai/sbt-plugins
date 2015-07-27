@@ -14,9 +14,9 @@ class cacheKeyTest {
     (1 to dependenciesAdded) foreach (x => Seq("git", "reset", "--hard", "HEAD~1").!!)
   }
 
-  def generateCacheKey1() =  { cacheKey1 = generateCacheKey() }
+  def generateCacheKey1() = { cacheKey1 = generateCacheKey() }
 
-  def generateCacheKey2() =  { cacheKey2 = generateCacheKey() }
+  def generateCacheKey2() = { cacheKey2 = generateCacheKey() }
 
   def generateCacheKey(): Option[String] = {
     runStageAndCacheKey()
@@ -49,10 +49,6 @@ class cacheKeyTest {
 }
 
 class CacheKeyTestSpec extends FeatureSpec with GivenWhenThen {
-  private var cacheKey1 = Option("cacheKey1")
-  private var cacheKey2 = Option("cacheKey2")
-
-
   feature("CacheKey Generation") {
     scenario("CacheKeys remain the same on rebuild") {
       Given("we have generated a cacheKey")
@@ -60,17 +56,17 @@ class CacheKeyTestSpec extends FeatureSpec with GivenWhenThen {
       cacheKeyTest.generateCacheKey1()
 
       Then("the cachekey should exist in the right location")
-      assert(cacheKeyTest.getCacheKey() != None)     
+      assert(cacheKeyTest.getCacheKey() != None)
     }
 
     scenario("CacheKeys remain the same on rebuild") {
       Given("we have generated a cacheKey")
       val cacheKeyTest = new CacheKeyTest
       cacheKeyTest.generateCacheKey1()
-      
+
       When("we generate a cacheKey again")
-      cacheKeyTest.generateCacheKey2()  
-      
+      cacheKeyTest.generateCacheKey2()
+
       Then("the cachekeys should be different")
       assert(!cacheKeyTest.areCacheKeysEqual())
     }
@@ -85,14 +81,14 @@ class CacheKeyTestSpec extends FeatureSpec with GivenWhenThen {
       cacheKeyTest.generateCacheKey2()
 
       Then("the cachekeys should be different")
-      assert(!cacheKeyTest.areCacheKeysEqual()
+      assert(!cacheKeyTest.areCacheKeysEqual())
     }
-    
+
     scenario("CacheKeys change on git commits to local dependencies") {
       Given("we have generated a cacheKey")
       val cacheKeyTest = new CacheKeyTest
       cacheKeyTest.generateCacheKey1()
-      
+
       When("we make a git commit to a local dependency and generate a cacheKey again")
       cacheKeyTest.makeGitCommit()
       cacheKeyTest.generateCacheKey2()
@@ -105,7 +101,7 @@ class CacheKeyTestSpec extends FeatureSpec with GivenWhenThen {
       Given("we have generated a cacheKey")
       val cacheKeyTest = new CacheKeyTest
       cacheKeyTest.generateCacheKey1()
-      
+
       When("we make a git commit to src dir and generate a cacheKey again")
       cacheKeyTest.makeGitCommit()
       cacheKeyTest.generateCacheKey2()
@@ -114,6 +110,5 @@ class CacheKeyTestSpec extends FeatureSpec with GivenWhenThen {
       assert(!cacheKeyTest.areCacheKeysEqual())
     }
 
-
   }
-
+}
