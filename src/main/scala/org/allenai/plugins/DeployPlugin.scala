@@ -60,6 +60,8 @@ object DeployPlugin extends AutoPlugin {
         "Defaults to false"
     )
 
+    val filterNotCacheKeyGenFileNames = settingKey[Seq[String]]("starts of jars in stage you don't want hashed for cachekey")
+
     val cleanStage = taskKey[Unit](
       "Cleans the staging directory. This is not done by default by the universal packager."
     )
@@ -167,12 +169,12 @@ object DeployPlugin extends AutoPlugin {
     if (reducedArgs.length != 1) {
       throw new IllegalArgumentException(Usage)
     }
-
     val workingDirectory = (baseDirectory in thisProject).value
     val configFile = new File(workingDirectory.getPath + "/conf/deploy.conf")
     if (!configFile.isFile()) {
       throw new IllegalArgumentException(s"${configFile.getPath()}: Must be a config file")
     }
+
     val deployTarget = reducedArgs(0)
 
     val targetConfig = loadTargetConfig(commandlineOverrides, configFile, deployTarget)
@@ -261,15 +263,12 @@ object DeployPlugin extends AutoPlugin {
     import VersionInjectorPlugin.autoImport.gitLocalSha1
     val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
     val logger = streams.value.log
-    val allFiles = (((stageDir / "lib")) * ".jar").get
+    val allFiles = (((stageDir / "lib")) * "*.jar").get
     val filesToHash = allFiles filterNot { f: File =>
       //TODO: make this a setting
       val fileName = f.getName
-      fileName.startsWith("org.allenai.ari-api") ||
-        fileName.startsWith("org.allenai.solvers-") ||
-        fileName.startsWith("org.allenai.ari-solvers-")
+      autoImport.filterNotCacheKeyGenFileNames.value.exists(fileName.startsWith(_))
     }
-
     val hashes = filesToHash
       .map(Hash.apply)
       .map(Hash.toHex)
@@ -312,6 +311,7 @@ object DeployPlugin extends AutoPlugin {
     // You can opt-in by setting `makeDefaultBashScript := true` in your
     // build.sbt
     makeDefaultBashScript := false,
+    filterNotCacheKeyGenFileNames := Seq(),
     JavaAppPackaging.autoImport.makeBashScript := {
       if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
     },
