@@ -1,8 +1,6 @@
-import Dependencies._
-
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  allenAiTestkit % "test"  
+  "org.allenai.common" %% "testkit" % "0.0.1-SNAPSHOT" % "test"  
 )
 
 organization := "org.allenai.plugins"
