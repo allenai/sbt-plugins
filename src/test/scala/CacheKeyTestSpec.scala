@@ -14,7 +14,7 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
   }
 
   def addADependency(): Unit = {
-    Seq("bash", "-c", "echo libraryDependencies += \\\"org.apache.derby\\\" % \\\"derby\\\" % \\\"10.4.1.3\\\" >> build.sbt").!!
+    Seq("bash", "-c", "echo libraryDependencies += \\\"org.apache.derby\\\" % \\\"derby\\\" % \\\"10.4.1.3\\\" >> test-projects/test-deploy/service/build.sbt").!!
   }
 
   def makeGitCommit(dir: Strint): Unit = {
