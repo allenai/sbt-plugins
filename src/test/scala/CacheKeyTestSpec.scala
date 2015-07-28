@@ -1,21 +1,14 @@
 import org.allenai.common.testkit.UnitSpec
+import org.scalatest.BeforeAndAfter
 import scala.sys.process._
 import scala.io.Source
 
-class CacheKeyTestSpec extends UnitSpec {
+class CacheKeyTestSpec extends UnitSpec with BeforeAndAfter {
   private var cacheKey1: Option[String] = None
   private var cacheKey2: Option[String] = None
-  private var gitCommitsMade = 0
-  private var dependenciesAdded = 0
+  private var originalGitCommit: String = ""
 
   // Helper methods
-  def cleanUp(): Unit = {
-    // Remove dependency that was added (sed remove last line from file)
-    (1 to gitCommitsMade) foreach (x => Seq("sed", "-i", "$ d", "build.sbt").!!)
-    // Remove git commit that was added (git remove last commit & reset file state)
-    (1 to dependenciesAdded) foreach (x => Seq("git", "reset", "--hard", "HEAD~1").!!)
-  }
-
   def generateCacheKey(): Option[String] = {
     runStageAndCacheKey()
     getCacheKey()
@@ -42,7 +35,13 @@ class CacheKeyTestSpec extends UnitSpec {
     } catch { case _ => None }
   }
 
-  def areCacheKeysEqual() = cacheKey1 == cacheKey2
+  before {
+    originalGitCommit = Seq("git", "log", "--pretty=format:%H", "-n1").!!.trim
+  }
+
+  after {
+    Seq("git", "reset", "--hard", originalGitCommit).!!
+  }
 
   "A cachekey" should "be injected properly" in {
     val cacheKey = generateCacheKey()
