@@ -67,7 +67,7 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
     assert(cacheKey1 != cacheKey2)
   }
 
-  "A cachekey" should "change on git commits to src dir of project"{
+  "A cachekey" should "change on git commits to src dir of project" in {
     val cacheKey1 = generateCacheKey()
     makeGitCommit()
     val cacheKey2 = generateCacheKey()
