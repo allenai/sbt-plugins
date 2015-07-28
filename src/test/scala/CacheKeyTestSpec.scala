@@ -17,8 +17,8 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
     Seq("bash", "-c", "echo libraryDependencies += \\\"org.apache.derby\\\" % \\\"derby\\\" % \\\"10.4.1.3\\\" >> build.sbt").!!
   }
 
-  def makeGitCommit(): Unit = {
-    Seq("bash", "-c", "echo \"something\" >> test-projects/test-deploy/service/src/main/resources/forCommit.txt").!!
+  def makeGitCommit(dir: Strint): Unit = {
+    Seq("bash", "-c", s"""echo \"something\" >>${dir}/forCommit.txt").!!""").!!
     Seq("git", "add", "test-projects/test-deploy/service/src/main/resources/forCommit.txt").!!
     Seq("git", "commit", "-m", "\"commit for testing \"").!!
   }
@@ -62,14 +62,14 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
 
   "A cachekey" should "change on git commits to local dependencies" in {
     val cacheKey1 = generateCacheKey()
-    makeGitCommit()
+    makeGitCommit("test-projects/test-deploy/webapp/src/main/resources")
     val cacheKey2 = generateCacheKey()
     assert(cacheKey1 != cacheKey2)
   }
 
   "A cachekey" should "change on git commits to src dir of project" in {
     val cacheKey1 = generateCacheKey()
-    makeGitCommit()
+    makeGitCommit("test-projects/test-deploy/service/src/main/resources")
     val cacheKey2 = generateCacheKey()
     assert(cacheKey1 != cacheKey2)
   }
