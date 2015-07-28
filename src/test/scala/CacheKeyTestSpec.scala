@@ -1,9 +1,8 @@
-import org.allenai.common.testkit.UnitSpec
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{ BeforeAndAfter, FlatSpecLike, Matchers, OneInstancePerTest }
 import scala.sys.process._
 import scala.io.Source
 
-class CacheKeyTestSpec extends UnitSpec with BeforeAndAfter {
+class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTest with BeforeAndAfter {
   private var cacheKey1: Option[String] = None
   private var cacheKey2: Option[String] = None
   private var originalGitCommit: String = ""

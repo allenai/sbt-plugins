@@ -1,6 +1,8 @@
+resolvers += Resolver.jcenterRepo
+ 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  "org.allenai.common" %% "testkit" % "0.0.1-SNAPSHOT" % "test"  
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"  
 )
 
 organization := "org.allenai.plugins"
