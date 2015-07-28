@@ -1,6 +1,8 @@
+import Dependencies._
+
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  "org.scalatest" % "scalatest_2.10" % "2.1.6" % "test"
+  allenAiTestkit % "test"  
 )
 
 organization := "org.allenai.plugins"
