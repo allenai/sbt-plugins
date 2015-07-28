@@ -67,8 +67,8 @@ class CacheKeyTestSpec extends FeatureSpec with GivenWhenThen {
       When("we generate a cacheKey again")
       cacheKeyTest.generateCacheKey2()
 
-      Then("the cachekeys should be different")
-      assert(!cacheKeyTest.areCacheKeysEqual())
+      Then("the cachekeys should be the same")
+      assert(cacheKeyTest.areCacheKeysEqual())
     }
 
     scenario("CacheKeys change on dependency changes") {
