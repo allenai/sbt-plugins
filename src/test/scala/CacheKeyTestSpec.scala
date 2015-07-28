@@ -18,8 +18,8 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
   }
 
   def makeGitCommit(dir: String): Unit = {
-    Seq("bash", "-c", s"""echo \"something\" >>${dir}/forCommit.txt").!!""").!!
-    Seq("git", "add", "test-projects/test-deploy/service/src/main/resources/forCommit.txt").!!
+    Seq("bash", "-c", s"""echo \"something\" >> ${dir}/forCommit.txt""").!!
+    Seq("git", "add", s"""${dir}/forCommit.txt""").!!
     Seq("git", "commit", "-m", "\"commit for testing \"").!!
   }
 
