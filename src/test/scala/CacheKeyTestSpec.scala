@@ -1,7 +1,9 @@
 import org.scalatest.{ BeforeAndAfter, FlatSpecLike, Matchers, OneInstancePerTest }
 import scala.sys.process._
 import scala.io.Source
-
+/* This Test Class is for testing cachekey generation functionality in the deployPlugin. When the stageAndCacheKey sbt task is called in that plugin, we generate * a cachekey for the current project that changes on dependency changes, and git commits to the projects src, and any git commits to local jars that the project
+* depends on. We have to filter out the project & any jars that it depends on - this is a settingkey that the user needs to set themself in project/plugins.sbt*
+*/
 class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTest with BeforeAndAfter {
   private var cacheKey1: Option[String] = None
   private var cacheKey2: Option[String] = None
