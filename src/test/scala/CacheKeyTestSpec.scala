@@ -25,9 +25,8 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
     Seq("git", "commit", "-m", "\"commit for testing \"").!!
   }
 
-  def runStageAndCacheKey(): Boolean = {
+  def runStageAndCacheKey(): Unit = {
     Process(Seq("sbt", ";clean", ";stageAndCacheKey"), new java.io.File("./test-projects/test-deploy")).!!
-    true
   }
 
   def getCacheKey(): Option[String] = {
@@ -49,27 +48,27 @@ class CacheKeyTestSpec extends FlatSpecLike with Matchers with OneInstancePerTes
     assert(cacheKey != None)
   }
 
-  "A cachekey" should "be the same on rebuild" in {
+  it should "be the same on rebuild" in {
     val cacheKey1 = generateCacheKey()
     val cacheKey2 = generateCacheKey()
-    assert(cacheKey1 == cacheKey2)
+    assert(cacheKey1 === cacheKey2)
   }
 
-  "A cachekey" should "change on dependency changes" in {
+  it should "change on dependency changes" in {
     val cacheKey1 = generateCacheKey()
     addADependency()
     val cacheKey2 = generateCacheKey()
     assert(cacheKey1 != cacheKey2)
   }
 
-  "A cachekey" should "change on git commits to local dependencies" in {
+  it should "change on git commits to local dependencies" in {
     val cacheKey1 = generateCacheKey()
     makeGitCommit("test-projects/test-deploy/webapp/src/main/resources")
     val cacheKey2 = generateCacheKey()
     assert(cacheKey1 != cacheKey2)
   }
 
-  "A cachekey" should "change on git commits to src dir of project" in {
+  it should "change on git commits to src dir of project" in {
     val cacheKey1 = generateCacheKey()
     makeGitCommit("test-projects/test-deploy/service/src/main/resources")
     val cacheKey2 = generateCacheKey()

@@ -265,7 +265,6 @@ object DeployPlugin extends AutoPlugin {
     val logger = streams.value.log
     val allFiles = (((stageDir / "lib")) * "*.jar").get
     val filesToHash = allFiles filterNot { f: File =>
-      //TODO: make this a setting
       val fileName = f.getName
       autoImport.filterNotCacheKeyGenFileNames.value.exists(fileName.startsWith(_))
     }
