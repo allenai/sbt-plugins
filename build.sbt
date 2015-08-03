@@ -1,4 +1,9 @@
-libraryDependencies ++= Seq("com.typesafe" % "config" % "1.2.0")
+resolvers += Resolver.jcenterRepo
+ 
+libraryDependencies ++= Seq(
+  "com.typesafe" % "config" % "1.2.0",
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"  
+)
 
 organization := "org.allenai.plugins"
 
@@ -12,6 +17,7 @@ scalacOptions := Seq(
   "-unchecked",
   "-deprecation",
   "-language:_",
+
   "-Xlog-reflective-calls")
 
 // SBT requires 2.10 for now (1/15/15).
@@ -41,6 +47,7 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 // Allows us to test our plugins via the sbt-scripted plugin:
 scriptedSettings
 
+
 // Publication settings.
 
 publishMavenStyle := false
@@ -50,3 +57,4 @@ bintrayRepository := "sbt-plugins"
 bintrayOrganization := Some("allenai")
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+
