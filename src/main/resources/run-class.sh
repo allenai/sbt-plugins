@@ -100,7 +100,7 @@ fi
 
 #Add a cache-key config, user tests for existence
 ADD_CACHE_KEY=""
-if [ -e conf/cacheKey.Sha1 ]; then
+if [ -e ../conf/cacheKey.Sha1 ]; then
   CACHEKEY=$(<cacheKey.Sha1)
   ADD_CACHE_KEY="-Dapplication.cacheKey=$CACHEKEY"
 fi
