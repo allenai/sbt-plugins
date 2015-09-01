@@ -91,15 +91,31 @@ object DeployPlugin extends AutoPlugin {
     def error(msg: String): Unit = sbtLogger.error(logMsg(msg))
   }
 
+  /** Returns a filter for the local project dependencies. */
+  lazy val dependencyFilter: Def.Initialize[Task[ScopeFilter]] = Def.task {
+    val localDependencies = buildDependencies.value.classpathRefs(thisProjectRef.value)
+    ScopeFilter(inProjects(localDependencies: _*))
+  }
+
+  /** Returns all of the local dependencies' most recent git commits. */
   lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
-    import VersionInjectorPlugin.autoImport.gitLocalSha1
-    // get the local dependencies
-    val MRCs = buildDependencies.value.classpathRefs(thisProjectRef.value)
-    // this is weird, we create a scopefilter on the dependencies
-    val filter = ScopeFilter(inProjects(MRCs: _*))
-    // odd piece of syntax - returns a list of tasks (we're inside a taskDyn block) that is
-    // applying gitLocalSHa1 to all scopes in the scopefilter 'filter'
-    gitLocalSha1.all(filter)
+    VersionInjectorPlugin.autoImport.gitLocalSha1.all(dependencyFilter.value)
+  }
+
+  /** Returns the filename used by the native packager in the staging directory. */
+  lazy val stagingArtifactFilename: Def.Initialize[Task[String]] = Def.task {
+    // Adapted from http://git.io/vGoFH .
+    val organization = Keys.organization.value
+    val moduleId = projectID.value
+    val artifact = Keys.artifact.value
+    val classifier = artifact.classifier.fold("")("-" + _)
+
+    s"$organization.${artifact.name}-${moduleId.revision}$classifier.${artifact.extension}"
+  }
+
+  /** Returns all of the local dependencies' staging artifact filenames. */
+  lazy val dependentStagingArtifactFilenames: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
+    stagingArtifactFilename.all(dependencyFilter.value)
   }
 
   val gitRepoCleanTask = gitRepoClean := {
@@ -264,13 +280,14 @@ object DeployPlugin extends AutoPlugin {
     val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
     val logger = streams.value.log
     val allFiles = (((stageDir / "lib")) * "*.jar").get
+    val filteredFilenames = dependentStagingArtifactFilenames.value ++
+      filterNotCacheKeyGenFileNames.value :+
+      stagingArtifactFilename.value
     val filesToHash = allFiles filterNot { f: File =>
       val fileName = f.getName
-      autoImport.filterNotCacheKeyGenFileNames.value.exists(fileName.startsWith(_))
+      filteredFilenames.exists(fileName.startsWith)
     }
-    val hashes = filesToHash
-      .map(Hash.apply)
-      .map(Hash.toHex)
+    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex)
     // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
     // to not change
     val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
