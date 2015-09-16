@@ -104,7 +104,7 @@ object VersionInjectorPlugin extends AutoPlugin {
           "name: \"" + name + "\"\n" +
             "version: \"" + version + "\""
 
-        s.log.info(s"Generating artifact.conf managed resource... (name|version: $name|$version)")
+        s.log.debug(s"Generating artifact.conf managed resource... (name|version: $name|$version)")
 
         IO.write(artifactConfFile, artifactContents)
         artifactConfFile
@@ -115,7 +115,7 @@ object VersionInjectorPlugin extends AutoPlugin {
       (resourceManaged, org, name, version, s, remotes, sha1, date) =>
         val gitConfFile = resourceManaged / org / cleanArtifactName(name) / "git.conf"
 
-        s.log.info(s"Generating git.conf managed resource... (sha1: ${sha1})")
+        s.log.debug(s"Generating git.conf managed resource... (sha1: ${sha1})")
 
         def quote(s: String) = "\"" + s + "\""
         val gitContents =

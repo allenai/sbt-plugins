@@ -25,7 +25,7 @@ object CoreSettingsPlugin extends AutoPlugin {
 
   val generateRunClassTask = autoImport.generateRunClass := {
     val logger = streams.value.log
-    logger.info("Generating run-class.sh")
+    logger.debug("Generating run-class.sh")
     val file = (resourceManaged in Compile).value / "run-class.sh"
     // Read the plugin's resource file.
     val contents = {
@@ -39,7 +39,7 @@ object CoreSettingsPlugin extends AutoPlugin {
 
     // Copy the contents to the clients managed resources.
     IO.write(file, contents)
-    logger.info(s"Wrote ${contents.size} bytes to ${file.getPath}.")
+    logger.debug(s"Wrote ${contents.size} bytes to ${file.getPath}.")
 
     file
   }
