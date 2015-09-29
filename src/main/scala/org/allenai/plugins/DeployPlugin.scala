@@ -93,7 +93,7 @@ object DeployPlugin extends AutoPlugin {
 
   /** Returns a filter for the local project dependencies. */
   lazy val dependencyFilter: Def.Initialize[Task[ScopeFilter]] = Def.task {
-    val localDependencies = buildDependencies.value.classpathRefs(thisProjectRef.value)
+    val localDependencies = buildDependencies.value.classpathTransitiveRefs(thisProjectRef.value)
     ScopeFilter(inProjects(localDependencies: _*))
   }
 
