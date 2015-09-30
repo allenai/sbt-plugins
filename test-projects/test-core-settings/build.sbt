@@ -12,3 +12,5 @@ libraryDependencies ++= Seq(
   sprayRouting,
   akkaActor,
   sprayJson)
+
+ScaladocGenPlugin.fixNullCurrentBranch

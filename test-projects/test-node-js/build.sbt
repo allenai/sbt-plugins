@@ -24,3 +24,5 @@ Revolver.settings
 NodeKeys.nodeProjectDir in Npm := file("node-app")
 
 NodeKeys.npmLogLevel in Npm := NpmLogLevel.Info
+
+ScaladocGenPlugin.fixNullCurrentBranch
