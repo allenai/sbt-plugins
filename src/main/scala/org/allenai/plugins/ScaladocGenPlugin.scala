@@ -94,14 +94,18 @@ object ScaladocGenPlugin extends AutoPlugin {
     // Build up a regular expression that matches any of the external javadoc links we have.
     val externalUrls =
       scaladocGenJavadocUrl.value +: scaladocGenExtraJavadocMap.value.values.toVector
+    // Generate an alternation that will match any of the urls provided. Note that \Q and \E tell
+    // the compiler to escape all regex characters in the URL, such as '.'.
     val anyUrl = externalUrls map { url => s"""\\Q$url\\E""" } mkString { "|" }
+    // Final compiled regex capturing the URL matched as well as the fragment.
+    // Looks like: (\Qhttp://url1.com\E|\Qhttp://url2.com\E)#([^"]*)
     val captureUrlAndFragment = s""""($anyUrl)#([^"]*)"""".r
 
     // Run the doc task, and get the folder it generated the HTML files into.
     val docFolder: File = (doc in ScalaUnidoc).value
     val htmlFiles: Iterable[File] = (docFolder ** "*.html").get
     // Replace all the Javadoc links in the generated files.
-    htmlFiles foreach { file => 
+    htmlFiles foreach { file =>
       val oldContent: String = IO.read(file)
       val newContent: String = captureUrlAndFragment.replaceAllIn(oldContent, { regexMatch =>
         val urlBase = regexMatch.group(1)
@@ -137,7 +141,7 @@ object ScaladocGenPlugin extends AutoPlugin {
       "spray-client" -> sprayUrl,
       "spray-routing" -> sprayUrl,
       "spray-testkit" -> sprayUrl
-      // TODO(jkinkead): spray-json doesn't publish their scaladoc - link to a fork + publish.
+    // TODO(jkinkead): spray-json doesn't publish their scaladoc - link to a fork + publish.
     )
   }
   /** Setting to add API mappings for our Scala libraries. This allows the scaladoc generation task
@@ -165,7 +169,6 @@ object ScaladocGenPlugin extends AutoPlugin {
       }
     }
   }
-
 
   // The final setting is to handle awkwardness with the Git plugin.
 
@@ -201,16 +204,19 @@ object ScaladocGenPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = {
     // Dependency settings.
     UnidocPlugin.unidocSettings ++
-    SbtSite.site.settings ++
-    SbtGhPages.ghpages.settings ++
-    Seq(
-      // Local settings.
-      javadocUrlSetting,
-      extraJavadocMapSetting,
-      javaApiMappingsSetting,
-      fixJavadocSetting,
-      extraScaladocMapSetting,
-      scalaApiMappingsSetting
-    )
+      SbtSite.site.settings ++
+      SbtGhPages.ghpages.settings ++
+      Seq(
+        // Local settings.
+        javadocUrlSetting,
+        extraJavadocMapSetting,
+        javaApiMappingsSetting,
+        fixJavadocSetting,
+        extraScaladocMapSetting,
+        scalaApiMappingsSetting,
+        // This will pull in links from pom.xml files that sbt has generated, when the project sets
+        // the apiURL key.
+        autoAPIMappings := true
+      )
   }
 }
