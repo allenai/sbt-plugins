@@ -48,6 +48,16 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 scriptedSettings
 
 
+// Plugins for generating and publishing scaladoc.
+
+// sbt-unidoc lets you bundle subproject scaladoc into a single place.
+addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.3.3")
+// sbt-site has tasks for publishing websites.
+addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "0.7.1")
+// sbt-ghpages has tasks for publishing sbt-sites to github pages.
+addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.5.2")
+
+
 // Publication settings.
 
 publishMavenStyle := false
