@@ -217,8 +217,8 @@ object ScaladocGenPlugin extends AutoPlugin {
         // This will pull in links from pom.xml files that sbt has generated, when the project sets
         // the apiURL key.
         autoAPIMappings := true,
-        // This adds the output of Unidoc to the SbtSite plugin's site directory (what gets synced
-        // to github pages).
+        // This adds the output of Unidoc to the SbtSite plugin's mappings - meaning, this will end
+        // up in the `latest/api` directory of the site synced to github pages.
         SbtSite.site.addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), "latest/api")
       )
   }
