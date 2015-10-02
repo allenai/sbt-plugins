@@ -13,17 +13,20 @@ Usage
 =====
 Configuring:
 ```scala
+laze val sharedSettings = Seq(
+  // This is not strictly required, but embeds this URL into your artifact's
+  // pom.xml so that sbt can automatically generate links to it from other
+  // projects. You should set this for any subproject that will be released as a
+  // library.
+  apiURL := Some(url("https://allenai.github.io/myprojectname/latest/api/"))
+  // Any other shared project settings.
+)
 // Enable the plugin on your project, which should aggregate all of your
 // subprojects.
 lazy val myRootProject = project.in(file(".")).aggregate(one, two)
   .settings(
     // This setting is required in order for the plugin to load.
-    scaladocGenGitRemoteRepo := "git@github.com:allenai/myprojectname.git",
-    // This is not strictly required, but embeds this URL into your artifact's
-    // pom.xml so that sbt can automatically generate links to it from other
-    // projects. You should set this for any project that will be released as a
-    // library.
-    apiURL := Some(url("https://allenai.github.io/myprojectname/latest/api/"))
+    scaladocGenGitRemoteRepo := "git@github.com:allenai/myprojectname.git"
   )
   .enablePlugins(ScaladocGenPlugin)
 ```
