@@ -153,10 +153,11 @@ object ScaladocGenPlugin extends AutoPlugin {
     // The filter removes local dependencies.
     val jarSuffix = s"_${scalaBinaryVersion.value}"
     val jarFiles: Map[String, Attributed[File]] = (
-      allDependencies filter { _.data.isFile } map { attributed =>
-        val moduleId = attributed.metadata(AttributeKey[ModuleID]("moduleId"))
-        // Copy the moduleId with all non-default fields taken out.
-        moduleId.name.stripSuffix(jarSuffix) -> attributed
+      allDependencies filter { _.data.isFile } flatMap { attributed =>
+        attributed.metadata.get(AttributeKey[ModuleID]("moduleId")) map { id =>
+          // Copy the module ID with all non-default fields taken out.
+          id.name.stripSuffix(jarSuffix) -> attributed
+        }
       }
     ).toMap
     val librariesToUrls = scaladocGenExtraScaladocMap.value
