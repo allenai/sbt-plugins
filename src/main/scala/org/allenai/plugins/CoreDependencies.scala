@@ -60,7 +60,7 @@ trait CoreDependencies {
   }
 
   // AI2 common libraries
-  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "1.0.18"
+  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "1.0.19"
   val allenAiCommon = common("core")
   val allenAiGuice = common("guice")
   val allenAiTestkit = common("testkit")
