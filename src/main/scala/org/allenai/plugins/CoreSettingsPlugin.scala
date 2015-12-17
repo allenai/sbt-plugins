@@ -5,8 +5,7 @@ import sbt.Keys._
 import sbt._
 
 import scalariform.formatter.ScalaFormatter
-import scalariform.formatter.preferences.IFormattingPreferences
-import scalariform.formatter.preferences.{ DoubleIndentClassDeclaration, FormattingPreferences }
+import scalariform.formatter.preferences._
 import scalariform.parser.ScalaParserException
 
 object CoreSettingsPlugin extends AutoPlugin {
@@ -156,7 +155,11 @@ object CoreSettingsPlugin extends AutoPlugin {
         dependencyOverrides += "org.scala-lang" % "scala-library" % scalaVersion.value,
         // Override default scalariform settings.
         SbtScalariform.autoImport.scalariformPreferences := {
-          FormattingPreferences().setPreference(DoubleIndentClassDeclaration, true)
+          FormattingPreferences()
+            .setPreference(DoubleIndentClassDeclaration, true)
+            .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)
+            .setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true)
+            .setPreference(SpacesAroundMultiImports, true)
         },
         // Configure root-level tasks to aggregate accross configs
         format := {
