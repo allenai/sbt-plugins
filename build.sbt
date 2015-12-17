@@ -1,8 +1,8 @@
 resolvers += Resolver.jcenterRepo
- 
+
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.2.0",
-  "org.scalatest" %% "scalatest" % "2.2.4" % "test"  
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
 
 organization := "org.allenai.plugins"
@@ -31,12 +31,13 @@ addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
 
-addSbtPlugin(
-  ("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")
-    // Exclude the old scalariform fork - we include a newer version with sbt-scalariform below.
-    .exclude("com.danieltrinh", "scalariform_2.10"))
+addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0" excludeAll(
+  // scalastyle depends on an old version of scalariform. We bring in the latest with the
+  // sbt-scalariform plugin dependency below.
+  ExclusionRule(organization = "com.danieltrinh")
+))
 
-addSbtPlugin("com.github.jkinkead" % "sbt-scalariform" % "0.1.6")
+addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
 
 // Dependency graph visualiztion in SBT console
 addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")
