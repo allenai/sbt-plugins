@@ -45,7 +45,9 @@ object NodeJsPlugin extends AutoPlugin {
     }
 
     object NodeKeys {
-      val build = taskKey[Seq[File]]("Execution `npm run build` in the Node application directory")
+      val build = taskKey[Seq[File]](
+        "Execution of build script(s) with `npm run` in the Node application directory"
+      )
 
       val install = taskKey[Unit](
         "Execution `npm install` in the Node application directory to install dependencies"
@@ -59,6 +61,10 @@ object NodeJsPlugin extends AutoPlugin {
 
       val nodeProjectDir = settingKey[File](
         "The directory containing the Node application"
+      )
+
+      val buildScripts = settingKey[Seq[String]](
+        "Build scripts defined in `package.json` to be executed by npm:build task"
       )
 
       val nodeEnv = settingKey[String]("The value to use for NODE_ENV during development builds.")
@@ -112,6 +118,7 @@ object NodeJsPlugin extends AutoPlugin {
   val npmBuildTask = build in Npm := {
     execBuild(
       (nodeProjectDir in Npm).value,
+      (buildScripts in Npm).value,
       (environment in Npm).value,
       (npmLogLevel in Npm).value
     )
@@ -162,6 +169,7 @@ object NodeJsPlugin extends AutoPlugin {
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
     nodeProjectDir in Npm := baseDirectory.value / "webclient",
     nodeProjectTarget in Npm := baseDirectory.value / "public",
+    buildScripts in Npm := Seq("build"),
     nodeEnv in Npm := "dev",
     npmLogLevel in Npm := NpmLogLevel.Warn,
     npmEnvironmentSetting,
@@ -216,14 +224,16 @@ object NodeJsPlugin extends AutoPlugin {
       exec("install", root, env, npmLogLevel)
     }
 
-  /** Execute the build command with the given root + env.
+  /** Execute the build script(s) with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
     */
-  def execBuild(root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
+  def execBuild(root: File, scripts: Seq[String], env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
     // Make sure we install dependencies prior to building.
     // This is necssary for building on a clean repository (e.g. CI server)
     execInstall(root, env, npmLogLevel)
-    exec("run build", root, env, npmLogLevel)
+    scripts foreach { script =>
+      exec(s"run $script", root, env, npmLogLevel)
+    }
   }
 
   // TODO(jkinkead): Make the below take logs instead of prinlning.
