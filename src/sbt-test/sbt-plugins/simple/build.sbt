@@ -57,17 +57,3 @@ checkFormat := {
   val expected = fileAsString(new File("BadFormat.scala.formatted-expected"))
   assert(actual == expected, s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
 }
-
-val assertCacheKeysEqual = taskKey[Unit]("Assert that cacheKey1.Sha1 == cacheKey2.Sha1")
-assertCacheKeysEqual := {
-  val cacheKey1 = fileAsString(file("cacheKey1.Sha1"))
-  val cacheKey2 = fileAsString(file("cacheKey2.Sha1"))
-  assert(cacheKey1 == cacheKey2, s"Cache keys were not equal:\ncacheKey1 : $cacheKey1\ncacheKey2: $cacheKey2")
-}
-
-val assertCacheKeysNotEqual = taskKey[Unit]("Assert that cacheKey1.Sha1 == cacheKey2.Sha1")
-assertCacheKeysNotEqual := {
-  val cacheKey1 = fileAsString(file("cacheKey1.Sha1"))
-  val cacheKey2 = fileAsString(file("cacheKey2.Sha1"))
-  assert(cacheKey1 != cacheKey2, "Cache keys were equal")
-}
