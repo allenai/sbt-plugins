@@ -18,13 +18,6 @@ lazy val webService = project.in(file("webservice")).dependsOn(core).enablePlugi
 
 def fileAsString(file: File) = scala.io.Source.fromFile(file).getLines.mkString("\n")
 
-val checkFormat = taskKey[Unit]("check formatting")
-checkFormat := {
-  val actual = fileAsString((format in (core, Compile)).value.find(_.getName == "BadFormat.scala").get)
-  val expected = fileAsString(new File("BadFormat.scala.formatted-expected"))
-  assert(actual == expected, s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
-}
-
 val assertCacheKeysEqual = taskKey[Unit]("Assert that cacheKey1.Sha1 == cacheKey2.Sha1")
 assertCacheKeysEqual := {
   val cacheKey1 = fileAsString(file("cacheKey1.Sha1"))
