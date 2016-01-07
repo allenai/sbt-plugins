@@ -1,6 +1,8 @@
 AI2 SBT Plugins
 ===========
 
+[![Build Status](https://semaphoreci.com/api/v1/projects/8954a1aa-855b-4ada-807e-f81e30ff88dd/653444/badge.svg)](https://semaphoreci.com/allenai/sbt-plugins)
+
 The AI2 SBT plugins are intended to minimize build boilerplate accross projects. It is recommended to only enable "Archetype" plugins, which currently include:
 
 - `CliPlugin` - for command line applications using the [scopt](https://github.com/scopt/scopt) library.
@@ -53,9 +55,26 @@ Currently, all plugins are defined in the same SBT project. New plugins should b
 
 - `src/main/scala/org/allenai/plugins/archetypes` if they are to be a project Archetype plugin
 
-## Test Projects
+## Testing
 
-Each plugin should have its own `test-[plugin]` project in the `test-projects/` directory, which are separate SBT projects using the plugin under test. These projects are meant for rapid feedback while making changes to the plugins, and not necessarily as a template for how to use the plugins.
+We use [sbt-scripted](http://eed3si9n.com/testing-sbt-plugins) for testing our SBT plugins. To run the tests:
+
+```shell
+$ sbt
+> scripted
+```
+
+You could also just run `sbt test` which will trigger the scripted tests as well.
+
+To keep test execution time down, we prefer to minimize the number of sbt-scripted test projects. If possible, try to write tests in the primary test project in [src/sbt-test/sbt-plugins/simple](src/sbt-test/sbt-plugins/simple).
+
+If you write an isolated test, you can execute only that test via:
+
+```
+> scripted sbt-plugins/my-test
+```
+
+This assumes you've written your test in `src/sbt-test/sbt-plugins/my-test`. This is useful to speed up code/test iterating.
 
 ## Publishing Releases
 

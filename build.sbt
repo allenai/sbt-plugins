@@ -1,8 +1,7 @@
 resolvers += Resolver.jcenterRepo
 
 libraryDependencies ++= Seq(
-  "com.typesafe" % "config" % "1.2.0",
-  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+  "com.typesafe" % "config" % "1.2.0"
 )
 
 organization := "org.allenai.plugins"
@@ -45,9 +44,6 @@ addSbtPlugin("com.gilt" % "sbt-dependency-graph-sugar" % "0.7.4")
 // Wrapped by WebServicePlugin and WebappPlugin
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.7.2")
 
-// Allows us to test our plugins via the sbt-scripted plugin:
-scriptedSettings
-
 
 // Plugins for generating and publishing scaladoc.
 
@@ -69,3 +65,22 @@ bintrayOrganization := Some("allenai")
 
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
+// Allows us to test our plugins via the sbt-scripted plugin:
+
+scriptedSettings
+
+scriptedLaunchOpts := {
+  scriptedLaunchOpts.value ++ Seq(
+    "-Xmx1024M", "-Dplugin.version=" + version.value
+  )
+}
+
+// If we don't do this, the the scripted tests run without producing console output.
+scriptedBufferLog := false
+
+// Hook in our scripted tests to the test command. This makes it so scripted tests must pass
+// for a release to be possible.
+test := {
+  (test in Test).value
+  scripted.toTask("").value
+}
