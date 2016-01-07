@@ -23,7 +23,7 @@ $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey2.Sha1
 
 # cache key should change when local source changes
 $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey1.Sha1
-$ exec sed -i '' 's/OK/OKK/' webservice/src/main/scala/TestWebService.scala 
+$ exec sed -i'' 's/OK/OKK/' webservice/src/main/scala/TestWebService.scala
 $ exec git add .
 $ exec git commit -m "change webservice source"
 > webService/stageAndCacheKey
@@ -32,7 +32,7 @@ $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey2.Sha1
 
 # cache key should change when dependency source changes
 $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey1.Sha1
-$ exec sed -i '' 's/foo is/bar is/' core/src/main/scala/Main.scala 
+$ exec sed -i'' 's/foo is/bar is/' core/src/main/scala/Main.scala
 $ exec git add .
 $ exec git commit -m "change core source"
 > webService/stageAndCacheKey
