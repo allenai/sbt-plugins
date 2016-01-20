@@ -61,12 +61,33 @@ trait CoreDependencies {
 
   /* ==========>  AI2 common libraries <========== */
 
-  private def common(name: String) = "org.allenai.common" %% s"common-$name" % "1.0.20"
-  val allenAiCommon = common("core")
-  val allenAiGuice = common("guice")
-  val allenAiTestkit = common("testkit")
-  val allenAiWebapp = common("webapp")
-  val allenAiIndexing = common("indexing")
+  /** Global version for all allenAi common modules.
+    * Override this value before referencing any of the common modules to set the version globally.
+    *
+    * E.g.
+    * format: OFF
+    * {{{
+    * // in project/Dependencies.scala
+    * import org.allenai.plugins.CoreDependencies
+    *
+    * object Dependencies extends CoreDependencies {
+    *   // purposefully downgrade all common modules to a previous version
+    *   override val allenAiCommonVersion = "1.1.2"
+    * }
+    *
+    * // in build.sbt
+    * libraryDependencies += Dependencies.allenAiIndexing
+    * }}}
+    */
+  val allenAiCommonVersion = "1.1.3"
+
+  def allenAiCommonModule(name: String) = "org.allenai.common" %% s"common-$name" % allenAiCommonVersion
+
+  lazy val allenAiCommon = allenAiCommonModule("core")
+  lazy val allenAiGuice = allenAiCommonModule("guice")
+  lazy val allenAiTestkit = allenAiCommonModule("testkit")
+  lazy val allenAiWebapp = allenAiCommonModule("webapp")
+  lazy val allenAiIndexing = allenAiCommonModule("indexing")
 
   val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
