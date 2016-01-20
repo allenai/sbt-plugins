@@ -59,7 +59,8 @@ trait CoreDependencies {
     Seq(cleanedDeps, logbackDeps)
   }
 
-  // AI2 common libraries
+  /* ==========>  AI2 common libraries <========== */
+
   private def common(name: String) = "org.allenai.common" %% s"common-$name" % "1.0.20"
   val allenAiCommon = common("core")
   val allenAiGuice = common("guice")
@@ -70,9 +71,9 @@ trait CoreDependencies {
   val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 
-  // Akka
+  /* ==========>  Akka <========== */
 
-  val defaultAkkaVersion = "2.3.11"
+  val defaultAkkaVersion = "2.4.1"
 
   /** Generates an akka module dependency
     * @param id The akka module ID. E.g. `actor` or `cluster`
@@ -85,7 +86,17 @@ trait CoreDependencies {
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")
 
-  // Spray
+  // Akka HTTP is still experimental, but we are starting to use it in some projects.
+  // Once Akka HTTP is no longer experimental, we should remove the spray dependencies
+  val defaultAkkaHttpVersion = "2.0.1"
+  def akkaHttpModule(id: String, version: String = defaultAkkaHttpVersion): ModuleID =
+    "com.typesafe.akka" %% s"akka-http-$id" % version
+  val akkaHttp = akkaHttpModule("experimental")
+  val akkaHttpTestkit = akkaHttpModule("testkit-experimental")
+  val akkaHttpSprayJsonSupport = akkaHttpModule("spray-json-experimental")
+
+  /* ==========>  Spray <========== */
+
   val sprayVersion = "1.3.3"
   def sprayModule(id: String): ModuleID = "io.spray" %% s"spray-$id" % sprayVersion
   val sprayCan = sprayModule("can")
@@ -96,6 +107,8 @@ trait CoreDependencies {
 
   // Spray json (separate from Spray toolkit)
   val sprayJson = "io.spray" %% "spray-json" % "1.3.2"
+
+  /* ==========>  Slick <========== */
 
   // Slick for database integration
   // TODO consider upgrading to slick 3.0. All of our existing projects use
