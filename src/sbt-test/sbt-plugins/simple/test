@@ -1,8 +1,12 @@
 # See http://eed3si9n.com/testing-sbt-plugins for sbt-scripted test syntax
 # initialize a git repository to make our plugins happy
 $ exec git init
+# Remove any hooks (such as the formatting hook), since it in particular will cause errors.
+$ exec rm -r .git/hooks
 $ exec git add .
 $ exec git commit -m "initial commit"
+
+> checkCompileDoesNotFormat
 
 > checkFormat
 

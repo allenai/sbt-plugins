@@ -51,9 +51,28 @@ checkStyle := {
 
 def fileAsString(file: File) = scala.io.Source.fromFile(file).getLines.mkString("\n")
 
-val checkFormat = taskKey[Unit]("check formatting")
+val checkCompileDoesNotFormat = {
+  taskKey[Unit]("validate that compilation does not trigger formatting")
+}
+checkCompileDoesNotFormat := {
+  val filePath = (sourceDirectory in (core, Compile)).value / "scala"/ "BadFormat.scala"
+  // Dependency on `compile`.
+  (compile in (core, Compile)).value
+
+  val actual = fileAsString(filePath)
+  val expected = fileAsString(new File("BadFormat.scala.unformatted"))
+  assert(actual == expected,
+    s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
+}
+
+val checkFormat = taskKey[Unit]("check that format correctly formats")
 checkFormat := {
-  val actual = fileAsString((format in (core, Compile)).value.find(_.getName == "BadFormat.scala").get)
+  val filePath = (sourceDirectory in (core, Compile)).value / "scala"/ "BadFormat.scala"
+  // Dependency on `formalt`.
+  (format in (core, Compile)).value
+
+  val actual = fileAsString(filePath)
   val expected = fileAsString(new File("BadFormat.scala.formatted-expected"))
-  assert(actual == expected, s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
+  assert(actual == expected,
+    s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
 }

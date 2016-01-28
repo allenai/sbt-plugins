@@ -1,12 +1,13 @@
 package org.allenai.plugins
 
 import com.typesafe.sbt.SbtScalariform
-import sbt.Keys._
 import sbt._
-
+import sbt.Keys._
 import scalariform.formatter.ScalaFormatter
 import scalariform.formatter.preferences._
 import scalariform.parser.ScalaParserException
+
+import scala.collection.immutable
 
 object CoreSettingsPlugin extends AutoPlugin {
 
@@ -91,6 +92,9 @@ object CoreSettingsPlugin extends AutoPlugin {
   }
 
   val baseScalariformSettings: Seq[Def.Setting[_]] = Seq(
+    // Override the SbtScalariform formatter, since it gets plugged in awkwardly (as a dependency on
+    // compile).
+    SbtScalariform.autoImport.scalariformFormat := { immutable.Seq.empty[File] },
     format := {
       // The mainline SbtScalariform uses FileFunction to cache this, but it's not really worth the
       // effort here - especially given that we actually don't want to cache for formatCheck.
