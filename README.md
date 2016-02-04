@@ -47,6 +47,14 @@ object ProjBuild extends Build {
 }
 ```
 
+## Install Git pre-commit hook to autoformat sources
+
+Once you've added the plugins to a project, you can install a git pre-commit hook that will autoformat your code before allowing a commit via:
+
+```shell
+sbt generateAutoformatGitHook
+```
+
 # Developing AI2 Plugins
 
 Currently, all plugins are defined in the same SBT project. New plugins should be created in:

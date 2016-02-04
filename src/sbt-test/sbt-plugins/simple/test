@@ -3,6 +3,7 @@
 $ exec git init
 # Remove any hooks (such as the formatting hook), since it in particular will cause errors.
 $ exec rm -r .git/hooks
+$ exec mkdir .git/hooks
 $ exec git add .
 $ exec git commit -m "initial commit"
 
@@ -31,3 +32,10 @@ $ exists client/node_modules
 $ sleep 2000
 $ exec curl http://0.0.0.0:8888
 > webService/reStop
+
+-$ exists .git/hooks/pre-commit
+-$ exists .git/hooks/scalariform.jar
+
+> generateAutoformatGitHook
+$ exists .git/hooks/pre-commit
+$ exists .git/hooks/scalariform.jar
