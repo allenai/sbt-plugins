@@ -36,6 +36,8 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0" excludeAll(
   ExclusionRule(organization = "com.danieltrinh")
 ))
 
+// If you change the scalariform version, you may also need to generate a new
+// scalariform.jar in src/main/resources/autoformat/
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
 
 // Dependency graph visualiztion in SBT console

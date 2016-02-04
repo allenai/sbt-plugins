@@ -1,12 +1,14 @@
 package org.allenai.plugins
 
 import com.typesafe.sbt.SbtScalariform
-import sbt._
 import sbt.Keys._
+import sbt._
+
 import scalariform.formatter.ScalaFormatter
 import scalariform.formatter.preferences._
 import scalariform.parser.ScalaParserException
 
+import java.nio.file.Files
 import scala.collection.immutable
 
 object CoreSettingsPlugin extends AutoPlugin {
@@ -23,6 +25,10 @@ object CoreSettingsPlugin extends AutoPlugin {
 
     val generateRunClass = taskKey[File](
       "creates the run-class.sh script in the managed resources directory"
+    )
+
+    val generateAutoformatGitHook = taskKey[Unit](
+      "Generates a .git/hooks/pre-commit hook that enforces code formatting prior to commit."
     )
 
     val scalariformPreferences = settingKey[IFormattingPreferences](
@@ -141,6 +147,52 @@ object CoreSettingsPlugin extends AutoPlugin {
   // See http://www.scala-sbt.org/release/docs/Testing.html#Custom+test+configuration
   override val projectConfigurations = Seq(Configurations.IntegrationTest extend (Test))
 
+  /** Scalariform settings we use that are different from the defaults */
+  val ScalariformDefaultOverrides: Seq[(PreferenceDescriptor[_], Boolean)] = Seq(
+    (DoubleIndentClassDeclaration, true),
+    (MultilineScaladocCommentsStartOnFirstLine, true),
+    (PlaceScaladocAsterisksBeneathSecondAsterisk, true),
+    (SpacesAroundMultiImports, true)
+  )
+
+  // These settings will be automatically applied to the build exactly once and will not be applied
+  // to individual subprojects. Tasks added to buildSettings will _not_ show up in tab-completion in
+  // the SBT console. However, this is a good place to put tasks that you do not want executed once
+  // per subproject.
+  override def buildSettings: Seq[Setting[_]] = Seq(
+    generateAutoformatGitHook := {
+      val expectedGitHooksDir = (baseDirectory in ThisBuild).value / ".git" / "hooks"
+      val preCommitFile = expectedGitHooksDir / "pre-commit"
+      val scalariformFile = expectedGitHooksDir / "scalariform.jar"
+      def requireFilesDontExist(files: File*) = {
+        files find (_.exists) foreach { file =>
+          sys.error(s"You already have .git/hooks/${file.getName}. Remove or rename the file and run again.")
+        }
+      }
+      requireFilesDontExist(preCommitFile, scalariformFile)
+
+      // generate the pre-commit hook with scalariform options injected:
+      val scalariformOpts = (ScalariformDefaultOverrides map {
+        case (descriptor, enable) =>
+          val enableDisable = if (enable) "+" else "-"
+          s"${enableDisable}${descriptor.key}"
+      }).mkString("(", " ", ")")
+      val lines = IO.readLinesURL(getClass.getClassLoader.getResource("autoformat/pre-commit"))
+        .map(_.replace("__scalariform_opts__", scalariformOpts))
+      IO.writeLines(preCommitFile, lines.toList)
+        // git hooks must be executable
+      preCommitFile.setExecutable(true)
+
+      // copy the scalariform.jar
+      val scalariformIs = getClass.getClassLoader.getResourceAsStream("autoformat/scalariform.jar")
+      try {
+        Files.copy(scalariformIs, scalariformFile.toPath)
+      } finally {
+        scalariformIs.close()
+      }
+    }
+  )
+
   // These settings will be automatically applied to projects
   override def projectSettings: Seq[Setting[_]] = {
     Defaults.itSettings ++
@@ -159,11 +211,10 @@ object CoreSettingsPlugin extends AutoPlugin {
         dependencyOverrides += "org.scala-lang" % "scala-library" % scalaVersion.value,
         // Override default scalariform settings.
         SbtScalariform.autoImport.scalariformPreferences := {
-          FormattingPreferences()
-            .setPreference(DoubleIndentClassDeclaration, true)
-            .setPreference(MultilineScaladocCommentsStartOnFirstLine, true)
-            .setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true)
-            .setPreference(SpacesAroundMultiImports, true)
+          ScalariformDefaultOverrides.foldLeft(FormattingPreferences()) {
+            case (carry, (descriptor, enable)) =>
+              carry.setPreference(descriptor.asInstanceOf[PreferenceDescriptor[Any]], enable)
+          }
         },
         // Configure root-level tasks to aggregate accross configs
         format := {

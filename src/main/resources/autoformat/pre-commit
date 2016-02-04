@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# Git pre-commit hook to check staged scala files for formatting issues.
+#
+# This requires that scalariform is installed alongside the pre-commit script, as scalariform.jar.
+# This can be built with "sbt cli/oneJar" - see the README for more details.
+#
+# This script has one gitconfig parameter, hooks.autoformat, which controls how badly-formatted
+# files are handled.
+#
+# Default mode:
+# When autoformat is off, this will test all staged files, and will exit with an error code if any
+# are misformatted, printing the files with errors.
+#
+# Autoformat mode:
+# When autoformat is on, this first checks for unstaged changes to staged files, and if there are
+# any, it will exit with an error. Files with unstaged changes will be printed.
+#
+# If all staged files have no unstaged changes, it will run scalariform against them, leaving the
+# formatting changes unstaged. Changed files will be printed.
+
+# Find all staged scala files, and exit early if there aren't any.
+SCALA_FILES=(`git diff --name-only --cached --diff-filter=AM | grep --color=never '.scala$'`)
+if [ ! "$SCALA_FILES" ]; then
+  exit 0
+fi
+
+# Validate that the scalariform jar exists.
+JAR=`dirname $0`/scalariform.jar
+if [ ! -e $JAR ]; then
+  echo "ERROR: $JAR not found!"
+  exit 2
+fi
+
+# The formatting options we change from the defaults. Values are set by the CoreSettingsPlugin
+# when running generateAutoformatGitHook task.
+OPTIONS=__scalariform_opts__
+
+AUTOFORMAT=$(git config --bool hooks.autoformat)
+
+# Autoformat, if configured to do so.
+if [ "$AUTOFORMAT" != "false" ]; then
+  # Check for unstaged changes to files in the index.
+  CHANGED_FILES=(`git diff --name-only ${SCALA_FILES[@]}`)
+  if [ "$CHANGED_FILES" ]; then
+    echo 'You have unstaged changes to some files in your commit; skipping auto-format.'
+    echo 'Please stage or revert these changes.'
+    echo
+    echo 'Files with unstaged changes:'
+    for file in ${CHANGED_FILES[@]}; do
+      echo "  $file"
+    done
+    exit 1
+  fi
+  # Format all staged files, then exit with an error code if any have uncommitted changes.
+  echo 'Formatting staged scala files . . .'
+  java -jar "$JAR" ${OPTIONS[@]} -q ${SCALA_FILES[@]}
+  CHANGED_FILES=(`git diff --name-only ${SCALA_FILES[@]}`)
+  if [ "$CHANGED_FILES" ]; then
+    echo 'Some staged files were reformatted. Please review the changes and stage them.'
+    echo
+    echo 'Files updated:'
+    for file in ${CHANGED_FILES[@]}; do
+      echo "  $file"
+    done
+    exit 1
+  else
+    exit 0
+  fi
+else
+  echo 'Checking for misformatted scala files . . .'
+  # Get the list of misformatted files.
+  MISFORMATTED=(
+    `java -jar "$JAR" ${OPTIONS[@]} -q --showFilenames -t ${SCALA_FILES[@]} 2>&1`
+  )
+  HAD_ERRORS=$?
+
+  # Print the files, if there are any.
+  if [ $HAD_ERRORS != 0 ]; then
+    echo 'Some staged files contain formatting errors; please run "sbt format" to fix.'
+    echo
+    echo 'Files with errors:'
+    for file in ${MISFORMATTED[@]}; do
+      echo "  $file"
+    done
+    echo
+    exit 1
+  else
+    exit 0
+  fi
+fi
