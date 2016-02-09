@@ -10,7 +10,7 @@
 # 3 - command, one of start|stop|restart
 #
 # If arguments should be passed on to the main class at startup, they can be given as arguments to
-# this script, separated from the three args above by "--"
+# this script, separated from the three args above by "--".
 #
 # You can specify custom JVM arguments by setting the environment variable JVM_ARGS.
 
@@ -22,9 +22,9 @@ fi
 SCRIPT_NAME=`basename $0`
 # Use a compact usage if we're being invoked as another script.
 if [[ $SCRIPT_NAME == run-class.sh ]]; then
-  USAGE="usage: $SCRIPT_NAME mainClass shortName [start|stop|restart] [ -- args* ]"
+  USAGE="usage: $SCRIPT_NAME mainClass shortName [start|stop|restart] [-- <args>]"
 else
-  USAGE="usage: $SCRIPT_NAME [start|stop|restart] [ -- args* ]"
+  USAGE="usage: $SCRIPT_NAME [start|stop|restart] [-- <args>]"
 fi
 
 if [[ $# < 3 ]]; then
@@ -54,6 +54,7 @@ stop)
   exit 1
 esac
 
+# Check for any additional args to pass through to the main java class, separated by "--".
 if [[ ! -z "$1" ]]; then
   if [[ "$1" != "--" ]]; then
     echo "$USAGE"
@@ -122,7 +123,7 @@ JAVA_CMD=(java $JVM_ARGS -classpath $CLASSPATH $CONF_FILE
 
 # Run java.
 echo "running in `pwd` ..."
-echo "${JAVA_CMD[@]} ${MAIN_CLASS} ${@}"
+echo "${JAVA_CMD[@]} ${MAIN_CLASS} $@"
 nohup ${JAVA_CMD[@]} "$MAIN_CLASS" "$@" > "${SHORT_NAME}.out" 2> "${SHORT_NAME}.err" &
 EXIT_CODE=$?
 
