@@ -54,7 +54,10 @@ stop)
   exit 1
 esac
 
-# Check for any additional args to pass through to the main java class, separated by "--".
+# Check if any additional args were passed to this script.
+# If there are additional args, the first should be the separator "--". This separator will be
+# stripped and all remaining args will be passed on to the main java class.
+# If additional args were passed but not properly separated, print usage and exit with an error.
 if [[ ! -z "$1" ]]; then
   if [[ "$1" != "--" ]]; then
     echo "$USAGE"
