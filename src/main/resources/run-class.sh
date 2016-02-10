@@ -4,10 +4,13 @@
 # This assumes that we're working out of a universal install (lib/ directory
 # present, and this script is in bin/).
 #
-# This takes three arguments:
+# This takes at least three arguments:
 # 1 - fully-qualified classname to run
 # 2 - short name used to name output and PID files
 # 3 - command, one of start|stop|restart
+#
+# If arguments should be passed on to the main class at startup, they can be given as arguments to
+# this script, separated from the three args above by "--".
 #
 # You can specify custom JVM arguments by setting the environment variable JVM_ARGS.
 
@@ -19,12 +22,12 @@ fi
 SCRIPT_NAME=`basename $0`
 # Use a compact usage if we're being invoked as another script.
 if [[ $SCRIPT_NAME == run-class.sh ]]; then
-  USAGE="usage: $SCRIPT_NAME mainClass shortName [start|stop|restart]"
+  USAGE="usage: $SCRIPT_NAME mainClass shortName [start|stop|restart] [-- <args>]"
 else
-  USAGE="usage: $SCRIPT_NAME [start|stop|restart]"
+  USAGE="usage: $SCRIPT_NAME [start|stop|restart] [-- <args>]"
 fi
 
-if [[ $# != 3 ]]; then
+if [[ $# < 3 ]]; then
   echo "$USAGE"
   exit 1
 fi
@@ -50,6 +53,18 @@ stop)
   echo "$USAGE"
   exit 1
 esac
+
+# Check if any additional args were passed to this script.
+# If there are additional args, the first should be the separator "--". This separator will be
+# stripped and all remaining args will be passed on to the main java class.
+# If additional args were passed but not properly separated, print usage and exit with an error.
+if [[ ! -z "$1" ]]; then
+  if [[ "$1" != "--" ]]; then
+    echo "$USAGE"
+    exit 1
+  fi
+  shift
+fi
 
 # Change to the root of the install.
 SCRIPT_DIR=`dirname $0`
@@ -111,8 +126,8 @@ JAVA_CMD=(java $JVM_ARGS -classpath $CLASSPATH $CONF_FILE
 
 # Run java.
 echo "running in `pwd` ..."
-echo "${JAVA_CMD[@]} ${MAIN_CLASS}"
-nohup ${JAVA_CMD[@]} "$MAIN_CLASS" > "${SHORT_NAME}.out" 2> "${SHORT_NAME}.err" &
+echo "${JAVA_CMD[@]} ${MAIN_CLASS} $@"
+nohup ${JAVA_CMD[@]} "$MAIN_CLASS" "$@" > "${SHORT_NAME}.out" 2> "${SHORT_NAME}.err" &
 EXIT_CODE=$?
 
 sleep 2
