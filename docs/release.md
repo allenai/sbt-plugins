@@ -12,6 +12,19 @@ continuous build system to BinTray.  Specifically, the plugin configures the
 publish.  It's expected that the CI system is configured to recognize the tag
 and kick off a publish. See the section below for instructions.
 
+## Releasing with the plugin
+
+After the plugin is installed, release using the following checklist:
+
+1.  Make sure you are on a branch of the main repository other than `master`.
+**You cannot use a branch of your fork for releases.**  If you do, your tag
+will not make it to the main repository.
+2.  Set the upstream repository (`git push --set-upstream origin $branch_name`).
+3.  Kick of the release with `sbt release`.
+4.  Create a pull request and make sure Semaphore builds it OK.
+5.  When the pull request is merged, Semaphore will kick off a build and ultimately publish the artifact.
+6.  You can verify that it was published by [looking on BinTray.com](https://bintray.com).
+
 ## Installation
 
 ### Configure local build
