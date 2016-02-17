@@ -191,9 +191,6 @@ object DeployPlugin extends AutoPlugin {
       throw new IllegalArgumentException(Usage)
     }
 
-    // Ensure necessary environment variables are set.
-    validateEnv()
-
     val workingDirectory = (baseDirectory in thisProject).value
     val configFile = new File(workingDirectory.getPath + "/conf/deploy.conf")
     if (!configFile.isFile) {
@@ -242,64 +239,74 @@ object DeployPlugin extends AutoPlugin {
       System.console.readLine()
     }
 
-    val deploys = deployConfig.hostConfigs map { hostConfig =>
+    val deploys: Seq[Future[Try[Unit]]] = deployConfig.hostConfigs map { hostConfig =>
       Future {
-        // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
-        // operations.
-        val sshCommand = {
-          val sshKeyfile = sys.env("AWS_PEM_FILE")
-          val sshUser = hostConfig.sshUser
-          Seq("ssh", "-i", sshKeyfile, "-l", sshUser)
-        }
-        val deployHost = hostConfig.host
-        val deployDirectory = hostConfig.directory
+        // Run commands within a Try so we can fold over any errors.
+        Try {
+          // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh
+          // operations.
+          val sshCommand = Seq("ssh", "-l", hostConfig.sshUser)
+          val deployHost = hostConfig.host
+          val deployDirectory = hostConfig.directory
 
-        val rsyncDirs = deployDirs.value map (name => s"--include=/$name")
-        val rsyncCommand = Seq.concat(
-          Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")),
-          rsyncDirs,
-          Seq(
-            "--exclude=/*",
-            "--delete",
-            universalStagingDir.getPath + "/",
-            deployHost + ":" + deployDirectory
+          val rsyncDirs = deployDirs.value map (name => s"--include=/$name")
+          val rsyncCommand = Seq.concat(
+            Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")),
+            rsyncDirs,
+            Seq(
+              "--exclude=/*",
+              "--delete",
+              universalStagingDir.getPath + "/",
+              deployHost + ":" + deployDirectory
+            )
           )
-        )
 
-        // Shell-friendly version of rsync command, with rsh value quoted.
-        val quotedRsync = rsyncCommand.patch(
-          2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1
-        ).mkString(" ")
-        log.info("Running " + quotedRsync + " . . .")
-        if (Process(rsyncCommand).! != 0) {
-          throw new IllegalArgumentException(s"Error running rsync to host '$deployHost'.")
-        }
+          // Shell-friendly version of rsync command, with rsh value quoted.
+          val quotedRsync = rsyncCommand.patch(
+            2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1
+          ).mkString(" ")
+          log.info("Running " + quotedRsync + " . . .")
+          if (Process(rsyncCommand).! != 0) {
+            throw new IllegalArgumentException(s"Error running rsync to host '$deployHost'.")
+          }
 
-        // Now, ssh to the remote host and run the restart script.
-        val restartScript = deployDirectory + "/" + hostConfig.startupScript
-        val restartCommand = Seq.concat(
-          sshCommand,
-          Seq(deployHost, restartScript, "restart"),
-          hostConfig.startupArgs map { "--" +: _ } getOrElse Seq()
-        )
-        log.info("Running " + restartCommand.mkString(" ") + " . . .")
-        if (Process(restartCommand).! != 0) {
-          throw new IllegalArgumentException(s"Error running restart command on host '$deployHost'.")
+          // Now, ssh to the remote host and run the restart script.
+          val restartScript = deployDirectory + "/" + hostConfig.startupScript
+          val restartArgs = if (hostConfig.startupArgs.nonEmpty) {
+            "--" +: hostConfig.startupArgs
+          } else {
+            Seq()
+          }
+
+          val restartCommand = Seq.concat(
+            sshCommand,
+            Seq(deployHost, restartScript, "restart"),
+            restartArgs
+          )
+          log.info("Running " + restartCommand.mkString(" ") + " . . .")
+          if (Process(restartCommand).! != 0) {
+            throw new IllegalArgumentException(s"Error running restart command on host '$deployHost'.")
+          }
         }
-      } map Success.apply recover { case e => Failure(e) } // Map to Try so we can fold over errors.
+      }
     }
 
     // Accumulate all error messages thrown when trying to deploy.
-    val accumulatedErrors = Future.fold[Try[Unit], Option[String]](deploys)(None) {
+    val accumulatedErrors = Future.fold[Try[Unit], Seq[Throwable]](deploys)(Seq.empty) {
       case (acc, Success(_)) => acc
-      case (None, Failure(e)) => Some(e.getMessage + "\n")
-      case (Some(acc), Failure(e)) => Some(acc + e.getMessage + "\n")
+      case (acc, Failure(e)) => acc :+ e
     }
 
     // Throw an error if any deploy commands failed.
-    Await.result(accumulatedErrors, Duration.Inf) foreach { errorAcc =>
-      throw new IllegalArgumentException(s"Hit the following errors during deployment:\n$errorAcc")
+    val deployStatus = accumulatedErrors map { errorSeq =>
+      if (errorSeq.nonEmpty) {
+        throw new IllegalArgumentException(
+          "Hit the following errors during deployment:" +
+            (errorSeq map { _.getMessage } mkString ("\n", "\n", "\n"))
+        )
+      }
     }
+    Await.result(deployStatus, Duration.Inf)
 
     log.info("")
     // TODO(jkinkead): Run an automated "/info/name" check here to see if service is running.
@@ -449,34 +456,20 @@ object DeployPlugin extends AutoPlugin {
     overrides.withFallback(rcConfig.withFallback(targetConfig)).resolve
   }
 
-  /** Check that all environment variables required for deployment are set,
-    * and exit the program if any are missing.
-    */
-  def validateEnv(): Unit = {
-    val requiredEnv = Seq("AWS_PEM_FILE")
-    requiredEnv foreach { variable =>
-      val value = sys.env.getOrElse(variable, {
-        throw new IllegalArgumentException(s"Environment variable '$variable' undefined.")
-      })
-
-      require(!value.isEmpty, s"Environment variable '$variable' is empty.")
-    }
-  }
-
   /** Container for config needed to deploy a project to a host.
     * @param host The fully-qualified name of the host the project should be deployed to
     * @param directory The directory on the host in which the project's code should be placed
     * @param sshUser The username to use when accessing the host
     * @param startupScript The path, relative to the deploy directory, to the script that should
     *                      be used to restart the project after deploying the new code
-    * @param startupArgs Optional arguments to pass to the startup script
+    * @param startupArgs Arguments to pass to the startup script
     */
   case class HostConfig(
     host: String,
     directory: String,
     sshUser: String,
     startupScript: String,
-    startupArgs: Option[Seq[String]]
+    startupArgs: Seq[String]
   )
 
   /** Wrapper for many [[org.allenai.plugins.DeployPlugin.HostConfig]] objects, along with any data
@@ -496,7 +489,13 @@ object DeployPlugin extends AutoPlugin {
 
     DeployConfig(
       hostConfigs = Seq(parseHostConfig(targetConfig.getConfig("deploy"))),
-      projectVersion = Try(targetConfig.getString("project.version")).toOption
+      projectVersion = try {
+        Some(targetConfig.getString("project.version"))
+      } catch {
+        case _: ConfigException.Missing => None
+        case _: ConfigException.WrongType =>
+          throw new IllegalArgumentException(s"Error: 'project.version' must be a string")
+      }
     )
   }
 
@@ -505,7 +504,7 @@ object DeployPlugin extends AutoPlugin {
     * @param hostConfig host-level config to convert
     */
   def parseHostConfig(hostConfig: Config): HostConfig = {
-    lazy val renderedConfig = hostConfig.root().render()
+    val renderedConfig = hostConfig.root().render()
 
     val requiredKeys = Seq("host", "directory", "startup_script", "user.ssh_username")
 
@@ -523,9 +522,9 @@ object DeployPlugin extends AutoPlugin {
     }).toMap
 
     val startArgs = try {
-      Some(hostConfig.getStringList("startup_args").asScala)
+      hostConfig.getStringList("startup_args").asScala
     } catch {
-      case _: ConfigException.Missing => None
+      case _: ConfigException.Missing => Seq()
       case _: ConfigException.WrongType =>
         throw new IllegalArgumentException(
           s"Error: 'startup_args' must be an array of strings in $renderedConfig"
