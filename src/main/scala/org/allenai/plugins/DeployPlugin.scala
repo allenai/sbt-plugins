@@ -238,62 +238,97 @@ object DeployPlugin extends AutoPlugin {
       System.console.readLine()
     }
 
-    val deploys: Seq[Future[Try[Unit]]] = deployConfig.hostConfigs map { hostConfig =>
-      Future {
-        // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh operations.
-        val sshCommand = {
-          val keyFile = sys.env.getOrElse("AWS_PEM_FILE", {
-            throw new IllegalStateException(s"Environment variable 'AWS_PEM_FILE' is undefined")
-          })
-          require(keyFile.nonEmpty, "Environment variable 'AWS_PEM_FILE' is empty")
+    val hosts = deployConfig.replicasByHost.keys
+    val deploys: Iterable[Future[Try[Unit]]] = hosts flatMap { hostConfig =>
+      val deployHost = hostConfig.host
+      val baseDeployDir = deployConfig.baseDirectory
 
-          Seq("ssh", "-i", keyFile, "-l", hostConfig.sshUser)
-        }
-        val deployHost = hostConfig.host
-        val deployDirectory = hostConfig.directory
+      // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh operations.
+      val sshCommand = {
+        val keyFile = sys.env.getOrElse("AWS_PEM_FILE", {
+          throw new IllegalStateException(s"Environment variable 'AWS_PEM_FILE' is undefined")
+        })
+        require(keyFile.nonEmpty, "Environment variable 'AWS_PEM_FILE' is empty")
 
-        val rsyncDirs = deployDirs.value map (name => s"--include=/$name")
-        val rsyncCommand = Seq.concat(
-          Seq("rsync", "-vcrtzP", "--rsh=" + sshCommand.mkString(" ")),
-          rsyncDirs,
-          Seq(
-            "--exclude=/*",
-            "--delete",
-            universalStagingDir.getPath + "/",
-            deployHost + ":" + deployDirectory
-          )
-        )
+        Seq("ssh", "-i", keyFile, "-l", hostConfig.sshUser)
+      }
 
-        // Shell-friendly version of rsync command, with rsh value quoted.
-        val quotedRsync = rsyncCommand.patch(
-          2, Seq("--rsh=" + sshCommand.mkString("\"", " ", "\"")), 1
-        ).mkString(" ")
+      val replicas = deployConfig.replicasByHost(hostConfig)
+      val numReplicas = replicas.length
 
-        // Now, ssh to the remote host and run the restart script.
-        val restartScript = deployDirectory + "/" + hostConfig.startupScript
-        val restartArgs = if (hostConfig.startupArgs.nonEmpty) {
-          "--" +: hostConfig.startupArgs
-        } else {
-          Seq()
-        }
+      replicas.zipWithIndex map {
+        case (replicaConfig, i) => {
+          Future {
+            val deployDirectory = if (numReplicas > 1) {
+              s"$baseDeployDir/$i"
+            } else {
+              baseDeployDir
+            }
 
-        val restartCommand = Seq.concat(
-          sshCommand,
-          Seq(deployHost, restartScript, "restart"),
-          restartArgs
-        )
+            // Command to pass to rsync's "rsync-path" flag to ensure creation of the remote dir.
+            // http://www.schwertly.com/2013/07/forcing-rsync-to-create-a-remote-path-using-rsync-path/
+            val pathCommand = Seq(
+              "mkdir",
+              "-p",
+              deployDirectory,
+              "&&",
+              "rsync"
+            )
 
-        // Run commands within a Try so we can collect errors using Future.fold.
-        // TODO(danm): Use ProcessIO to capture and report the actual stderr of failures here.
-        Try {
-          log.info("Running " + quotedRsync + " . . .")
-          if (Process(rsyncCommand).! != 0) {
-            sys.error(s"Error running rsync to host '$deployHost'.")
-          }
+            val rsyncDirs = deployDirs.value map (name => s"--include=/$name")
+            val rsyncCommand = Seq.concat(
+              Seq(
+                "rsync",
+                "-vcrtzP",
+                s"--rsync-path=${pathCommand.mkString(" ")}",
+                s"--rsh=${sshCommand.mkString(" ")}"
+              ),
+              rsyncDirs,
+              Seq(
+                "--exclude=/*",
+                "--delete",
+                universalStagingDir.getPath + "/",
+                deployHost + ":" + deployDirectory
+              )
+            )
 
-          log.info("Running " + restartCommand.mkString(" ") + " . . .")
-          if (Process(restartCommand).! != 0) {
-            sys.error(s"Error running restart command on host '$deployHost'.")
+            // Shell-friendly version of rsync command, with rsh value quoted.
+            val quotedRsync = rsyncCommand.patch(
+              2,
+              Seq(
+                "--rsync-path=" + pathCommand.mkString("\"", " ", "\""),
+                "--rsh=" + sshCommand.mkString("\"", " ", "\"")
+              ),
+              2
+            ).mkString(" ")
+
+            // Now, ssh to the remote host and run the restart script.
+            val restartScript = deployDirectory + "/" + deployConfig.startupScript
+            val restartArgs = if (replicaConfig.startupArgs.nonEmpty) {
+              "--" +: replicaConfig.startupArgs
+            } else {
+              Seq()
+            }
+
+            val restartCommand = Seq.concat(
+              sshCommand,
+              Seq(deployHost, restartScript, "restart"),
+              restartArgs
+            )
+
+            // Run commands within a Try so we can collect errors using Future.fold.
+            // TODO(danm): Use ProcessIO to capture and report the actual stderr of failures here.
+            Try {
+              log.info("Running " + quotedRsync + " . . .")
+              if (Process(rsyncCommand).! != 0) {
+                sys.error(s"Error running rsync to host '$deployHost'.")
+              }
+
+              log.info("Running " + restartCommand.mkString(" ") + " . . .")
+              if (Process(restartCommand).! != 0) {
+                sys.error(s"Error running restart command on host '$deployHost'.")
+              }
+            }
           }
         }
       }
@@ -462,29 +497,37 @@ object DeployPlugin extends AutoPlugin {
     overrides.withFallback(rcConfig.withFallback(targetConfig)).resolve
   }
 
-  /** Container for config needed to deploy a project to a host.
+  /** Wrapper for many [[org.allenai.plugins.DeployPlugin.ReplicaConfig]] objects,
+    * along with any data that should be shared between them, when deploying a project.
+    * @param baseDirectory the directory on remote hosts in which all project code should be placed
+    * @param startupScript the path, relative to the deployed project's root, to the script that
+    *                      should be used to restart the project after deploying the new code
+    * @param projectVersion the version of the project being deployed
+    * @param replicasByHost map from host information to the set of replicas to deploy on
+    *                            that host
+    */
+  case class DeployConfig(
+    baseDirectory: String,
+    startupScript: String,
+    projectVersion: Option[String],
+    replicasByHost: Map[HostConfig, Seq[ReplicaConfig]]
+  )
+
+  /** Wrapper for config needed to access a remote host.
     * @param host the fully-qualified name of the host the project should be deployed to
-    * @param directory The directory on the host in which the project's code should be placed
-    * @param sshUser The username to use when accessing the host
-    * @param startupScript The path, relative to the deploy directory, to the script that should
-    *                      be used to restart the project after deploying the new code
-    * @param startupArgs Arguments to pass to the startup script
+    * @param sshUser the username to use when accessing the host
     */
   case class HostConfig(
     host: String,
-    directory: String,
-    sshUser: String,
-    startupScript: String,
-    startupArgs: Seq[String]
+    sshUser: String
   )
 
-  /** Wrapper for many [[org.allenai.plugins.DeployPlugin.HostConfig]] objects, along with any data
-    * that should be shared between them, when deploying a project.
-    * @param hostConfigs configuration objects specifying how the project should be deployed to
-    *                    many hosts
-    * @param projectVersion the version of the project being deployed
+  /** Container for config needed to deploy a project replica to a host.
+    * @param startupArgs arguments to pass to the startup script
     */
-  case class DeployConfig(hostConfigs: Seq[HostConfig], projectVersion: Option[String])
+  case class ReplicaConfig(
+    startupArgs: Seq[String]
+  )
 
   /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
     * [[org.allenai.plugins.DeployPlugin.DeployConfig]] object.
@@ -493,58 +536,106 @@ object DeployPlugin extends AutoPlugin {
     */
   def parseConfig(targetName: String, targetConfig: Config): DeployConfig = {
 
-    DeployConfig(
-      hostConfigs = Seq(parseHostConfig(targetConfig.getConfig("deploy"))),
-      projectVersion = try {
-        Some(targetConfig.getString("project.version"))
+    val deployConfig = targetConfig.getConfig("deploy")
+
+    // Check for both replica list and top-level host config.
+    val replicasGiven = deployConfig.hasPath("replicas")
+    val topHostGiven = deployConfig.hasPath("host") && deployConfig.hasPath("user.ssh_username")
+
+    // Validate key layout.
+    require(
+      replicasGiven || topHostGiven,
+      "Deploy requires either key 'replicas' or keys 'host' and 'user.ssh_username' to be set"
+    )
+    require(
+      topHostGiven || !(deployConfig.hasPath("host") || deployConfig.hasPath("user.ssh_username")),
+      "Specification of a top-level host requires both 'host' and 'user.ssh_username' keys"
+    )
+    require(
+      topHostGiven || !deployConfig.hasPath("startup_args"),
+      "Top-level startup arguments not supported if no top-level host is specified"
+    )
+
+    // Parse common config.
+    val baseDirectory = getStringValue(deployConfig, "directory")
+    val startupScript = getStringValue(deployConfig, "startup_script")
+    val projectVersion = try {
+      Some(targetConfig.getString("project.version"))
+    } catch {
+      case _: ConfigException.Missing => None
+      case _: ConfigException.WrongType =>
+        throw new IllegalArgumentException(s"Error: 'project.version' must be a string")
+    }
+
+    // Parse replica config.
+    val replicaConfig: Seq[(HostConfig, ReplicaConfig)] = if (replicasGiven) {
+      val replicaList = try {
+        deployConfig.getConfigList("replicas").asScala
       } catch {
-        case _: ConfigException.Missing => None
         case _: ConfigException.WrongType =>
-          throw new IllegalArgumentException(s"Error: 'project.version' must be a string")
+          throw new IllegalArgumentException("Error: 'replicas' must be a config list")
       }
+      replicaList map parseReplicaConfig
+    } else {
+      Seq()
+    }
+    val topLevelReplica: Seq[(HostConfig, ReplicaConfig)] = if (topHostGiven) {
+      Seq(parseReplicaConfig(deployConfig))
+    } else {
+      Seq()
+    }
+
+    // Group replicas by host.
+    val groupedReplicas: Map[HostConfig, Seq[ReplicaConfig]] = {
+      (replicaConfig ++ topLevelReplica).foldLeft(Map[HostConfig, Seq[ReplicaConfig]]()) {
+        case (hostMap, (hostConf, replicaConf)) =>
+          hostMap + (hostConf -> (hostMap.getOrElse(hostConf, Seq()) :+ replicaConf))
+      }
+    }
+
+    DeployConfig(
+      baseDirectory = baseDirectory,
+      startupScript = startupScript,
+      projectVersion = projectVersion,
+      replicasByHost = groupedReplicas
     )
   }
 
   /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
-    * [[org.allenai.plugins.DeployPlugin.HostConfig]] object.
-    * @param hostConfig host-level config to convert
+    * tuple of ([[HostConfig]], [[ReplicaConfig]]).
+    * @param replicaConfig host-level config to convert
     */
-  def parseHostConfig(hostConfig: Config): HostConfig = {
-    val requiredKeys = Seq("host", "directory", "startup_script", "user.ssh_username")
+  def parseReplicaConfig(replicaConfig: Config): (HostConfig, ReplicaConfig) = {
 
-    val confMap = (requiredKeys map { key =>
-      val value = try {
-        hostConfig.getString(key)
-      } catch {
-        case _: ConfigException.Missing =>
-          throw new IllegalArgumentException(
-            s"Error: ${hostConfig.root().render()} missing key '$key'."
-          )
-        case _: ConfigException.WrongType =>
-          throw new IllegalArgumentException(
-            s"Error: '$key' must be a string in ${hostConfig.root().render()}"
-          )
-      }
-
-      key -> value
-    }).toMap
+    val host = getStringValue(replicaConfig, "host")
+    val sshUser = getStringValue(replicaConfig, "user.ssh_username")
 
     val startArgs = try {
-      hostConfig.getStringList("startup_args").asScala
+      replicaConfig.getStringList("startup_args").asScala
     } catch {
       case _: ConfigException.Missing => Seq()
       case _: ConfigException.WrongType =>
         throw new IllegalArgumentException(
-          s"Error: 'startup_args' must be an array of strings in ${hostConfig.root().render()}"
+          s"Error: 'startup_args' must be an array of strings in ${replicaConfig.root().render()}"
         )
     }
 
-    HostConfig(
-      host = confMap("host"),
-      directory = confMap("directory"),
-      sshUser = confMap("user.ssh_username"),
-      startupScript = confMap("startup_script"),
-      startupArgs = startArgs
-    )
+    HostConfig(host = host, sshUser = sshUser) -> ReplicaConfig(startupArgs = startArgs)
+  }
+
+  /** Helper method to get a required string value from config. */
+  def getStringValue(config: Config, key: String): String = {
+    try {
+      config.getString(key)
+    } catch {
+      case _: ConfigException.Missing =>
+        throw new IllegalArgumentException(
+          s"Error: ${config.root().render()} missing key '$key'."
+        )
+      case _: ConfigException.WrongType =>
+        throw new IllegalArgumentException(
+          s"Error: '$key' must be a string in ${config.root().render()}"
+        )
+    }
   }
 }
