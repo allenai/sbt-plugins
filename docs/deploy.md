@@ -120,3 +120,9 @@ The deploy plugin will now stage this file to the `bin` directory with run-class
     $ ./servicename.sh restart # Same as 'stop' followed by 'start'.
 
 This will also use `servicename` for your logback appname.
+
+If you need to pass arguments to the service's main class on startup, you can do so by appending
+the args to the call to `servicename.sh`, separated from the `start|restart` command by `--`:
+
+    $ ./servicename.sh start -- arg1 arg2 --flag
+    $ ./servicename.sh restart -- other1 --otherflag
