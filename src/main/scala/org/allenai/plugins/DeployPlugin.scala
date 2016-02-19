@@ -272,7 +272,7 @@ object DeployPlugin extends AutoPlugin {
       }
       // Use find -exec to locate, stop, and remove stale replicas that won't be updated as part
       // of the current deploy.
-      val localStopCommand = Seq(
+      val findCommand = Seq(
         "find",
         s"$deployParent/*",
         "-prune",
@@ -282,10 +282,11 @@ object DeployPlugin extends AutoPlugin {
         "-exec", s"{}/bin/$namePattern.sh stop \\;",
         "-exec", "rm -r {} \\;"
       )
-      val stopCommand = Seq.concat(sshCommand, Seq(deployHost), localStopCommand)
+      val stopCommand = Seq.concat(sshCommand, Seq(deployHost), findCommand)
+      // Shell-friendly version of find command, for logging.
       val quotedStopCommand = Seq.concat(
         sshCommand,
-        Seq(deployHost, localStopCommand.mkString("'", " ", "'"))
+        Seq(deployHost, findCommand.mkString("'", " ", "'"))
       )
 
       log.info("Running " + quotedStopCommand.mkString(" ") + " . . .")
@@ -373,7 +374,7 @@ object DeployPlugin extends AutoPlugin {
               )
             ).mkString(" ")
 
-            // Now, ssh to the remote host and run the restart script.
+            // Command to run the restart script on the remote host.
             val restartScript = s"$deployDirectory/${deployConfig.startupScript}"
             val restartCommand = Seq.concat(
               sshCommand,
