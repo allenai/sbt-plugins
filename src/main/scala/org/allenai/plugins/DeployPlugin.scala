@@ -204,8 +204,7 @@ object DeployPlugin extends AutoPlugin {
 
     val deployConfig = parseConfig(deployTarget, targetConfig)
 
-    // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the
-    // commands.
+    // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the commands.
 
     // Check out the provided version, if it's set.
     deployConfig.projectVersion foreach { version =>
@@ -240,22 +239,21 @@ object DeployPlugin extends AutoPlugin {
       ConfigFactory.empty
     }
 
+    // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh operations.
+    val sshCommand = {
+      val keyFile = sys.env.getOrElse("AWS_PEM_FILE", {
+        throw new IllegalStateException(s"Environment variable 'AWS_PEM_FILE' is undefined")
+      })
+      require(keyFile.nonEmpty, "Environment variable 'AWS_PEM_FILE' is empty")
+
+      Seq("ssh", "-i", keyFile, "-l", deployConfig.sshUser)
+    }
+
     val hosts = deployConfig.replicaOverridesByHost.keys
-    val deploys: Iterable[Future[Try[Unit]]] = hosts flatMap { hostConfig =>
-      val deployHost = hostConfig.host
+    val deploys: Iterable[Future[Try[Unit]]] = hosts flatMap { hostName =>
       val baseDeployDir = deployConfig.baseDirectory
 
-      // Command to pass to rsync's "rsh" flag, and to use as the base of our ssh operations.
-      val sshCommand = {
-        val keyFile = sys.env.getOrElse("AWS_PEM_FILE", {
-          throw new IllegalStateException(s"Environment variable 'AWS_PEM_FILE' is undefined")
-        })
-        require(keyFile.nonEmpty, "Environment variable 'AWS_PEM_FILE' is empty")
-
-        Seq("ssh", "-i", keyFile, "-l", hostConfig.sshUser)
-      }
-
-      val replicas = deployConfig.replicaOverridesByHost(hostConfig)
+      val replicas = deployConfig.replicaOverridesByHost(hostName)
       val numReplicas = replicas.length
 
       // First, stop and remove any replicas on the remote that won't be restarted
@@ -282,16 +280,16 @@ object DeployPlugin extends AutoPlugin {
         "-exec", s"{}/bin/$namePattern.sh stop \\;",
         "-exec", "rm -r {} \\;"
       )
-      val stopCommand = Seq.concat(sshCommand, Seq(deployHost), findCommand)
+      val stopCommand = Seq.concat(sshCommand, Seq(hostName), findCommand)
       // Shell-friendly version of find command, for logging.
       val quotedStopCommand = Seq.concat(
         sshCommand,
-        Seq(deployHost, findCommand.mkString("'", " ", "'"))
+        Seq(hostName, findCommand.mkString("'", " ", "'"))
       )
 
       log.info("Running " + quotedStopCommand.mkString(" ") + " . . .")
       if (Process(stopCommand).! != 0) {
-        sys.error(s"Error while trying to tear down stale replicas on '$deployHost'.")
+        sys.error(s"Error while trying to tear down stale replicas on '$hostName'.")
       }
 
       replicas.zipWithIndex map {
@@ -327,7 +325,7 @@ object DeployPlugin extends AutoPlugin {
                 "--exclude=/*",
                 "--delete",
                 universalStagingDir.getPath + "/",
-                deployHost + ":" + deployDirectory
+                hostName + ":" + deployDirectory
               )
             )
             // Shell-friendly version of rsync command, with rsh value quoted.
@@ -345,7 +343,7 @@ object DeployPlugin extends AutoPlugin {
             // Command to create the remote conf directory.
             val prepConfCommand = Seq.concat(
               sshCommand,
-              Seq(deployHost, s"mkdir -p $deployDirectory/conf")
+              Seq(hostName, s"mkdir -p $deployDirectory/conf")
             )
             // Command to print the full env config, to be piped to SSH.
             val echoEnvCommand = Seq(
@@ -354,7 +352,7 @@ object DeployPlugin extends AutoPlugin {
             )
             val writeEnvCommand = Seq.concat(
               sshCommand,
-              Seq(deployHost, s"cat > $deployDirectory/conf/env.conf")
+              Seq(hostName, s"cat > $deployDirectory/conf/env.conf")
             )
             // Shell-friendly version of env copy, with config and remote commands quoted.
             val quotedEnvCopy = Seq.concat(
@@ -378,7 +376,7 @@ object DeployPlugin extends AutoPlugin {
             val restartScript = s"$deployDirectory/${deployConfig.startupScript}"
             val restartCommand = Seq.concat(
               sshCommand,
-              Seq(deployHost, restartScript, "restart")
+              Seq(hostName, restartScript, "restart")
             )
 
             // Run commands within a Try so we can collect errors using Future.fold.
@@ -386,19 +384,19 @@ object DeployPlugin extends AutoPlugin {
             Try {
               log.info("Running " + quotedRsync + " . . .")
               if (Process(rsyncCommand).! != 0) {
-                sys.error(s"Error running rsync to host '$deployHost'.")
+                sys.error(s"Error running rsync to host '$hostName'.")
               }
 
               log.info("Running " + quotedEnvCopy + " . . .")
               val createConf = Process(prepConfCommand)
               val copyConf = Process(echoEnvCommand) #| Process(writeEnvCommand)
               if ((createConf #&& copyConf).! != 0) {
-                sys.error(s"Error writing config to host '$deployHost'.")
+                sys.error(s"Error writing config to host '$hostName'.")
               }
 
               log.info("Running " + restartCommand.mkString(" ") + " . . .")
               if (Process(restartCommand).! != 0) {
-                sys.error(s"Error running restart command on host '$deployHost'.")
+                sys.error(s"Error running restart command on host '$hostName'.")
               }
             }
           }
@@ -570,27 +568,20 @@ object DeployPlugin extends AutoPlugin {
   }
 
   /** Wrapper for config information required to deploy a project to many replicas.
+    * @param sshUser the username to use when accessing hosts
     * @param baseDirectory the directory on remote hosts in which all project code should be placed
     * @param startupScript the path, relative to the deployed project's root, to the script that
     *                      should be used to restart the project after deploying the new code
     * @param projectVersion the version of the project being deployed
-    * @param replicaOverridesByHost map from host information to a list of config overrides
-    *                               representing the replicas
+    * @param replicaOverridesByHost map from host domain-name to a list of config overrides
+    *                               representing the replicas that should be deployed on that host
     */
   case class DeployConfig(
+    sshUser: String,
     baseDirectory: String,
     startupScript: String,
     projectVersion: Option[String],
-    replicaOverridesByHost: Map[HostConfig, Seq[Config]]
-  )
-
-  /** Wrapper for config needed to access a remote host.
-    * @param host the fully-qualified name of the host the project should be deployed to
-    * @param sshUser the username to use when accessing the host
-    */
-  case class HostConfig(
-    host: String,
-    sshUser: String
+    replicaOverridesByHost: Map[String, Seq[Config]]
   )
 
   /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
@@ -604,7 +595,7 @@ object DeployPlugin extends AutoPlugin {
 
     // Check for both replica list and top-level host config.
     val replicasGiven = deployConfig.hasPath("replicas")
-    val topHostGiven = deployConfig.hasPath("host") && deployConfig.hasPath("user.ssh_username")
+    val topHostGiven = deployConfig.hasPath("host")
 
     // Validate key layout.
     require(
@@ -615,12 +606,9 @@ object DeployPlugin extends AutoPlugin {
       !(replicasGiven && topHostGiven),
       "Deploy supports only one of 'replicas' or 'host'&'user.ssh_username' to be set"
     )
-    require(
-      topHostGiven || !(deployConfig.hasPath("host") || deployConfig.hasPath("user.ssh_username")),
-      "Specification of a top-level host requires both 'host' and 'user.ssh_username' keys"
-    )
 
     // Parse common config.
+    val sshUser = getStringValue(deployConfig, "user.ssh_username")
     val baseDirectory = getStringValue(deployConfig, "directory")
     val startupScript = getStringValue(deployConfig, "startup_script")
 
@@ -642,7 +630,7 @@ object DeployPlugin extends AutoPlugin {
       }
       val parsedReplicas = replicaList map parseReplicaConfig
 
-      parsedReplicas.foldLeft(Map[HostConfig, Seq[Config]]()) {
+      parsedReplicas.foldLeft(Map[String, Seq[Config]]()) {
         case (hostMap, (hostConf, configOverrides)) =>
           val overrideAcc = hostMap.getOrElse(hostConf, Seq())
           hostMap + (hostConf -> (overrideAcc :+ configOverrides.withFallback(globalOverrides)))
@@ -653,6 +641,7 @@ object DeployPlugin extends AutoPlugin {
     }
 
     DeployConfig(
+      sshUser = sshUser,
       baseDirectory = baseDirectory,
       startupScript = startupScript,
       projectVersion = projectVersion,
@@ -661,16 +650,13 @@ object DeployPlugin extends AutoPlugin {
   }
 
   /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
-    * tuple of ([[HostConfig]], [[Config]]).
-    * @param replicaConfig host-level config to convert
+    * tuple of ([[String]], [[Config]]) representing a host -> replica pair.
+    * @param replicaConfig config to parse
     */
-  def parseReplicaConfig(replicaConfig: Config): (HostConfig, Config) = {
-
+  def parseReplicaConfig(replicaConfig: Config): (String, Config) = {
     val host = getStringValue(replicaConfig, "host")
-    val sshUser = getStringValue(replicaConfig, "user.ssh_username")
     val configOverrides = getConfigOverrides(replicaConfig)
-
-    HostConfig(host = host, sshUser = sshUser) -> configOverrides
+    host -> configOverrides
   }
 
   /** Helper method to get a required string value from config. */
