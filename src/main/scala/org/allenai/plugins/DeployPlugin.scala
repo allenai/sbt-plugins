@@ -258,6 +258,41 @@ object DeployPlugin extends AutoPlugin {
       val replicas = deployConfig.replicaOverridesByHost(hostConfig)
       val numReplicas = replicas.length
 
+      // First, stop and remove any replicas on the remote that won't be restarted
+      // as part of the deploy.
+      val (deployParent, deployTarget) = baseDeployDir.splitAt(baseDeployDir.lastIndexOf('/'))
+      // Strip leading / from deployTarget so we can match names on it.
+      val namePattern = deployTarget.tail
+      // Build a regex matching the replicas we will eventually update / restart as part of this
+      // process, and therefore DON'T want to stop and remove.
+      val restartedPattern = if (numReplicas == 1) {
+        namePattern
+      } else {
+        s"$namePattern-[1-$numReplicas]"
+      }
+      // Use find -exec to locate, stop, and remove stale replicas that won't be updated as part
+      // of the current deploy.
+      val localStopCommand = Seq(
+        "find",
+        s"$deployParent/*",
+        "-prune",
+        "-type", "d",
+        "-name", "\"" + s"$namePattern*" + "\"",
+        "-not", "-name", "\"" + restartedPattern + "\"",
+        "-exec", s"{}/bin/$namePattern.sh stop \\;",
+        "-exec", "rm -r {} \\;"
+      )
+      val stopCommand = Seq.concat(sshCommand, Seq(deployHost), localStopCommand)
+      val quotedStopCommand = Seq.concat(
+        sshCommand,
+        Seq(deployHost, localStopCommand.mkString("'", " ", "'"))
+      )
+
+      log.info("Running " + stopCommand.mkString(" ") + " . . .")
+      if (Process(stopCommand).! != 0) {
+        sys.error(s"Error while trying to tear down stale replicas on '$deployHost'.")
+      }
+
       replicas.zipWithIndex map {
         case (replicaConfig, i) => {
           Future {
