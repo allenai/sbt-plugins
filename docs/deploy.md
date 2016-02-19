@@ -126,3 +126,6 @@ the args to the call to `servicename.sh`, separated from the `start|restart` com
 
     $ ./servicename.sh start -- arg1 arg2 --flag
     $ ./servicename.sh restart -- other1 --otherflag
+
+This is not recommended for normal deploys, however, since it makes it impossible to manually
+restart the service with the same start state without looking into deploy configuration.
