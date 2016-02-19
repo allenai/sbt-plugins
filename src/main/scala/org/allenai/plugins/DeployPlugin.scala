@@ -179,6 +179,33 @@ object DeployPlugin extends AutoPlugin {
     }
   }
 
+  // We stage and generate the cache key in the same task so that stage only runs once.
+  val stageAndCacheKeyTask = stageAndCacheKey := {
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
+    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    val logger = streams.value.log
+    val allFiles = ((stageDir / "lib") * "*.jar").get
+    val filteredFilenames = dependentStagingArtifactFilenames.value ++
+      filterNotCacheKeyGenFileNames.value :+
+      stagingArtifactFilename.value
+    val filesToHash = allFiles filterNot { f: File =>
+      val fileName = f.getName
+      filteredFilenames.exists(fileName.startsWith)
+    }
+    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex)
+    // We sort so that we're not dependent on filesystem or git sorting remaining stable in order
+    // for the cacheKey to not change.
+    val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
+
+    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.Sha1")
+
+    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
+
+    IO.write(cacheKeyConfFile, cacheKey)
+    // return the stageDirectory so that others can depend on stage having happened via us
+    stageDir
+  }
+
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
@@ -424,75 +451,6 @@ object DeployPlugin extends AutoPlugin {
     log.info("Deploy complete. Validate your server!")
   }
 
-  // we stage and generate the cache key in the same task so that stage only runs once
-  val stageAndCacheKeyTask = stageAndCacheKey := {
-    import VersionInjectorPlugin.autoImport.gitLocalSha1
-    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
-    val logger = streams.value.log
-    val allFiles = ((stageDir / "lib") * "*.jar").get
-    val filteredFilenames = dependentStagingArtifactFilenames.value ++
-      filterNotCacheKeyGenFileNames.value :+
-      stagingArtifactFilename.value
-    val filesToHash = allFiles filterNot { f: File =>
-      val fileName = f.getName
-      filteredFilenames.exists(fileName.startsWith)
-    }
-    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex)
-    // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
-    // to not change
-    val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
-
-    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.Sha1")
-
-    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
-
-    IO.write(cacheKeyConfFile, cacheKey)
-    // return the stageDirectory so that others can depend on stage having happened via us
-    stageDir
-  }
-
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    gitRepoCleanTask,
-    gitRepoPresentTask,
-    cleanStageTask,
-    deployDirs := Seq("bin", "lib", "public"),
-    nodeEnv := "prod",
-    deployTask,
-    stageAndCacheKeyTask,
-    // Clean up anything leftover in the staging directory before re-staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
-    // Create the required run-class.sh script before staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
-
-    // Add root run script.
-    mappings in Universal += {
-      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
-    },
-
-    // JavaAppPackaging creates non-daemon start scripts by default. Since we
-    // provide our own run-class.sh script meant for running a daemon process,
-    // we disable the creation of these scripts by default.
-    // You can opt-in by setting `makeDefaultBashScript := true` in your
-    // build.sbt
-    makeDefaultBashScript := false,
-    filterNotCacheKeyGenFileNames := Seq(),
-    JavaAppPackaging.autoImport.makeBashScript := {
-      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
-    },
-    JavaAppPackaging.autoImport.makeBatScript := None,
-
-    // Map src/main/resources => conf and src/main/bin => bin.
-    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
-    // for more info on sbt mappings.
-    mappings in Universal ++=
-      (sourceDirectory.value / "main" / "resources" ** "*" pair
-        rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
-        (sourceDirectory.value / "main" / "bin" ** "*" pair
-          relativeTo(sourceDirectory.value / "main"))
-  )
-
   /** Parses all Java properties-style defines from the argument list, and
     * returns the Config generated from these properties, as well as the updated
     * argument list.
@@ -687,4 +645,46 @@ object DeployPlugin extends AutoPlugin {
         )
     }
   }
+
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    gitRepoCleanTask,
+    gitRepoPresentTask,
+    cleanStageTask,
+    deployDirs := Seq("bin", "lib", "public"),
+    nodeEnv := "prod",
+    deployTask,
+    stageAndCacheKeyTask,
+    // Clean up anything leftover in the staging directory before re-staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
+    // Create the required run-class.sh script before staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
+
+    // Add root run script.
+    mappings in Universal += {
+      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
+    },
+
+    // JavaAppPackaging creates non-daemon start scripts by default. Since we
+    // provide our own run-class.sh script meant for running a daemon process,
+    // we disable the creation of these scripts by default.
+    // You can opt-in by setting `makeDefaultBashScript := true` in your
+    // build.sbt
+    makeDefaultBashScript := false,
+    filterNotCacheKeyGenFileNames := Seq(),
+    JavaAppPackaging.autoImport.makeBashScript := {
+      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
+    },
+    JavaAppPackaging.autoImport.makeBatScript := None,
+
+    // Map src/main/resources => conf and src/main/bin => bin.
+    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
+    // for more info on sbt mappings.
+    mappings in Universal ++=
+      (sourceDirectory.value / "main" / "resources" ** "*" pair
+        rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
+        (sourceDirectory.value / "main" / "bin" ** "*" pair
+          relativeTo(sourceDirectory.value / "main"))
+  )
 }
