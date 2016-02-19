@@ -288,7 +288,7 @@ object DeployPlugin extends AutoPlugin {
         Seq(deployHost, localStopCommand.mkString("'", " ", "'"))
       )
 
-      log.info("Running " + stopCommand.mkString(" ") + " . . .")
+      log.info("Running " + quotedStopCommand.mkString(" ") + " . . .")
       if (Process(stopCommand).! != 0) {
         sys.error(s"Error while trying to tear down stale replicas on '$deployHost'.")
       }
