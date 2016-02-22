@@ -82,6 +82,117 @@ A simple configuration using `global_deploy.conf` could look like:
       }
     }
 
+Running the deploy task with this config would result in a single instance of `servicename`
+being deployed to the host `ari-staging.allenai.org`, with code placed in the remote directory
+`/local/deploy/servicename`.
+
+A more complex configuration would involve deploying multiple instances of a host in parallel. An
+example configuration achieving this would be:
+
+    staging = {
+      include "global_deploy.conf"
+
+      project = {
+        name = "servicename"
+      }
+      deploy = {
+        replicas = [
+          {
+            host = "ari-staging.allenai.org"
+          }
+          {
+            host = "ari-staging.allenai.org"
+          }
+        ]
+      }
+    }
+
+Deploying with this config would set up two instances of `servicename` on `ari-staging.allenai.org`,
+with code placed in the remote directories `/local/deploy/servicename-1` and
+`/local/deploy/servicename-2`.
+
+The naming scheme of remote directories the plugin deploys to is determined by the number of
+replicas being deployed to a given host. If only one replica is being deployed to a host, then
+only one directory will be created on the host, and it will be named according to the value of
+the `deploy.directory` key in config (which in turn can be derived from the `project.name` key).
+On the other hand, if multiple replicas are being deployed to a host then multiple directories
+will be created on the host; the names of these directories will take the form `deploy.directory-i`,
+where `i` is the index of the replica contained in the directory.
+
+The above example is contrived in that it deploys two identical services on the same host. More
+likely, we'd want to deploy two instances of a service with slightly different configuration (to
+prevent conflict over port bindings, for example). The deploy task supports this usage by
+allowing per-replica config overrides to be specified in `deploy.conf`, for example:
+
+    staging = {
+      include "global_deploy.conf"
+
+      project = {
+        name = "servicename"
+      }
+      deploy = {
+        replicas = [
+          {
+            host = "ari-staging.allenai.org",
+            config_overrides = { port = 2000 }
+          }
+          {
+            host = "ari-staging.allenai.org"
+            config_overrides = { port = 3000 }
+          }
+        ]
+      }
+    }
+
+Note that overrides are merged directly with the top-level object defined by the service's
+environment configuration (for example, `dev.conf`), so keys must match for overrides to take hold.
+It's also possible to specify a `config_overrides` key in the top-level `deploy` object. Any
+overrides listed in that location will be applied to all replicas, or to the single top-level
+host if only one service instance is being deployed.
+
+The deploy task will handle stopping and cleaning up any replicas that become stale as deploy
+configuration changes over time. For example, if a project with config:
+
+    staging = {
+      include "global_deploy.conf"
+
+      project = {
+        name = "servicename"
+      }
+      deploy = {
+        replicas = [
+          {
+            host = "ari-staging.allenai.org",
+            config_overrides = { port = 2000 }
+          }
+          {
+            host = "ari-staging.allenai.org"
+            config_overrides = { port = 3000 }
+          }
+        ]
+      }
+    }
+
+Was modified to have config:
+
+    staging = {
+      include "global_deploy.conf"
+
+      project = {
+        name = "servicename"
+      }
+      deploy = {
+        host = "ari-staging.allenai.org"
+      }
+    }
+
+On the next deploy, the deploy task will stop the old replicas running in
+`/local/deploy/servicename-1` and `/local/deploy/servicename-2` and delete those directories
+before deploying to `/local/deploy/servicename`. The same would be true in reverse. The task
+would not, however, delete the two directories if a third replica was added instead of the second
+being removed, since the directories would still be valid for use according to the directory
+naming scheme outlined above.
+
 The `ari-core` project has a more complicated example using more features of the [HOCON language](https://github.com/typesafehub/config/blob/master/HOCON.md).
 
 ### caching
@@ -120,3 +231,12 @@ The deploy plugin will now stage this file to the `bin` directory with run-class
     $ ./servicename.sh restart # Same as 'stop' followed by 'start'.
 
 This will also use `servicename` for your logback appname.
+
+If you need to pass arguments to the service's main class on startup, you can do so by appending
+the args to the call to `servicename.sh`, separated from the `start|restart` command by `--`:
+
+    $ ./servicename.sh start -- arg1 arg2 --flag
+    $ ./servicename.sh restart -- other1 --otherflag
+
+This is not recommended for normal deploys, however, since it makes it impossible to manually
+restart the service with the same start state without looking into deploy configuration.
