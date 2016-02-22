@@ -321,8 +321,15 @@ object DeployPlugin extends AutoPlugin {
       val replicas = deployConfig.replicaOverridesByHost(hostName)
       val numReplicas = replicas.length
 
-      // First, stop and remove any replicas on the remote that won't be restarted
-      // as part of the deploy.
+      // First, ensure parent directory structure of deploy exists.
+      mkdirOnRemote(
+        hostName,
+        baseDeployDir.take(baseDeployDir.lastIndexOf('/')),
+        sshCommand,
+        log
+      )
+
+      // Then stop and remove any replicas that won't be restarted as part of the deploy.
       stopStaleReplicas(hostName, baseDeployDir, numReplicas, sshCommand, log)
 
       // Loop over all replicas being set up on the current remote, and deploy to them in parallel.
@@ -621,7 +628,7 @@ object DeployPlugin extends AutoPlugin {
     val findCommand = Seq(
       "find",
       // Prevent `find` from reporting subdirectories of the deployed replicas.
-      s"$deployParent/*", "-prune",
+      deployParent, "-maxdepth", "1",
       // Set `find` to only report directory names.
       "-type", "d",
       // Set `find` to only report directories named after this project (to avoid cleaning other
@@ -739,7 +746,7 @@ object DeployPlugin extends AutoPlugin {
     // Command to print the full env config, to be piped to SSH.
     val echoConfCommand = Seq("echo", renderedConf)
     // Shell-friendly version of above, for copy-paste.
-    val quotedEcho = Seq("echo", s"'$renderedConf'")
+    val quotedEcho = Seq("echo", s"'$renderedConf'").mkString(" ")
 
     // SSH command to receive `echo` results and redirect them to disk.
     val writeConfCommand = sshCommand :+ host :+ s"cat > $confPath/env.conf"
