@@ -78,7 +78,7 @@ object DeployPlugin extends AutoPlugin {
       */
     val deployDirs = settingKey[Seq[String]](
       "subdirectories from the stage task to copy during deploy. " +
-        "defaults to bin/, lib/, and public/"
+        "defaults to bin/, conf/, lib/, and public/"
     )
 
     val gitRepoClean = taskKey[Unit]("Succeeds if the git repository is clean")
@@ -87,6 +87,48 @@ object DeployPlugin extends AutoPlugin {
   }
 
   import autoImport._
+
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    gitRepoCleanTask,
+    gitRepoPresentTask,
+    cleanStageTask,
+    deployDirs := Seq("bin", "conf", "lib", "public"),
+    nodeEnv := "prod",
+    deployTask,
+    stageAndCacheKeyTask,
+    // Clean up anything leftover in the staging directory before re-staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
+    // Create the required run-class.sh script before staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
+
+    // Add root run script.
+    mappings in Universal += {
+      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
+    },
+
+    // JavaAppPackaging creates non-daemon start scripts by default. Since we
+    // provide our own run-class.sh script meant for running a daemon process,
+    // we disable the creation of these scripts by default.
+    // You can opt-in by setting `makeDefaultBashScript := true` in your
+    // build.sbt
+    makeDefaultBashScript := false,
+    filterNotCacheKeyGenFileNames := Seq(),
+    JavaAppPackaging.autoImport.makeBashScript := {
+      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
+    },
+    JavaAppPackaging.autoImport.makeBatScript := None,
+
+    // Map src/main/resources => conf and src/main/bin => bin.
+    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
+    // for more info on sbt mappings.
+    mappings in Universal ++=
+      (sourceDirectory.value / "main" / "resources" ** "*" pair
+        rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
+        (sourceDirectory.value / "main" / "bin" ** "*" pair
+          relativeTo(sourceDirectory.value / "main"))
+  )
 
   /** sbt.Logger wrapper that prepends [deploy] to log messages */
   case class DeployLogger(sbtLogger: Logger) {
@@ -207,32 +249,31 @@ object DeployPlugin extends AutoPlugin {
   }
 
   lazy val deployTask = deploy := {
-    // Dependencies
+    // Task dependencies.
     gitRepoClean.value
     val log = DeployLogger(streams.value.log)
+    val universalStagingDir = stageAndCacheKey.value
+    val workingDirectory = (baseDirectory in thisProject).value
+    val deployedDirs = deployDirs.value
 
-    val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
+    log.info(s"Building ${(name in thisProject).value} . . .")
+
     // Process any definition-like args.
+    val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
     val (commandlineOverrides, reducedArgs) = parseDefines(args)
-
     if (reducedArgs.length != 1) {
       throw new IllegalArgumentException(Usage)
     }
+    val deployTarget = reducedArgs.head
 
-    val workingDirectory = (baseDirectory in thisProject).value
+    // Get configuration for the deploy process itself.
     val configFile = new File(workingDirectory.getPath + "/conf/deploy.conf")
     if (!configFile.isFile) {
       throw new IllegalArgumentException(s"${configFile.getPath}: Must be a config file")
     }
-
-    val deployTarget = reducedArgs.head
-
-    val targetConfig = loadTargetConfig(commandlineOverrides, configFile, deployTarget)
-
-    val deployConfig = parseConfig(deployTarget, targetConfig)
+    val deployConfig = loadDeployConfig(commandlineOverrides, configFile, deployTarget)
 
     // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the commands.
-
     // Check out the provided version, if it's set.
     deployConfig.projectVersion foreach { version =>
       log.info(s"Checking out $version . . .")
@@ -247,10 +288,6 @@ object DeployPlugin extends AutoPlugin {
     } else {
       deployTarget
     }
-
-    log.info(s"Building ${(name in thisProject).value} . . .")
-
-    val universalStagingDir = stageAndCacheKey.value
 
     val envConfFile = new File(universalStagingDir, s"conf/$deployEnv.conf")
     val baseEnvConf = if (envConfFile.exists) {
@@ -276,6 +313,7 @@ object DeployPlugin extends AutoPlugin {
       Seq("ssh", "-i", keyFile, "-l", deployConfig.sshUser)
     }
 
+    // Loop over all unique remote hosts listed in config, deploying to them in parallel.
     val hosts = deployConfig.replicaOverridesByHost.keys
     val deploys: Iterable[Future[Try[Unit]]] = hosts flatMap { hostName =>
       val baseDeployDir = deployConfig.baseDirectory
@@ -285,147 +323,49 @@ object DeployPlugin extends AutoPlugin {
 
       // First, stop and remove any replicas on the remote that won't be restarted
       // as part of the deploy.
-      val (deployParent, deployTarget) = baseDeployDir.splitAt(baseDeployDir.lastIndexOf('/'))
-      // Strip leading / from deployTarget so we can match names on it.
-      val namePattern = deployTarget.tail
-      // Build a regex matching the replicas we will eventually update / restart as part of this
-      // process, and therefore DON'T want to stop and remove.
-      val restartedPattern = if (numReplicas == 1) {
-        namePattern
-      } else {
-        s"$namePattern-[1-$numReplicas]"
-      }
-      // Use find -exec to locate, stop, and remove stale replicas that won't be updated as part
-      // of the current deploy.
-      val findCommand = Seq(
-        "find",
-        s"$deployParent/*",
-        "-prune",
-        "-type", "d",
-        "-name", "\"" + s"$namePattern*" + "\"",
-        "-not", "-name", "\"" + restartedPattern + "\"",
-        "-exec", s"{}/bin/$namePattern.sh stop \\;",
-        "-exec", "rm -r {} \\;"
-      )
-      val stopCommand = Seq.concat(sshCommand, Seq(hostName), findCommand)
-      // Shell-friendly version of find command, for logging.
-      val quotedStopCommand = Seq.concat(
-        sshCommand,
-        Seq(hostName, findCommand.mkString("'", " ", "'"))
-      )
+      stopStaleReplicas(hostName, baseDeployDir, numReplicas, sshCommand, log)
 
-      log.info("Running " + quotedStopCommand.mkString(" ") + " . . .")
-      if (Process(stopCommand).! != 0) {
-        sys.error(s"Error while trying to tear down stale replicas on '$hostName'.")
-      }
-
+      // Loop over all replicas being set up on the current remote, and deploy to them in parallel.
       replicas.zipWithIndex map {
         case (replicaConfig, i) => {
+          // Determine the specific remote directory for this replica.
+          val deployDirectory = if (numReplicas > 1) {
+            s"$baseDeployDir-${i + 1}"
+          } else {
+            baseDeployDir
+          }
+          // Environment config with replica-specific overrides to copy to the remote host.
+          val envConf = replicaConfig.withFallback(baseEnvConf)
+
           Future {
-            // Determine the specific remote directory for this replica.
-            val deployDirectory = if (numReplicas > 1) {
-              s"$baseDeployDir-${i + 1}"
-            } else {
-              baseDeployDir
-            }
-
-            // Command to pass to rsync's "rsync-path" flag to ensure creation of the remote dir.
-            // http://www.schwertly.com/2013/07/forcing-rsync-to-create-a-remote-path-using-rsync-path/
-            val pathCommand = Seq(
-              "mkdir",
-              "-p",
+            // Ensure the target deploy directory exists on the remote (rsync won't do it for you).
+            mkdirOnRemote(hostName, deployDirectory, sshCommand, log)
+          } map { _ =>
+            // Sync the project to the remote.
+            rsyncToRemote(
+              hostName,
+              sshCommand,
+              universalStagingDir.getPath + "/",
               deployDirectory,
-              "&&",
-              "rsync"
+              deployedDirs,
+              log
             )
-
-            val rsyncDirs = deployDirs.value map { name => s"--include=/$name" }
-            val rsyncCommand = Seq.concat(
-              Seq(
-                "rsync",
-                "-vcrtzP",
-                s"--rsync-path=${pathCommand.mkString(" ")}",
-                s"--rsh=${sshCommand.mkString(" ")}"
-              ),
-              rsyncDirs,
-              Seq(
-                "--exclude=/*",
-                "--delete",
-                universalStagingDir.getPath + "/",
-                hostName + ":" + deployDirectory
-              )
-            )
-            // Shell-friendly version of rsync command, with rsh value quoted.
-            val quotedRsync = rsyncCommand.patch(
-              2,
-              Seq(
-                "--rsync-path=" + pathCommand.mkString("\"", " ", "\""),
-                "--rsh=" + sshCommand.mkString("\"", " ", "\"")
-              ),
-              2
-            ).mkString(" ")
-
-            // Environment config with replica-specific overrides to copy to the remote host.
-            val envConf = replicaConfig.withFallback(baseEnvConf)
-            // Command to create the remote conf directory.
-            val prepConfCommand = Seq.concat(
+          } map { _ =>
+            // Copy replica-specific config into the synchronized directory.
+            copyEnvConfToRemote(hostName, envConf, s"$deployDirectory/conf", sshCommand, log)
+          } map { _ =>
+            // Restart the replica.
+            restartReplica(
+              hostName,
+              s"$deployDirectory/${deployConfig.startupScript}",
               sshCommand,
-              Seq(hostName, s"mkdir -p $deployDirectory/conf")
+              log
             )
-            // Command to print the full env config, to be piped to SSH.
-            val echoEnvCommand = Seq(
-              "echo",
-              envConf.root().render(ConfigRenderOptions.concise)
-            )
-            val writeEnvCommand = Seq.concat(
-              sshCommand,
-              Seq(hostName, s"cat > $deployDirectory/conf/env.conf")
-            )
-            // Shell-friendly version of env copy, with config and remote commands quoted.
-            val quotedEnvCopy = Seq.concat(
-              prepConfCommand.updated(
-                prepConfCommand.length - 1,
-                s"'mkdir -p $deployDirectory/conf'"
-              ),
-              Seq("&&"),
-              echoEnvCommand.updated(
-                echoEnvCommand.length - 1,
-                s"'${envConf.root().render(ConfigRenderOptions.concise)}'"
-              ),
-              Seq("|"),
-              writeEnvCommand.updated(
-                writeEnvCommand.length - 1,
-                s"'cat > $deployDirectory/conf/env.conf'"
-              )
-            ).mkString(" ")
-
-            // Command to run the restart script on the remote host.
-            val restartScript = s"$deployDirectory/${deployConfig.startupScript}"
-            val restartCommand = Seq.concat(
-              sshCommand,
-              Seq(hostName, restartScript, "restart")
-            )
-
-            // Run commands within a Try so we can collect errors using Future.fold.
-            // TODO(danm): Use ProcessIO to capture and report the actual stderr of failures here.
-            Try {
-              log.info("Running " + quotedRsync + " . . .")
-              if (Process(rsyncCommand).! != 0) {
-                sys.error(s"Error running rsync to host '$hostName'.")
-              }
-
-              log.info("Running " + quotedEnvCopy + " . . .")
-              val createConf = Process(prepConfCommand)
-              val copyConf = Process(echoEnvCommand) #| Process(writeEnvCommand)
-              if ((createConf #&& copyConf).! != 0) {
-                sys.error(s"Error writing config to host '$hostName'.")
-              }
-
-              log.info("Running " + restartCommand.mkString(" ") + " . . .")
-              if (Process(restartCommand).! != 0) {
-                sys.error(s"Error running restart command on host '$hostName'.")
-              }
-            }
+          } map { _ =>
+            // Wrap the entire chain in a Try so we can collect any errors that may have occurred.
+            Success()
+          } recover {
+            case e => Failure(e)
           }
         }
       }
@@ -483,48 +423,6 @@ object DeployPlugin extends AutoPlugin {
     (config, prunedArgs)
   }
 
-  /** Loads the given config file, fetches the config at the given key, then
-    * merges it with ~/.deployrc (if it exists), and the provided overrides.
-    *
-    * Exits the program if the file can't be parsed or the given key doesn't
-    * exist.
-    * @param overrides a config to use to override the values loaded from the file
-    * @param configFile the config file to load
-    * @param deployKey the key into the config file to return
-    */
-  def loadTargetConfig(overrides: Config, configFile: File, deployKey: String): Config = {
-    // Load the config file.
-    val deployConfig = try {
-      ConfigFactory.parseFile(configFile).resolve
-    } catch {
-      case configError: ConfigException =>
-        throw new IllegalArgumentException("Error loading config file:" + configError.getMessage)
-    }
-
-    // Validate that the user provided a target that exists.
-    if (!deployConfig.hasPath(deployKey)) {
-      println(s"Error: No configuration found for target '$deployKey'.")
-      println("Possible root targets are:")
-      val keys = for {
-        key <- deployConfig.root.keySet.asScala
-      } yield key
-      println(s"    ${keys.mkString(" ")}")
-      throw new IllegalArgumentException(s"Error: No configuration found for target '$deployKey'.")
-    }
-    val targetConfig = deployConfig.getConfig(deployKey)
-
-    // Load .deployrc file, if it exists.
-    val rcFile = new File(System.getenv("HOME"), ".deployrc")
-    val rcConfig = if (rcFile.isFile) {
-      ConfigFactory.parseFile(rcFile)
-    } else {
-      ConfigFactory.empty
-    }
-
-    // Final config order - overrides > rcFile > target.
-    overrides.withFallback(rcConfig.withFallback(targetConfig)).resolve
-  }
-
   /** Wrapper for config information required to deploy a project to many replicas.
     * @param sshUser the username to use when accessing hosts
     * @param baseDirectory the directory on remote hosts in which all project code should be placed
@@ -542,14 +440,47 @@ object DeployPlugin extends AutoPlugin {
     replicaOverridesByHost: Map[String, Seq[Config]]
   )
 
-  /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
-    * [[org.allenai.plugins.DeployPlugin.DeployConfig]] object.
-    * @param targetName the name of the target to print on error
-    * @param targetConfig env-level deployment config to convert
+  /** Loads the given config file, fetches the config at the given key, then
+    * merges it with ~/.deployrc (if it exists), and the provided overrides.
+    * After merging, parses the result into a [[DeployConfig]] object for subsequent use.
+    * Exits the program if the file can't be parsed or the given key doesn't
+    * exist.
+    * @param overrides a config to use to override the values loaded from the file
+    * @param configFile the config file to load
+    * @param deployKey the key into the config file to return
     */
-  def parseConfig(targetName: String, targetConfig: Config): DeployConfig = {
+  def loadDeployConfig(overrides: Config, configFile: File, deployKey: String): DeployConfig = {
+    // Load the config file.
+    val loadedConfig = try {
+      ConfigFactory.parseFile(configFile).resolve
+    } catch {
+      case configError: ConfigException =>
+        throw new IllegalArgumentException("Error loading config file:" + configError.getMessage)
+    }
 
-    val deployConfig = targetConfig.getConfig("deploy")
+    // Validate that the user provided a target that exists.
+    if (!loadedConfig.hasPath(deployKey)) {
+      println(s"Error: No configuration found for target '$deployKey'.")
+      println("Possible root targets are:")
+      val keys = for {
+        key <- loadedConfig.root.keySet.asScala
+      } yield key
+      println(s"    ${keys.mkString(" ")}")
+      throw new IllegalArgumentException(s"Error: No configuration found for target '$deployKey'.")
+    }
+    val targetConfig = loadedConfig.getConfig(deployKey)
+
+    // Load .deployrc file, if it exists.
+    val rcFile = new File(System.getenv("HOME"), ".deployrc")
+    val rcConfig = if (rcFile.isFile) {
+      ConfigFactory.parseFile(rcFile)
+    } else {
+      ConfigFactory.empty
+    }
+
+    // Final config order - overrides > rcFile > target.
+    val finalConfig = overrides.withFallback(rcConfig.withFallback(targetConfig)).resolve
+    val deployConfig = finalConfig.getConfig("deploy")
 
     // Check for both replica list and top-level host config.
     val replicasGiven = deployConfig.hasPath("replicas")
@@ -558,11 +489,11 @@ object DeployPlugin extends AutoPlugin {
     // Validate key layout.
     require(
       replicasGiven || topHostGiven,
-      "Deploy requires either key 'replicas' or keys 'host' and 'user.ssh_username' to be set"
+      "Deploy requires either 'deploy.replicas' or 'deploy.host' to be set"
     )
     require(
       !(replicasGiven && topHostGiven),
-      "Deploy supports only one of 'replicas' or 'host'&'user.ssh_username' to be set"
+      "Deploy supports setting only one of 'deploy.replicas' or 'deploy.host'"
     )
 
     // Parse common config.
@@ -571,7 +502,7 @@ object DeployPlugin extends AutoPlugin {
     val startupScript = getStringValue(deployConfig, "startup_script")
 
     val projectVersion = try {
-      Some(targetConfig.getString("project.version"))
+      Some(finalConfig.getString("project.version"))
     } catch {
       case _: ConfigException.Missing => None
       case _: ConfigException.WrongType =>
@@ -584,16 +515,14 @@ object DeployPlugin extends AutoPlugin {
         deployConfig.getConfigList("replicas").asScala
       } catch {
         case _: ConfigException.WrongType =>
-          throw new IllegalArgumentException("Error: 'replicas' must be a config list")
+          throw new IllegalArgumentException("Error: 'deploy.replicas' must be a config list")
       }
       val parsedReplicas = replicaList map parseReplicaConfig
-
       parsedReplicas.foldLeft(Map[String, Seq[Config]]()) {
         case (hostMap, (hostConf, configOverrides)) =>
           val overrideAcc = hostMap.getOrElse(hostConf, Seq())
           hostMap + (hostConf -> (overrideAcc :+ configOverrides.withFallback(globalOverrides)))
       }
-
     } else {
       Map(parseReplicaConfig(deployConfig)) mapValues { Seq(_) }
     }
@@ -646,45 +575,210 @@ object DeployPlugin extends AutoPlugin {
     }
   }
 
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    gitRepoCleanTask,
-    gitRepoPresentTask,
-    cleanStageTask,
-    deployDirs := Seq("bin", "lib", "public"),
-    nodeEnv := "prod",
-    deployTask,
-    stageAndCacheKeyTask,
-    // Clean up anything leftover in the staging directory before re-staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
-    // Create the required run-class.sh script before staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
+  /** Use `find -exec` to locate, stop, and remove stale replicas that won't be updated as part
+    * of a running deploy. Replicas are considered 'stale' if they are running in a directory
+    * that will not be updated by subsequent `rsync` commands.
+    * Directories are chosen to be `rsync`-ed according to the following scheme:
+    *   - If only one replica is being deployed to a host, then the `rsync`-ed directory will be
+    *     `baseDeployDirectory`.
+    *   - If `n > 1` replicas are being deployed to a host, then the `rsync`-ed directories will
+    *     be `baseDeployDirectory-i` for `i` in `1` to `n`.
+    * @param host the remote host to clean up
+    * @param baseDeployDirectory the base deploy directory for this project on the remote host
+    * @param numReplicas the number of replicas that will later be deployed to the remote host
+    *                    using `rsync`
+    * @param sshCommand a constructed SSH command that should be used to communicate with the
+    *                   remote host
+    */
+  def stopStaleReplicas(
+    host: String,
+    baseDeployDirectory: String,
+    numReplicas: Int,
+    sshCommand: Seq[String],
+    log: DeployLogger
+  ): Unit = {
+    // The base deploy directory for this project includes the project name; extract it.
+    val (deployParent, deployTarget) =
+      baseDeployDirectory.splitAt(baseDeployDirectory.lastIndexOf('/'))
 
-    // Add root run script.
-    mappings in Universal += {
-      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
-    },
+    // Strip leading '/' from project name so we can match names on it.
+    val projectName = deployTarget.tail
 
-    // JavaAppPackaging creates non-daemon start scripts by default. Since we
-    // provide our own run-class.sh script meant for running a daemon process,
-    // we disable the creation of these scripts by default.
-    // You can opt-in by setting `makeDefaultBashScript := true` in your
-    // build.sbt
-    makeDefaultBashScript := false,
-    filterNotCacheKeyGenFileNames := Seq(),
-    JavaAppPackaging.autoImport.makeBashScript := {
-      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
-    },
-    JavaAppPackaging.autoImport.makeBatScript := None,
+    // Build a pattern matching the replica directories that we want to maintain for subsequent
+    // updates. This pattern will be passed to `find` as a negated name match.
+    val persistedPattern = if (numReplicas == 1) {
+      // If only one replica is going to be deployed, we want to keep the deploy directory
+      // without a numeric suffix.
+      projectName
+    } else {
+      // If multiple replicas are going to be deployed, we want to keep one deploy directory for
+      // each of them.
+      s"$projectName-[1-$numReplicas]"
+    }
 
-    // Map src/main/resources => conf and src/main/bin => bin.
-    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
-    // for more info on sbt mappings.
-    mappings in Universal ++=
-      (sourceDirectory.value / "main" / "resources" ** "*" pair
-        rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
-        (sourceDirectory.value / "main" / "bin" ** "*" pair
-          relativeTo(sourceDirectory.value / "main"))
-  )
+    // Build the `find` command that will be executed on the remote host to stop & clean stale
+    // replicas.
+    val findCommand = Seq(
+      "find",
+      // Prevent `find` from reporting subdirectories of the deployed replicas.
+      s"$deployParent/*", "-prune",
+      // Set `find` to only report directory names.
+      "-type", "d",
+      // Set `find` to only report directories named after this project (to avoid cleaning other
+      // deployed projects).
+      "-name", "\"" + projectName + "*\"",
+      // Set `find` to ignore the directories we've decided to persist.
+      "-not", "-name", "\"" + persistedPattern + "\"",
+      // Within each replica directory meeting the above criteria, stop the service.
+      "-exec", s"{}/bin/$projectName.sh stop \\;",
+      // After stopping the replica service, delete it from the deploy directory.
+      "-exec", "rm -r {} \\;"
+    )
+
+    // Build the SSH command that will be sent to the remote host to execute the above `find`.
+    val teardownCommand = (sshCommand :+ host) ++ findCommand
+    // Also build a shell-friendly version of the command to log out, for copy-paste.
+    val quotedTeardownCommand = quoteSshCmd(sshCommand, host, findCommand)
+
+    // Log and run the command on the remote host, and throw an error if it fails.
+    log.info(s"Running $quotedTeardownCommand . . .")
+    if (Process(teardownCommand).! != 0) {
+      sys.error(s"Error while trying to tear down stale replicas on '$host'.")
+    }
+  }
+
+  /** Run `mkdir` through SSH to create a remote directory.
+    * @param host the remote host to make a directory on
+    * @param dir the absolute path of the directory to create on the remote host
+    * @param sshCommand a constructed SSH command that should be used to communicate with the
+    *                   remote host
+    */
+  def mkdirOnRemote(host: String, dir: String, sshCommand: Seq[String], log: DeployLogger): Unit = {
+    // Build the `mkdir` command that will be executed on the remote host.
+    val mkdirCommand = Seq("mkdir", "-p", dir)
+
+    // Build the SSH command that will be sent to the remote host to execute the above `mkdir`.
+    val remoteCommand = (sshCommand :+ host) ++ mkdirCommand
+    // Also build a shell-friendly version of the command to log out, for copy-paste.
+    val quotedRemoteCommand = quoteSshCmd(sshCommand, host, mkdirCommand)
+
+    // Log and run the command on the remote host, and throw an error if it fails.
+    log.info(s"Running $quotedRemoteCommand . . .")
+    if (Process(remoteCommand).! != 0) {
+      sys.error(s"Error while trying to create directory '$dir' on '$host'")
+    }
+  }
+
+  /** Run `rsync` to copy the staged contents of this project to a remote host.
+    * @param host the remote host to `rsync` to
+    * @param sshCommand the SSH command to pass as the `rsh` option when running `rsync`
+    * @param srcDir the path to the local directory containing the staged contents of this project
+    * @param targetDir the path to the directory on the remote host to sync with
+    * @param deployedDirs the names of subdirectories of this project to copy to the remote host
+    */
+  def rsyncToRemote(
+    host: String,
+    sshCommand: Seq[String],
+    srcDir: String,
+    targetDir: String,
+    deployedDirs: Seq[String],
+    log: DeployLogger
+  ): Unit = {
+    // Build the `rsync` command.
+    val rsyncIncludes = deployedDirs map { name => s"--include=/$name" }
+    val rsyncCommand = Seq.concat(
+      Seq(
+        "rsync",
+        "-vcrtzP",
+        s"--rsh=${sshCommand.mkString(" ")}"
+      ),
+      rsyncIncludes,
+      Seq(
+        "--exclude=/*",
+        "--delete",
+        srcDir,
+        s"$host:$targetDir"
+      )
+    )
+    // Also build a shell-friendly version of the command to log out, for copy-paste.
+    val quotedRsync = rsyncCommand.updated(
+      2,
+      s"--rsh=${sshCommand.mkString("'", " ", "'")}"
+    ).mkString(" ")
+
+    // Log and run the command, and throw an error if it fails.
+    log.info(s"Running $quotedRsync . . .")
+    if (Process(rsyncCommand).! != 0) {
+      sys.error(s"Error while running rsync to host '$host'")
+    }
+  }
+
+  /** Write a Typesafe config object to file on a remote host without creating a local temp file.
+    * This is done by `echo`-ing the contents of the config locally, and piping the output into
+    * an SSH command running `cat`.
+    * We don't create a local temp file to avoid munging config overrides as many replicas deploy
+    * in parallel.
+    * The written file will be named `env.conf`.
+    * @param host the remote host to write the conf go
+    * @param envConf the Config object to write
+    * @param confPath the absolute path to the remote directory in which the written file should
+    *                 be placed
+    * @param sshCommand a constructed SSH command that should be used to communicate with the
+    *                   remote host
+    */
+  def copyEnvConfToRemote(
+    host: String,
+    envConf: Config,
+    confPath: String,
+    sshCommand: Seq[String],
+    log: DeployLogger
+  ): Unit = {
+    // Get the config contents to write.
+    val renderedConf = envConf.root().render(ConfigRenderOptions.concise)
+
+    // Command to print the full env config, to be piped to SSH.
+    val echoConfCommand = Seq("echo", renderedConf)
+    // Shell-friendly version of above, for copy-paste.
+    val quotedEcho = Seq("echo", s"'$renderedConf'")
+
+    // SSH command to receive `echo` results and redirect them to disk.
+    val writeConfCommand = sshCommand :+ host :+ s"cat > $confPath/env.conf"
+    // Shell-friendly version of above, for copy-paste.
+    val quotedWrite = quoteSshCmd(sshCommand, host, Seq(s"cat > $confPath/env.conf"))
+
+    // Log and run the commands, and throw an error if the combination fails.
+    log.info(s"Running ${Seq(quotedEcho, quotedWrite).mkString(" | ")} . . .")
+    if ((Process(echoConfCommand) #| Process(writeConfCommand)).! != 0) {
+      sys.error(s"Error writing env config to host '$host'")
+    }
+  }
+
+  /** Restart a replica on a remote host through SSH.
+    * @param host the host the replica is running on
+    * @param restartScriptPath the absolute path to the restart script of the replica
+    * @param sshCommand a constructed SSH command that should be used to communicate with the
+    *                   remote host
+    */
+  def restartReplica(
+    host: String,
+    restartScriptPath: String,
+    sshCommand: Seq[String],
+    log: DeployLogger
+  ): Unit = {
+    // Build the SSH command that will run the restart script in the remote replica.
+    val restartCommand = (sshCommand :+ host) ++ Seq(restartScriptPath, "restart")
+    // Also build a shell-friendly version of the command to log out for copy-paste.
+    val quotedRestart = quoteSshCmd(sshCommand, host, Seq(restartScriptPath, "restart"))
+
+    // Log and run the command, and throw an error if it fails.
+    log.info(s"Running $quotedRestart . . .")
+    if (Process(restartCommand).! != 0) {
+      sys.error(s"Error running restart command on host '$host'")
+    }
+  }
+
+  /** Helper method for producing a shell-friendly SSH command, for copy-paste. */
+  def quoteSshCmd(sshCommand: Seq[String], host: String, remoteCommand: Seq[String]): String =
+    Seq.concat(sshCommand, Seq(host, remoteCommand.mkString("'", " ", "'"))).mkString(" ")
+
 }
