@@ -36,10 +36,8 @@ import scala.util.{ Failure, Success, Try }
   * override.
   *
   * Overrides of the deploy target's settings can also be specified as arguments to the `deploy`
-  * task via Java property overrides (-Dprop.path=propvalue). This is the easiest way to specify a
-  * version (project.version) or any other variable info. These key/value pairs are imported into
-  * the deploy target's scope.  For example, "project.version" will override the current target's
-  * version; specifying "target.path.project.version" will not work.
+  * task via Java property overrides (-Dprop.path=propvalue). This is the easiest way to specify
+  * variable info. These key/value pairs are imported into the deploy target's scope.
   *
   * Argument overrides have precedence over .deployrc overrides.
   */
@@ -202,17 +200,7 @@ object DeployPlugin extends AutoPlugin {
 
     val deployConfig = parseConfig(deployTarget, targetConfig)
 
-    // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the
-    // commands.
-
-    // Check out the provided version, if it's set.
-    deployConfig.projectVersion foreach { version =>
-      log.info(s"Checking out $version . . .")
-      if (Process(Seq("git", "checkout", "-q", version)).! != 0) {
-        throw new IllegalArgumentException(s"Could not checkout $version.")
-      }
-    }
-
+    // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the commands.
     // Copy over the per-env config file, if it exists.
     val deployEnv = if (deployTarget.lastIndexOf('.') >= 0) {
       deployTarget.substring(deployTarget.lastIndexOf('.') + 1)
@@ -482,9 +470,8 @@ object DeployPlugin extends AutoPlugin {
     * that should be shared between them, when deploying a project.
     * @param hostConfigs configuration objects specifying how the project should be deployed to
     *                    many hosts
-    * @param projectVersion the version of the project being deployed
     */
-  case class DeployConfig(hostConfigs: Seq[HostConfig], projectVersion: Option[String])
+  case class DeployConfig(hostConfigs: Seq[HostConfig])
 
   /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
     * [[org.allenai.plugins.DeployPlugin.DeployConfig]] object.
@@ -493,16 +480,7 @@ object DeployPlugin extends AutoPlugin {
     */
   def parseConfig(targetName: String, targetConfig: Config): DeployConfig = {
 
-    DeployConfig(
-      hostConfigs = Seq(parseHostConfig(targetConfig.getConfig("deploy"))),
-      projectVersion = try {
-        Some(targetConfig.getString("project.version"))
-      } catch {
-        case _: ConfigException.Missing => None
-        case _: ConfigException.WrongType =>
-          throw new IllegalArgumentException(s"Error: 'project.version' must be a string")
-      }
-    )
+    DeployConfig(Seq(parseHostConfig(targetConfig.getConfig("deploy"))))
   }
 
   /** Transform the given [[com.typesafe.config.Config]] object into a corresponding
