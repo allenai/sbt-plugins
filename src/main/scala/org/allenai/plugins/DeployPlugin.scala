@@ -210,7 +210,7 @@ object DeployPlugin extends AutoPlugin {
   /** Wrapper around the NodeJSPlugin's npmBuildTask.
     * We wrap this here because the other plugin's definition doesn't support distinguishing
     * between "dev" and "prod" environments.
-    * DON'T DELETE THIS, IT'S USED BY THE ARCHETYPE PLUGINS.
+    * Used by the WebappArchetype plugin.
     */
   lazy val npmBuildTask = Def.taskDyn {
     if ((nodeEnv in thisProject).value == "dev") {
