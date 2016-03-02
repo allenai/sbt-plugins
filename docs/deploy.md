@@ -53,7 +53,7 @@ You can provide key/value overrides on the commandline through Java-style proper
 
     sbt deploy <target> -Dproperty.path=some_string_value
 
-The override key is within the <target> namespace.  E.g. to set the project version, use `-Dproject.version=`. To set the host use `-Ddeploy.host=`, etc.
+The override key is within the <target> namespace.  E.g. to set the host use `-Ddeploy.host=`, etc.
 
 ### configuration
 Documentation for all of the configuration values is in `conf/global_deploy.conf`, which can serve as a base
