@@ -51,44 +51,97 @@ object DeployPlugin extends AutoPlugin {
 
   object autoImport {
 
-    val deploy = inputKey[Unit](Usage)
+    // The universal packager doesn't clean the staging directory by default.
+    val cleanStage = taskKey[Unit]("Clean the staging directory.")
 
-    val nodeEnv = settingKey[String]("The value to use for NODE_ENV during deploy builds.")
+    val deploy = inputKey[Unit](
+      s"Deploy this project to a remote host specified in conf/deploy.conf.\n$Usage"
+    )
+
+    // The reason this is a Setting instead of just including * is that including * in the rsync
+    // command causes files created on the server side (like log files and .pid files) to be
+    // deleted when the rsync runs, which we don't want to happen.
+    val deployDirs = settingKey[Seq[String]](
+      "Subdirectories from the stage task to copy during deploy. " +
+        "Defaults to bin/, conf/, lib/, and public/."
+    )
+
+    val filterNotCacheKeyGenFileNames = settingKey[Seq[String]](
+      "Starts of jars in stage you don't want hashed for cachekey."
+    )
+
+    val gitRepoClean = taskKey[Unit]("Assert that this project's git repository is clean.")
+
+    val gitRepoPresent = taskKey[Unit]("Assert that there is a git repository in the cwd")
 
     val makeDefaultBashScript = settingKey[Boolean](
       "If true, will create executable bash script per JavaAppPackaging defaults. " +
-        "Defaults to false"
+        "Defaults to false."
     )
 
-    val filterNotCacheKeyGenFileNames = settingKey[Seq[String]]("starts of jars in stage you don't want hashed for cachekey")
+    // TODO(danm): Create a Deploy scope to reduce confusion around duplication of this setting
+    // between this plugin and the NodeJsPlugin.
+    val nodeEnv = settingKey[String]("The value to use for NODE_ENV during deploy builds.")
 
-    val cleanStage = taskKey[Unit](
-      "Cleans the staging directory. This is not done by default by the universal packager."
-    )
+    val stageAndCacheKey = taskKey[File]("Stage the current project, and calculate its cache key.")
 
-    val stageAndCacheKey = taskKey[File]("stages and calculates cacheKey of this project")
-
-    /** The reason this is a Setting instead of just including * is that including * in the rsync
-      * command causes files created on the server side (like log files and .pid files) to be
-      * deleted when the rsync runs, which we don't want to happen.
-      */
-    val deployDirs = settingKey[Seq[String]](
-      "subdirectories from the stage task to copy during deploy. " +
-        "defaults to bin/, conf/, lib/, and public/"
-    )
-
-    val gitRepoClean = taskKey[Unit]("Succeeds if the git repository is clean")
-
-    val gitRepoPresent = taskKey[Unit]("Succeeds if a git repository is present in the cwd")
   }
 
   import autoImport._
+
+  /** Default settings and task dependencies for the Keys defined by this plugin. */
+  override def projectSettings: Seq[Def.Setting[_]] = Seq(
+    gitRepoCleanTask,
+    gitRepoPresentTask,
+    cleanStageTask,
+    deployDirs := Seq("bin", "conf", "lib", "public"),
+    nodeEnv := "prod",
+    deployTask,
+    stageAndCacheKeyTask,
+    // Clean up anything leftover in the staging directory before re-staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
+    // Create the required run-class.sh script before staging.
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
+
+    // Add root run script.
+    mappings in Universal += {
+      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
+    },
+
+    // JavaAppPackaging creates non-daemon start scripts by default. Since we
+    // provide our own run-class.sh script meant for running a daemon process,
+    // we disable the creation of these scripts by default.
+    // You can opt-in by setting `makeDefaultBashScript := true` in your
+    // build.sbt
+    makeDefaultBashScript := false,
+    filterNotCacheKeyGenFileNames := Seq(),
+    JavaAppPackaging.autoImport.makeBashScript := {
+      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
+    },
+    JavaAppPackaging.autoImport.makeBatScript := None,
+
+    // Map src/main/resources => conf and src/main/bin => bin.
+    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
+    // for more info on sbt mappings.
+    mappings in Universal ++=
+      (sourceDirectory.value / "main" / "resources" ** "*" pair
+        rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
+        (sourceDirectory.value / "main" / "bin" ** "*" pair
+          relativeTo(sourceDirectory.value / "main"))
+  )
 
   /** sbt.Logger wrapper that prepends [deploy] to log messages */
   case class DeployLogger(sbtLogger: Logger) {
     private def logMsg(msg: String) = s"[deploy] $msg"
     def info(msg: String): Unit = sbtLogger.info(logMsg(msg))
     def error(msg: String): Unit = sbtLogger.error(logMsg(msg))
+  }
+
+  /** Task used to clean the staging directory. */
+  lazy val cleanStageTask = cleanStage := {
+    IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
   }
 
   /** Returns a filter for the local project dependencies. */
@@ -118,7 +171,19 @@ object DeployPlugin extends AutoPlugin {
     stagingArtifactFilename.all(dependencyFilter.value)
   }
 
-  val gitRepoCleanTask = gitRepoClean := {
+  /** Task that checks for a git repository in the project's directory. */
+  lazy val gitRepoPresentTask = gitRepoPresent := {
+    // Validate that we are, in fact, in a git repository.
+    // TODO(schmmd): Use JGit instead (http://www.eclipse.org/jgit/)
+    if (Process(Seq("git", "status")).!(ProcessLogger(line => ())) != 0) {
+      throw new IllegalStateException("Not in git repository, exiting.")
+    }
+
+    DeployLogger(streams.value.log).info("Git repository present.")
+  }
+
+  /** Task that checks if the project's git repository is clean. */
+  lazy val gitRepoCleanTask = gitRepoClean := {
     // Dependencies
     gitRepoPresent.value
 
@@ -139,20 +204,12 @@ object DeployPlugin extends AutoPlugin {
     log.info("Git repository contains no untracked files.")
   }
 
-  val gitRepoPresentTask = gitRepoPresent := {
-    // Validate that we are, in fact, in a git repository.
-    // TODO(schmmd): Use JGit instead (http://www.eclipse.org/jgit/)
-    if (Process(Seq("git", "status")).!(ProcessLogger(line => ())) != 0) {
-      throw new IllegalStateException("Not in git repository, exiting.")
-    }
-
-    DeployLogger(streams.value.log).info("Git repository present.")
-  }
-
-  val cleanStageTask = cleanStage := {
-    IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
-  }
-
+  // TODO(danm): Update the NodeJsPlugin's task definition to actually support "dev" vs "prod".
+  /** Wrapper around the NodeJSPlugin's npmBuildTask.
+    * We wrap this here because the other plugin's definition doesn't support distinguishing
+    * between "dev" and "prod" environments.
+    * Used by the WebappArchetype plugin.
+    */
   lazy val npmBuildTask = Def.taskDyn {
     if ((nodeEnv in thisProject).value == "dev") {
       Def.task {
@@ -175,6 +232,39 @@ object DeployPlugin extends AutoPlugin {
     }
   }
 
+  /** Task used to generate the cache key for the current project.
+    * We stage and generate the cache key in the same task so that stage only runs once.
+    */
+  val stageAndCacheKeyTask = stageAndCacheKey := {
+    import VersionInjectorPlugin.autoImport.gitLocalSha1
+    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    val logger = streams.value.log
+    val allFiles = ((stageDir / "lib") * "*.jar").get
+    val filteredFilenames = Seq.concat(
+      dependentStagingArtifactFilenames.value,
+      filterNotCacheKeyGenFileNames.value :+ stagingArtifactFilename.value
+    )
+    val filesToHash = allFiles filterNot { f: File =>
+      val fileName = f.getName
+      filteredFilenames.exists(fileName.startsWith)
+    }
+    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex)
+
+    // We sort so that we're not dependent on filesystem or git sorting remaining stable in order
+    // for the cacheKey to not change.
+    val cacheKey = Hash.toHex(
+      Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString)
+    )
+    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.Sha1")
+
+    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
+    IO.write(cacheKeyConfFile, cacheKey)
+
+    // Return the stageDirectory so that others can depend on stage having happened via us.
+    stageDir
+  }
+
+  /** Task used to deploy the current project to a remote host. */
   lazy val deployTask = deploy := {
     // Dependencies
     gitRepoClean.value
@@ -306,75 +396,6 @@ object DeployPlugin extends AutoPlugin {
     // TODO(jkinkead): Run an automated "/info/name" check here to see if service is running.
     log.info("Deploy complete. Validate your server!")
   }
-
-  // we stage and generate the cache key in the same task so that stage only runs once
-  val stageAndCacheKeyTask = stageAndCacheKey := {
-    import VersionInjectorPlugin.autoImport.gitLocalSha1
-    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
-    val logger = streams.value.log
-    val allFiles = ((stageDir / "lib") * "*.jar").get
-    val filteredFilenames = dependentStagingArtifactFilenames.value ++
-      filterNotCacheKeyGenFileNames.value :+
-      stagingArtifactFilename.value
-    val filesToHash = allFiles filterNot { f: File =>
-      val fileName = f.getName
-      filteredFilenames.exists(fileName.startsWith)
-    }
-    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex)
-    // we sort so that we're not dependent on filesystem or git sorting remaining stable in order for the cacheKey
-    // to not change
-    val cacheKey = Hash.toHex(Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString))
-
-    val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.Sha1")
-
-    logger.info(s"Generating cacheKey.conf managed resource... (cacheKey: $cacheKey)")
-
-    IO.write(cacheKeyConfFile, cacheKey)
-    // return the stageDirectory so that others can depend on stage having happened via us
-    stageDir
-  }
-
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    gitRepoCleanTask,
-    gitRepoPresentTask,
-    cleanStageTask,
-    deployDirs := Seq("bin", "conf", "lib", "public"),
-    nodeEnv := "prod",
-    deployTask,
-    stageAndCacheKeyTask,
-    // Clean up anything leftover in the staging directory before re-staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
-    // Create the required run-class.sh script before staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
-
-    // Add root run script.
-    mappings in Universal += {
-      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
-    },
-
-    // JavaAppPackaging creates non-daemon start scripts by default. Since we
-    // provide our own run-class.sh script meant for running a daemon process,
-    // we disable the creation of these scripts by default.
-    // You can opt-in by setting `makeDefaultBashScript := true` in your
-    // build.sbt
-    makeDefaultBashScript := false,
-    filterNotCacheKeyGenFileNames := Seq(),
-    JavaAppPackaging.autoImport.makeBashScript := {
-      if (makeDefaultBashScript.value) JavaAppPackaging.autoImport.makeBashScript.value else None
-    },
-    JavaAppPackaging.autoImport.makeBatScript := None,
-
-    // Map src/main/resources => conf and src/main/bin => bin.
-    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
-    // for more info on sbt mappings.
-    mappings in Universal ++=
-      (sourceDirectory.value / "main" / "resources" ** "*" pair
-        rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
-        (sourceDirectory.value / "main" / "bin" ** "*" pair
-          relativeTo(sourceDirectory.value / "main"))
-  )
 
   /** Parses all Java properties-style defines from the argument list, and
     * returns the Config generated from these properties, as well as the updated
