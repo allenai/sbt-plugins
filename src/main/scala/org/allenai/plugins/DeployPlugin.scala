@@ -282,13 +282,12 @@ object DeployPlugin extends AutoPlugin {
   /** Wrapper for config common to all hosts in a deploy.
     * @param projectName the name of the current project
     * @param rootDeployDir the root directory to which all replicas should be deployed on every
-    *                      remote host the project is copied to
+    *     remote host the project is copied to
     * @param sshUser the username to use when accessing remote hosts
     * @param startupScript the path, relative to a deployed instance of this project's root, to
-    *                      the script that should be used to restart the project after deploying
-    *                      updates
+    *     the script that should be used to restart the project after deploying updates
     * @param replicasByHost a map from host URLs to collections of info for every replica that
-    *                       should be deployed on the respective hosts
+    *     should be deployed on the respective hosts
     */
   case class DeployConfig(
     projectName: String,
@@ -300,9 +299,9 @@ object DeployPlugin extends AutoPlugin {
 
   /** Config information required to deploy one replica of a project to a remote host.
     * @param directory the directory on the host, relative to the root deploy directory, in which
-    *                  all project code for this replica should be placed
+    *     all project code for this replica should be placed
     * @param envOverrides configuration overrides specific to this replica that should be merged
-    *                     into the application configuration of the deploy environment
+    *     into the application configuration of the deploy environment
     */
   case class ReplicaConfig(
     directory: String,
@@ -510,8 +509,8 @@ object DeployPlugin extends AutoPlugin {
 
   /** Helper function for writing fully-resolved environment configuration to disk.
     * @param srcDir the directory from which environment configuration should be loaded
-    * @param targetDir the directory to which fully-resolved environment configuration should be
-    *                  written
+    * @param targetDir the directory to which fully-resolved environment configuration
+    *     should be written
     * @param deployTarget the name of the deploy environment to generate config for
     * @param deployConfig parsed deployConfiguration for the given deploy environment
     */
@@ -596,10 +595,15 @@ object DeployPlugin extends AutoPlugin {
   /* ==========>  The main deploy task.  <========== */
 
   /** Wrapper for information used to access a remote host. */
-  class SshInfo(val user: String, val host: String, keyFile: Option[String]) {
-    val keyfileFlag = keyFile map { Seq("-i", _) } getOrElse Seq()
-    val sshCmd = ("ssh" +: keyfileFlag) ++ Seq("-l", user, host)
-    def scpCmd(srcPath: String, targetPath: String) =
+  class SshInfo(val host: String, user: String, keyFile: Option[String]) {
+    private val keyfileFlag = keyFile.toSeq flatMap { Seq("-i", _) }
+
+    /** The command to pass as the --rsh flag of an rsync call to the remote host. */
+    val rshCmd: Seq[String] = ("ssh" +: keyfileFlag) ++ Seq("-l", user)
+    /** The command to use when running SSH to the remote host. */
+    val sshCmd: Seq[String] = rshCmd :+ host
+    /** Build a command to copy a local file to a directory on the remote host. */
+    def scpCmd(srcPath: String, targetPath: String): Seq[String] =
       ("scp" +: keyfileFlag) ++ Seq(srcPath, s"$user@$host:$targetPath")
   }
 
@@ -636,7 +640,7 @@ object DeployPlugin extends AutoPlugin {
       // Deploy to hosts, collecting any errors that occur.
       val deployErrorsByHost = parsedConfig.replicasByHost map {
         case (host, replicas) => {
-          implicit val sshInfo = new SshInfo(parsedConfig.sshUser, host, maybeKeyFile)
+          implicit val sshInfo = new SshInfo(host, parsedConfig.sshUser, maybeKeyFile)
 
           Future {
             // First, ensure parent directory structure of deploy exists.
@@ -720,7 +724,7 @@ object DeployPlugin extends AutoPlugin {
   def stopStaleReplicas(
     rootDeployDirectory: String,
     projectName: String
-  )(implicit log: DeployLogger, sshInfo: SshInfo): Unit = {
+  )(implicit sshInfo: SshInfo, log: DeployLogger): Unit = {
     // Build the `find` command that will be executed on the remote host to stop stale replicas.
     val findCommand = Seq(
       "find",
@@ -748,7 +752,7 @@ object DeployPlugin extends AutoPlugin {
   /** Run `mkdir` through SSH to create a remote directory.
     * @param dir the absolute path of the directory to create on the remote host
     */
-  def mkdirOnRemote(dir: String)(implicit log: DeployLogger, sshInfo: SshInfo): Unit = {
+  def mkdirOnRemote(dir: String)(implicit sshInfo: SshInfo, log: DeployLogger): Unit = {
     // Build the `mkdir` command that will be executed on the remote host.
     val mkdirCommand = Seq("mkdir", "-p", dir)
 
@@ -769,10 +773,10 @@ object DeployPlugin extends AutoPlugin {
     srcDir: String,
     targetDir: String,
     deployedDirs: Seq[String]
-  )(implicit log: DeployLogger, sshInfo: SshInfo): Unit = {
+  )(implicit sshInfo: SshInfo, log: DeployLogger): Unit = {
     // Build the `rsync` command.
     val rsyncIncludes = deployedDirs map { name => s"--include=/$name" }
-    val rsh = Seq("ssh", "-l", sshInfo.user) ++ sshInfo.keyfileFlag
+    val rsh = sshInfo.rshCmd
     val rsyncCommand = Seq.concat(
       Seq(
         "rsync",
@@ -804,7 +808,7 @@ object DeployPlugin extends AutoPlugin {
   def copyEnvConfToRemote(
     srcPath: String,
     targetDir: String
-  )(implicit log: DeployLogger, sshInfo: SshInfo): Unit = {
+  )(implicit sshInfo: SshInfo, log: DeployLogger): Unit = {
     // Build the scp command that will copy the file.
     // There's no need to specially quote this one for logging.
     val scpCmd = sshInfo.scpCmd(srcPath, targetDir)
@@ -814,7 +818,7 @@ object DeployPlugin extends AutoPlugin {
   /** Start a replica on a remote host through SSH.
     * @param startScriptPath the absolute path to the start script of the replica
     */
-  def startReplica(startScriptPath: String)(implicit log: DeployLogger, sshInfo: SshInfo): Unit = {
+  def startReplica(startScriptPath: String)(implicit sshInfo: SshInfo, log: DeployLogger): Unit = {
     // Build the SSH command that will run the restart script in the remote replica.
     val startCommand = sshInfo.sshCmd ++ Seq(startScriptPath, "start")
     // Also build a shell-friendly version of the command to log out for copy-paste.
