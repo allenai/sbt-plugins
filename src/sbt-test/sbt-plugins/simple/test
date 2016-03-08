@@ -15,25 +15,25 @@ $ exec git commit -m "initial commit"
 # core/src/it test code that depends on core/src/test code
 > it:compile
 
-# Style plugin tests
+# Style plugin tests.
 > checkStyle
 > styleCheckStrict
 -> test:styleCheckStrict
 
-# Webapp plugin tests
+# WebApp plugin tests.
 -$ exists client/build/index.html
 -$ exists client/node_modules
 > webApp/npm:build
 $ exists client/build/index.html
 $ exists client/node_modules
 
-# Webservice plugin tests
+# WebService plugin tests.
 > webService/reStart
 $ sleep 2000
 $ exec curl http://0.0.0.0:8888
 > webService/reStop
 
-# Git-hook generation tests
+# Git-hook generation tests.
 -$ exists .git/hooks/pre-commit
 -$ exists .git/hooks/scalariform.jar
 
@@ -41,7 +41,22 @@ $ exec curl http://0.0.0.0:8888
 $ exists .git/hooks/pre-commit
 $ exists .git/hooks/scalariform.jar
 
-# Env config generation tests
+# Env config generation tests.
+# We can't test the full deploy process in a contained way because of the system commands involved,
+# but by testing config generation we at least run through the parsing logic.
+# Test generating config from within the webservice project.
+> project webService
+-$ exists webservice/target/deploy/localhost/webservice/env.conf
+> generateEnvConfig test
+$ exists webservice/target/deploy/localhost/webservice/env.conf
+$ delete webservice/target/deploy/localhost/webservice/env.conf
+
+# Test generating config in webservice from another project.
+> project simple
 -$ exists webservice/target/deploy/localhost/webservice/env.conf
 > webService/generateEnvConfig test
 $ exists webservice/target/deploy/localhost/webservice/env.conf
+$ delete webservice/target/deploy/localhost/webservice/env.conf
+
+# Test generation for non-configured env fails.
+-> webService/generateEnvConfig notAnEnv
