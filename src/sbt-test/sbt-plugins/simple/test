@@ -11,7 +11,7 @@ $ exec git commit -m "initial commit"
 
 > checkFormat
 
-# make sure all our code compiles, including:
+# Make sure all our code compiles, including:
 # core/src/it test code that depends on core/src/test code
 > it:compile
 
@@ -20,22 +20,28 @@ $ exec git commit -m "initial commit"
 > styleCheckStrict
 -> test:styleCheckStrict
 
-# webapp plugin tests
+# Webapp plugin tests
 -$ exists client/build/index.html
 -$ exists client/node_modules
 > webApp/npm:build
 $ exists client/build/index.html
 $ exists client/node_modules
 
-# webservice plugin tests
+# Webservice plugin tests
 > webService/reStart
 $ sleep 2000
 $ exec curl http://0.0.0.0:8888
 > webService/reStop
 
+# Git-hook generation tests
 -$ exists .git/hooks/pre-commit
 -$ exists .git/hooks/scalariform.jar
 
 > generateAutoformatGitHook
 $ exists .git/hooks/pre-commit
 $ exists .git/hooks/scalariform.jar
+
+# Env config generation tests
+-$ exists webservice/target/deploy/localhost/webservice/env.conf
+> webService/generateEnvConfig test
+$ exists webservice/target/deploy/localhost/webservice/env.conf
