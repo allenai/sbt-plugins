@@ -308,19 +308,15 @@ object DeployPlugin extends AutoPlugin {
     envOverrides: Config
   )
 
-  /** Parser used for reading deploy targets.
-    * A string parser with auto-suggestion of valid deploy target environments.
-    */
-  lazy val deployTargetParser: State => Parser[String] = { state =>
-    val (_, deployConf) = Project.extract(state).runTask(loadDeployConfig, state)
-    val validTargets = deployConf.root.keySet.asScala map Parser.literal
-    token(validTargets.reduce(_ | _))
+  /** Parser used for reading deploy targets. */
+  lazy val deployTargetParser: Parser[String] = {
+    token(StringBasic, "<env>")
   }
 
   /** Parser used for reading deploy-config overrides into a [[Config]] object.
     * Overrides are passed using property-style syntax: -Dpath1=value1 -Dpath2=value2, etc.
     */
-  lazy val overridesParser: State => Parser[Config] = { _ =>
+  lazy val overridesParser: Parser[Config] = {
     // Parser for a single property-style config override.
     // Equivalent of extracting from the regex: `-D([^=])*=(.*)`.
     val overrideParser: Parser[(String, String)] = token(
@@ -330,7 +326,7 @@ object DeployPlugin extends AutoPlugin {
 
     // Parser for one or more space-delimited config overrides.
     val overridesParser: Parser[Seq[(String, String)]] =
-      rep1sep(overrideParser, Space)
+      rep1sep(overrideParser, token(Space))
 
     // Parser which folds some number of overrides into a Config object.
     overridesParser map { overrides =>
@@ -342,7 +338,7 @@ object DeployPlugin extends AutoPlugin {
 
   /** Parser used for reading input for the deploy and generateEnvConfig tasks. */
   lazy val deployParser: State => Parser[(Config, String)] = { state =>
-    Space ~> ((overridesParser(state) <~ Space).? ~ deployTargetParser(state)) map {
+    token(Space) ~> (overridesParser <~ token(Space)).? ~ deployTargetParser map {
       case (overrides, env) => (overrides getOrElse ConfigFactory.empty, env)
     }
   }
@@ -397,8 +393,14 @@ object DeployPlugin extends AutoPlugin {
     deployEnv: String,
     deployOverrides: Config = ConfigFactory.empty
   ): DeployConfig = {
-    val envConfig =
+    val envConfig = {
+      require(
+        deployConfig.hasPath(deployEnv),
+        s"'$deployEnv' is not a configured deploy environment! Configured environments are: " +
+          deployConfig.root.keySet.asScala.mkString("[", ", ", "]")
+      )
       deployOverrides.withFallback(deployConfig.getConfig(deployEnv)).getConfig("deploy")
+    }
 
     // Check for both replica list and top-level host config.
     val replicasGiven = envConfig.hasPath("replicas")
