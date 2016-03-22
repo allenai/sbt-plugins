@@ -649,7 +649,7 @@ object DeployPlugin extends AutoPlugin {
             mkdirOnRemote(rootDeployDir)
           } map { _ =>
             // Then stop any replicas already running on the remote.
-            stopStaleReplicas(rootDeployDir, parsedConfig.projectName)
+            stopStaleReplicas(rootDeployDir, parsedConfig.projectName, parsedConfig.startupScript)
           } flatMap { _ =>
             val replicaDeploys = replicas map { replica =>
               Future {
@@ -722,10 +722,13 @@ object DeployPlugin extends AutoPlugin {
     *     be `baseDeployDirectory-i` for `i` in `1` to `n`.
     * @param rootDeployDirectory the root deploy directory for all deploys on the remote host
     * @param projectName the base name of the current project, used to find replicas to stop
+    * @param stopScriptPath the path to the stop script of the replica, relative to the
+    *     root of the replica's deploy directory
     */
   def stopStaleReplicas(
     rootDeployDirectory: String,
-    projectName: String
+    projectName: String,
+    stopScriptPath: String
   )(implicit sshInfo: SshInfo, log: DeployLogger): Unit = {
     // Build the `find` command that will be executed on the remote host to stop stale replicas.
     val findCommand = Seq(
@@ -738,7 +741,7 @@ object DeployPlugin extends AutoPlugin {
       // deployed projects).
       "-name", s""""$projectName*"""",
       // Within each replica directory meeting the above criteria, stop the service.
-      "-exec", s"{}/bin/$projectName.sh stop \\;"
+      "-exec", s"{}/$stopScriptPath stop \\;"
     )
 
     // Build the SSH command that will be sent to the remote host to execute the above `find`.
