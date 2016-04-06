@@ -89,6 +89,7 @@ trait CoreDependencies {
   lazy val allenAiWebapp = allenAiCommonModule("webapp")
   lazy val allenAiIndexing = allenAiCommonModule("indexing")
 
+  val jedis = "redis.clients" % "jedis" % "2.7.2"
   val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
 
