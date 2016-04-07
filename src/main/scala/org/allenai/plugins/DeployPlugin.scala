@@ -737,9 +737,9 @@ object DeployPlugin extends AutoPlugin {
       rootDeployDirectory, "-maxdepth", "1",
       // Set `find` to only report directory names.
       "-type", "d",
-      // Set `find` to only report directories named after this project (to avoid stopping other
-      // deployed projects).
-      "-name", s""""$projectName*"""",
+      // Set `find` to only report directories named after this project, with an optional numeric
+      // suffix (to avoid stopping other deployed projects).
+      "-regex", s""""./$projectName\(\-[0-9]+\)?"""",
       // Within each replica directory meeting the above criteria, stop the service.
       "-exec", s"{}/$stopScriptPath stop \\;"
     )
