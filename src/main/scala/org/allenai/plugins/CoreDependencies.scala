@@ -79,7 +79,7 @@ trait CoreDependencies {
     * libraryDependencies += Dependencies.allenAiIndexing
     * }}}
     */
-  val allenAiCommonVersion = "1.1.3"
+  val allenAiCommonVersion = "1.2.0"
 
   def allenAiCommonModule(name: String) = "org.allenai.common" %% s"common-$name" % allenAiCommonVersion
 
@@ -88,6 +88,14 @@ trait CoreDependencies {
   lazy val allenAiTestkit = allenAiCommonModule("testkit")
   lazy val allenAiWebapp = allenAiCommonModule("webapp")
   lazy val allenAiIndexing = allenAiCommonModule("indexing")
+  lazy val allenAiCache = {
+    val splitVersion = allenAiCommonVersion.split('.')
+    require(
+      splitVersion(0).toInt >= 1 && splitVersion(1).toInt >= 2,
+      "The 'cache' module of allenai/common only exists in versions >= 1.2.0"
+    )
+    allenAiCommonModule("cache")
+  }
 
   val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.1"

@@ -16,12 +16,11 @@ scalacOptions := Seq(
   "-unchecked",
   "-deprecation",
   "-language:_",
+  "-Xlog-reflective-calls"
+)
 
-  "-Xlog-reflective-calls")
-
-// SBT requires 2.10 for now (1/15/15).
-// TODO(danm): Upgrade Scala version, since this is no longer the case?
-scalaVersion := "2.10.4"
+// SBT requires 2.10 for now (4/7/16).
+scalaVersion := "2.10.6"
 
 sbtPlugin := true
 
@@ -31,11 +30,13 @@ addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
 
-addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0" excludeAll(
-  // scalastyle depends on an old version of scalariform. We bring in the latest with the
-  // sbt-scalariform plugin dependency below.
-  ExclusionRule(organization = "com.danieltrinh")
-))
+addSbtPlugin(
+  ("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0").excludeAll(
+    // scalastyle depends on an old version of scalariform. We bring in the latest with the
+    // sbt-scalariform plugin dependency below.
+    ExclusionRule(organization = "com.danieltrinh")
+  )
+)
 
 // If you change the scalariform version, you may also need to generate a new
 // scalariform.jar in src/main/resources/autoformat/
