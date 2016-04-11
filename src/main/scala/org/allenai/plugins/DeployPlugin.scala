@@ -739,7 +739,7 @@ object DeployPlugin extends AutoPlugin {
       "-type", "d",
       // Set `find` to only report directories named after this project, with an optional numeric
       // suffix (to avoid stopping other deployed projects).
-      "-regex", s""""./$projectName\(\-[0-9]+\)?"""",
+      "-regex", s""""./$projectName\\(\\-[0-9]+\\)?"""",
       // Within each replica directory meeting the above criteria, stop the service.
       "-exec", s"{}/$stopScriptPath stop \\;"
     )
