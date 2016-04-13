@@ -460,7 +460,8 @@ object DeployPlugin extends AutoPlugin {
     // Wrap all parsed data.
     DeployConfig(
       projectName,
-      rootDeployDir,
+      // No trailing '/' for the root directory.
+      rootDeployDir.dropRight(1),
       sshUser,
       startupScript,
       replicasByHost
@@ -655,10 +656,11 @@ object DeployPlugin extends AutoPlugin {
               Future {
                 // Ensure the target deploy directory for this replica exists on the remote
                 // (rsync won't do it for you).
-                mkdirOnRemote(rootDeployDir)
-              } map { _ =>
+                val replicaDir = s"$rootDeployDir/${replica.directory}"
+                mkdirOnRemote(replicaDir)
+                replicaDir
+              } map { replicaDir =>
                 // Sync the project to the remote replica.
-                val replicaDir = s"$rootDeployDir${replica.directory}"
                 rsyncToRemote(
                   universalStagingDir.getPath + "/",
                   replicaDir,
@@ -734,12 +736,12 @@ object DeployPlugin extends AutoPlugin {
     val findCommand = Seq(
       "find",
       // Prevent `find` from reporting subdirectories of the deployed replicas.
-      rootDeployDirectory, "-maxdepth", "1",
+      rootDeployDirectory + "/", "-maxdepth", "1",
       // Set `find` to only report directory names.
       "-type", "d",
       // Set `find` to only report directories named after this project, with an optional numeric
       // suffix (to avoid stopping other deployed projects).
-      "-regex", s""""./$projectName\\(\\-[0-9]+\\)?"""",
+      "-regex", s""""$rootDeployDirectory/$projectName\\(-[0-9]+\\)?"""",
       // Within each replica directory meeting the above criteria, stop the service.
       "-exec", s"{}/$stopScriptPath stop \\;"
     )
