@@ -79,7 +79,7 @@ trait CoreDependencies {
     * libraryDependencies += Dependencies.allenAiIndexing
     * }}}
     */
-  val allenAiCommonVersion = "1.2.0"
+  val allenAiCommonVersion = "1.2.1"
 
   def allenAiCommonModule(name: String) = "org.allenai.common" %% s"common-$name" % allenAiCommonVersion
 
