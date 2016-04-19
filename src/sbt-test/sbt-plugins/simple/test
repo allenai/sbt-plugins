@@ -20,6 +20,13 @@ $ exec git commit -m "initial commit"
 > styleCheckStrict
 -> test:styleCheckStrict
 
+# Node plugin tests.
+-$ exists webapp/public
+> webApp/npm:mkNodeTarget
+$ exists webapp/public
+# Second run should not error.
+> webApp/npm:mkNodeTarget
+
 # WebApp plugin tests.
 -$ exists client/build/index.html
 -$ exists client/node_modules
