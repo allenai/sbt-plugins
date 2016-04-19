@@ -25,8 +25,6 @@ object WebappPlugin extends AutoPlugin {
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
     // Run "npm watch" when we run a re-start.
     Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.nwatch in Npm),
-    // Ensure the node target directory is created before the application tries to start up.
-    Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.mkNodeTarget in Npm),
     // Kill background watches on re-stop.
     Revolver.reStop <<= Revolver.reStop.dependsOn(NodeKeys.unwatch in Npm),
     // Run client-side tests when tests are run.
