@@ -75,6 +75,8 @@ object NodeJsPlugin extends AutoPlugin {
 
       val nodeProjectTarget = settingKey[File]("Target directory for Node application build")
 
+      val mkNodeTarget = taskKey[Unit]("Creates the target directory that Node builds into")
+
       val npmLogLevel = settingKey[NpmLogLevel]("Log level for npm commands.")
     }
   }
@@ -158,6 +160,13 @@ object NodeJsPlugin extends AutoPlugin {
     }
   }
 
+  val npmMkNodeTarget = mkNodeTarget in Npm := {
+    val targetDir = (nodeProjectTarget in Npm).value
+    if (!targetDir.exists) {
+      targetDir.mkdir()
+    }
+  }
+
   override def requires: Plugins = plugins.JvmPlugin
 
   /** Settings for a single node project located at `root`
@@ -179,6 +188,7 @@ object NodeJsPlugin extends AutoPlugin {
     npmInstallTask,
     npmWatchTask,
     npmUnwatchTask,
+    npmMkNodeTarget,
     commands += npm
   )
 
