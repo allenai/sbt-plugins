@@ -16,10 +16,17 @@ $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey2.Sha1
 > assertCacheKeysEqual
 
 # cache key should change when library dependencies change
+-$ exists webservice/target/universal/stage/lib/org.apache.derby.derby-10.4.1.3.jar
 > set (libraryDependencies in webService) += Dependencies.derby
 > webService/stageAndCacheKey
+$ exists webservice/target/universal/stage/lib/org.apache.derby.derby-10.4.1.3.jar
 $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey2.Sha1
 > assertCacheKeysNotEqual
+> set (libraryDependencies in webService) -= Dependencies.derby
+> webService/stageAndCacheKey
+-$ exists webservice/target/universal/stage/lib/org.apache.derby.derby-10.4.1.3.jar
+$ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey2.Sha1
+> assertCacheKeysEqual
 
 # cache key should change when local source changes
 $ copy-file webservice/target/universal/stage/conf/cacheKey.Sha1 cacheKey1.Sha1

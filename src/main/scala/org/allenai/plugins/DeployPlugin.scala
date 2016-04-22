@@ -122,9 +122,6 @@ object DeployPlugin extends AutoPlugin {
     loadDeployConfigTask,
     nodeEnv := "prod",
     stageAndCacheKeyTask,
-    // Clean up anything leftover in the staging directory before re-staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(cleanStage),
     // Create the required run-class.sh script before staging.
     UniversalPlugin.autoImport.stage <<=
       UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
