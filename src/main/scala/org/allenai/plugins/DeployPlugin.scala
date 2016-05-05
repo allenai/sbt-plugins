@@ -100,6 +100,10 @@ object DeployPlugin extends AutoPlugin {
 
     val stageAndCacheKey = taskKey[File]("Stage the current project, and calculate its cache key.")
 
+    // Clients may override to perform a different action in addition to staging (i.e. running
+    // database migrations).
+    val stageDeploy =
+      taskKey[Unit]("Stage the project for a deploy. Defaults to `stageAndCacheKey`.")
   }
 
   import autoImport._
@@ -118,6 +122,8 @@ object DeployPlugin extends AutoPlugin {
     loadDeployConfigTask,
     nodeEnv := "prod",
     stageAndCacheKeyTask,
+    // By default, this only depends on staging and generating the cache key.
+    stageDeploy := { stageAndCacheKey.value },
     // Create the required run-class.sh script before staging.
     UniversalPlugin.autoImport.stage <<=
       UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
