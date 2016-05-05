@@ -53,9 +53,6 @@ object DeployPlugin extends AutoPlugin {
 
     val cleanEnvConfig = taskKey[Unit]("Clean generated environment configuration.")
 
-    // The universal packager doesn't clean the staging directory by default.
-    val cleanStage = taskKey[Unit]("Clean the staging directory.")
-
     val deploy = inputKey[Unit](
       """Deploy this project to a remote host specified in conf/deploy.conf.
         |  Usage: deploy [-Ddeploy.config.key=override ...] deploy-target
@@ -103,6 +100,9 @@ object DeployPlugin extends AutoPlugin {
 
     val stageAndCacheKey = taskKey[File]("Stage the current project, and calculate its cache key.")
 
+    // Clients may override to perform a different action in addition to staging (i.e. running
+    // database migrations).
+    val preDeploy = taskKey[Unit]("Prep the project for a deploy. Defaults to `stageAndCacheKey`.")
   }
 
   import autoImport._
@@ -110,7 +110,6 @@ object DeployPlugin extends AutoPlugin {
   /** Default settings and task dependencies for the Keys defined by this plugin. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     cleanEnvConfigTask,
-    cleanStageTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
     deployTask,
     envConfigSource := (sourceDirectory in thisProject).value / "main" / "resources",
@@ -122,6 +121,8 @@ object DeployPlugin extends AutoPlugin {
     loadDeployConfigTask,
     nodeEnv := "prod",
     stageAndCacheKeyTask,
+    // By default, this only depends on staging and generating the cache key.
+    preDeploy := { stageAndCacheKey.value },
     // Create the required run-class.sh script before staging.
     UniversalPlugin.autoImport.stage <<=
       UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
@@ -206,11 +207,6 @@ object DeployPlugin extends AutoPlugin {
   }
 
   /* ==========>  Cache key generation.  <========== */
-
-  /** Task used to clean the staging directory. */
-  lazy val cleanStageTask = cleanStage := {
-    IO.delete((UniversalPlugin.autoImport.stagingDirectory in Universal).value)
-  }
 
   /** Returns a filter for the local project dependencies. */
   lazy val dependencyFilter: Def.Initialize[Task[ScopeFilter]] = Def.task {
