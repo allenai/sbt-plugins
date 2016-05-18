@@ -16,10 +16,18 @@ lazy val core = project.in(file("core")).settings(
 
 lazy val cli = project.in(file("cli")).dependsOn(core).enablePlugins(CliPlugin)
 
+lazy val stubbedDeployNpmBuild = taskKey[Unit]("Verify stubbing the deploy npm build works")
+
 lazy val webService = project.in(file("webservice")).dependsOn(core).enablePlugins(WebServicePlugin)
 
 lazy val webApp = project.in(file("webapp")).dependsOn(core).enablePlugins(WebappPlugin)
-  .settings(NodeKeys.nodeProjectDir in Npm := file("client"))
+  .settings(
+    NodeKeys.nodeProjectDir in Npm := file("client"),
+    stubbedDeployNpmBuild := {
+      IO.write(baseDirectory.value / "stubbed.txt", "stubbed")
+      // verify file exists at webapp/stubbed.txt
+    }
+  )
 
 val scalaDocSubProject1 = project.in(file("one"))
 val scalaDocSubProject2 = project.in(file("two"))

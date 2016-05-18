@@ -34,6 +34,11 @@ $ exists webapp/public
 $ exists client/build/index.html
 $ exists client/node_modules
 
+# Test it is possible to stub out the deploy NPM build
+> set deployNpmBuild in webApp := (stubbedDeployNpmBuild in webApp).value
+> webApp/stage
+$ exists webapp/stubbed.txt
+
 # WebService plugin tests.
 > webService/reStart
 $ sleep 2000
