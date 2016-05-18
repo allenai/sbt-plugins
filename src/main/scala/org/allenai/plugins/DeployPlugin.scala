@@ -103,6 +103,8 @@ object DeployPlugin extends AutoPlugin {
     // Clients may override to perform a different action in addition to staging (i.e. running
     // database migrations).
     val preDeploy = taskKey[Unit]("Prep the project for a deploy. Defaults to `stageAndCacheKey`.")
+
+    val deployNpmBuild = taskKey[Unit]("Runs the npm build")
   }
 
   import autoImport._
@@ -120,6 +122,7 @@ object DeployPlugin extends AutoPlugin {
     generateEnvConfigTask,
     loadDeployConfigTask,
     nodeEnv := "prod",
+    deployNpmBuild := npmBuildTask.value,
     stageAndCacheKeyTask,
     // By default, this only depends on staging and generating the cache key.
     preDeploy := { stageAndCacheKey.value },
