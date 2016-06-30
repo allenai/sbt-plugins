@@ -68,11 +68,17 @@ object CoreRepositories {
       }
     }
 
+    /** Sets bintray keys to publish to the private bintray repository. This expects at least one
+      * license to be set, e.g. `licenses += Licenses.apache2`.
+      */
     val ai2BintrayPrivate = Seq(
       bintrayPackage := s"${organization.value}:${name.value}_${scalaBinaryVersion.value}",
       bintrayRepository := "private"
     )
 
+    /** Sets bintray keys to publish to the public bintray repository. This expects at least one
+      * license to be set, e.g. `licenses += Licenses.apache2`.
+      */
     val ai2BintrayPublic = Seq(
       bintrayPackage := s"${organization.value}:${name.value}_${scalaBinaryVersion.value}",
       bintrayRepository := "maven"
