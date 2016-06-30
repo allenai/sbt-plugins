@@ -1,9 +1,15 @@
 package org.allenai.plugins
 
+import bintray.BintrayKeys._
 import sbt._
 import sbt.Keys._
 
 object CoreRepositories {
+
+  /** Common licenses */
+  object Licenses {
+    val apache2 = ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+  }
 
   /** Common resolvers */
   object Resolvers {
@@ -61,5 +67,15 @@ object CoreRepositories {
         if (isSnapshot.value) Some(ai2PublicSnapshots) else Some(ai2PublicReleases)
       }
     }
+
+    val ai2BintrayPrivate = Seq(
+      bintrayPackage := s"${organization.value}:${name.value}_${scalaBinaryVersion.value}",
+      bintrayRepository := "private"
+    )
+
+    val ai2BintrayPublic = Seq(
+      bintrayPackage := s"${organization.value}:${name.value}_${scalaBinaryVersion.value}",
+      bintrayRepository := "maven"
+    )
   }
 }
