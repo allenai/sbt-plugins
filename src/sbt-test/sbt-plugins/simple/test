@@ -34,6 +34,11 @@ $ exists webapp/public
 $ exists client/build/index.html
 $ exists client/node_modules
 
+# Test that `stage` will create a public directory.
+> webApp/stage
+$ exists webapp/target/universal/stage/public
+> clean
+
 # Test it is possible to stub out the deploy NPM build
 > set deployNpmBuild in webApp := (stubbedDeployNpmBuild in webApp).value
 > webApp/stage

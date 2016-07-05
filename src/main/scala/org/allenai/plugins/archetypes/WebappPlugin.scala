@@ -32,10 +32,8 @@ object WebappPlugin extends AutoPlugin {
     // Clean node files on clean.
     cleanFiles += (NodeKeys.nodeProjectTarget in Npm).value,
     // Build the node project on stage (for deploys).
-    UniversalPlugin.autoImport.stage := {
-      DeployPlugin.autoImport.deployNpmBuild.value
-      UniversalPlugin.autoImport.stage.value
-    },
+    UniversalPlugin.autoImport.stage <<=
+      UniversalPlugin.autoImport.stage.dependsOn(DeployPlugin.autoImport.deployNpmBuild),
     // Copy the built node project into our staging directory, too!
     mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map MappingsHelper.directory
   )
