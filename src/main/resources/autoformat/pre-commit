@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Git pre-commit hook to check staged scala files for formatting issues.
 #
