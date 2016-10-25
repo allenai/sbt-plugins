@@ -34,8 +34,9 @@ $ exists webapp/public
 $ exists client/build/index.html
 $ exists client/node_modules
 
-# Test that `stage` will create a public directory.
+# Test that `stage` will create a public directory and run-class.sh.
 > webApp/stage
+$ exists webapp/target/universal/stage/bin/run-class.sh
 $ exists webapp/target/universal/stage/public
 > clean
 

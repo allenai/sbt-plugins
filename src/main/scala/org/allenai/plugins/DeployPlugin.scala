@@ -224,13 +224,7 @@ object DeployPlugin extends AutoPlugin {
 
   /** Returns the filename used by the native packager in the staging directory. */
   lazy val stagingArtifactFilename: Def.Initialize[Task[String]] = Def.task {
-    // Adapted from http://git.io/vGoFH .
-    val organization = Keys.organization.value
-    val moduleId = projectID.value
-    val artifact = Keys.artifact.value
-    val classifier = artifact.classifier.fold("")("-" + _)
-
-    s"$organization.${artifact.name}-${moduleId.revision}$classifier.${artifact.extension}"
+    Utilities.jarName(projectID.value, artifact.value)
   }
 
   /** Returns all of the local dependencies' staging artifact filenames. */
