@@ -16,6 +16,8 @@ lazy val core = project.in(file("core")).settings(
 
 lazy val cli = project.in(file("cli")).dependsOn(core).enablePlugins(CliPlugin)
 
+lazy val docker = project.in(file("docker")).enablePlugins(DockerBuildPlugin)
+
 lazy val stubbedDeployNpmBuild = taskKey[Unit]("Verify stubbing the deploy npm build works")
 
 lazy val webService = project.in(file("webservice")).dependsOn(core).enablePlugins(WebServicePlugin)
