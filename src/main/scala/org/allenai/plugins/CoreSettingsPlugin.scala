@@ -52,22 +52,11 @@ object CoreSettingsPlugin extends AutoPlugin {
   private val generateRunClassTask = autoImport.generateRunClass := {
     val logger = streams.value.log
     logger.debug("Generating run-class.sh")
-    val file = (resourceManaged in Compile).value / "run-class.sh"
-    // Read the plugin's resource file.
-    val contents = {
-      val is = this.getClass.getClassLoader.getResourceAsStream("run-class.sh")
-      try {
-        IO.readBytes(is)
-      } finally {
-        is.close()
-      }
-    }
+    // Copy the run-class.sh resource into managed resources.
+    val destination = (resourceManaged in Compile).value / "run-class.sh"
+    Utilities.copyResourceToFile(this.getClass, "run-class.sh", destination)
 
-    // Copy the contents to the clients managed resources.
-    IO.write(file, contents)
-    logger.debug(s"Wrote ${contents.size} bytes to ${file.getPath}.")
-
-    file
+    destination
   }
 
   case class FormatResult(sourceFile: File, original: String, formatted: String)
@@ -180,7 +169,7 @@ object CoreSettingsPlugin extends AutoPlugin {
       val lines = IO.readLinesURL(getClass.getClassLoader.getResource("autoformat/pre-commit"))
         .map(_.replace("__scalariform_opts__", scalariformOpts))
       IO.writeLines(preCommitFile, lines.toList)
-        // git hooks must be executable
+      // git hooks must be executable
       preCommitFile.setExecutable(true)
 
       // copy the scalariform.jar
