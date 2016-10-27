@@ -79,12 +79,13 @@ class UtilitiesSpec extends FlatSpecLike with Matchers with OneInstancePerTest w
   it should "return the same hash when files have the same normalized path" in {
     // Create versions of fooFile and barFile which are semantically the same, but have different
     // paths.
-    val fooRelative = new File("foo.txt")
-    val barRelative = new File(tempDirectory, ".." + File.pathSeparatorChar +
-      tempDirectory.getName + File.pathSeparatorChar + "bar.txt")
+    val fooRelative = new File(tempDirectory, ".." + File.separatorChar +
+      tempDirectory.getName + File.separatorChar + "foo.txt")
+    val barRelative = new File(tempDirectory, ".." + File.separatorChar +
+      tempDirectory.getName + File.separatorChar + "bar.txt")
 
     val firstHash = Utilities.hashFiles(Seq(fooFile, barFile), tempDirectory)
-    val secondHash = Utilities.hashFiles(Seq(fooFile, barFile), tempDirectory)
+    val secondHash = Utilities.hashFiles(Seq(fooRelative, barRelative), tempDirectory)
 
     firstHash shouldBe secondHash
   }

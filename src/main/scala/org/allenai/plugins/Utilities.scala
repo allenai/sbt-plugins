@@ -56,6 +56,8 @@ object Utilities {
     * @param filesToHash the files whose contents and names should be hashed
     * @param rootDir the root directory the file names should be resolved against before hashing.
     * Only path changes relative to this directory will cause the hash to change.
+    * @throws IllegalArgumentException if the path type (absolute or relative) of any of
+    * `filesToHash` doesn't match `roodDir`'s path type
     */
   def hashFiles(filesToHash: Seq[File], rootDir: File): String = {
     // Resolve the filenames relative to the root directory.
