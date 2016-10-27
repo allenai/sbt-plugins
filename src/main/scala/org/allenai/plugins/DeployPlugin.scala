@@ -251,12 +251,12 @@ object DeployPlugin extends AutoPlugin {
       val fileName = f.getName
       filteredFilenames.exists(fileName.startsWith)
     }
-    val hashes = filesToHash.map(Hash.apply).map(Hash.toHex)
+    val fileHash = Utilities.hashFiles(filesToHash, stageDir)
 
     // We sort so that we're not dependent on filesystem or git sorting remaining stable in order
     // for the cacheKey to not change.
     val cacheKey = Hash.toHex(
-      Hash((hashes ++ dependentGitCommits.value :+ gitLocalSha1.value).sorted.mkString)
+      Hash((dependentGitCommits.value :+ fileHash :+ gitLocalSha1.value).sorted.mkString)
     )
     val cacheKeyConfFile = new java.io.File(s"${stageDir.getCanonicalPath}/conf/cacheKey.Sha1")
 
