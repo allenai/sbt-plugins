@@ -33,32 +33,31 @@ object DockerBuildPlugin extends AutoPlugin {
 
     val dockerfileLocation: SettingKey[File] = settingKey[File](
       "The location of the Dockerfile to use in building the main project image. Defaults to " +
-        "`srcDirectory.value + \"docker/Dockerfile\", typically \"src/main/docker/Dockerfile\"."
+        "`srcDirectory.value + \"docker/Dockerfile\"`, typically \"src/main/docker/Dockerfile\"."
     )
 
     // The following three settings control how the generated image is tagged. The image portion of
     // image tags will be, for the main image:
-    //   ${imageRegistryHost}/${imageNamePrefix}/${imageName}
+    //   ${dockerImageRegistryHost}/${dockerImageNamePrefix}/${dockerImageName}
     // and for the dependency image will be:
-    //   ${imageRegistryHost}/${imageNamePrefix}/${imageName}-dependency
+    //   ${dockerImageRegistryHost}/${dockerImageNamePrefix}/${dockerImageName}-dependency
     //
     // See the documentation for details on which tags will be used by `dockerBuild` and
     // `dockerPush`.
-    val imageRegistryHost: SettingKey[String] = settingKey[String](
-      "The base name of the image you're creating. Defaults to " +
-        "allenai-docker-private-docker.bintray.io ."
+    val dockerImageRegistryHost: SettingKey[String] = settingKey[String](
+      "The base name of the image you're creating. Defaults to " + AI2_PRIVATE_REGISTRY + "."
     )
-    val imageNamePrefix: SettingKey[String] = settingKey[String](
+    val dockerImageNamePrefix: SettingKey[String] = settingKey[String](
       "The image name prefix (\"repository\", in Docker terms) of the image you're creating. " +
         "Defaults to organization.value.stripPrefix(\"org.allenai.\") . " +
         "This is typically the github repository name."
     )
-    val imageName: SettingKey[String] = settingKey[String](
+    val dockerImageName: SettingKey[String] = settingKey[String](
       "The name of the image you're creating. Defaults to the sbt project name (the `name` " +
         "setting key)."
     )
 
-    val imageBase: SettingKey[String] = settingKey[String](
+    val dockerImageBase: SettingKey[String] = settingKey[String](
       "The base image to use when creating your image. Defaults to " + DEFAULT_BASE_IMAGE + "."
     )
 
@@ -70,7 +69,7 @@ object DockerBuildPlugin extends AutoPlugin {
     )
 
     val dockerWorkdir: SettingKey[String] = settingKey[String](
-      "The WORKDIR value for your Dockerfile. Defaults to /local/deploy/`imageName.value`."
+      "The WORKDIR value for your Dockerfile. Defaults to /local/deploy/`dockerImageName.value`."
     )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,11 +124,11 @@ object DockerBuildPlugin extends AutoPlugin {
   /** Adds the settings to configure the `dockerBuild` command. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     dockerfileLocation := Keys.sourceDirectory.value.toPath.resolve("docker/Dockerfile").toFile,
-    imageRegistryHost := AI2_PRIVATE_REGISTRY,
-    imageNamePrefix := Keys.organization.value.stripPrefix("org.allenai."),
-    imageName := Keys.name.value,
-    imageBase := DEFAULT_BASE_IMAGE,
     dockerCopyMappings := defaultCopyMappings.value,
-    dockerWorkdir := "/local/deploy/" + imageName.value
+    dockerImageRegistryHost := AI2_PRIVATE_REGISTRY,
+    dockerImageNamePrefix := Keys.organization.value.stripPrefix("org.allenai."),
+    dockerImageName := Keys.name.value,
+    dockerImageBase := DEFAULT_BASE_IMAGE,
+    dockerWorkdir := "/local/deploy/" + dockerImageName.value
   )
 }
