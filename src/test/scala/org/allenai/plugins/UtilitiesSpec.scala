@@ -61,7 +61,7 @@ class UtilitiesSpec extends FlatSpecLike with Matchers with OneInstancePerTest w
     }
   }
 
-  it should "return the same hash when files have the same relative paths" in {
+  it should "return the same hash when files have the same relative paths w.r.t. the root" in {
     // Use two subdirectories of `tempDirectory`, and hash from both of them. Note that these
     // directories don't currently have to exist, since we're operating only on the paths, but they
     // are created in case this changes.
@@ -72,6 +72,19 @@ class UtilitiesSpec extends FlatSpecLike with Matchers with OneInstancePerTest w
 
     val firstHash = Utilities.hashFiles(Seq(fooFile, barFile), subdir1)
     val secondHash = Utilities.hashFiles(Seq(fooFile, barFile), subdir2)
+
+    firstHash shouldBe secondHash
+  }
+
+  it should "return the same hash when files have the same normalized path" in {
+    // Create versions of fooFile and barFile which are semantically the same, but have different
+    // paths.
+    val fooRelative = new File("foo.txt")
+    val barRelative = new File(tempDirectory, ".." + File.pathSeparatorChar +
+      tempDirectory.getName + File.pathSeparatorChar + "bar.txt")
+
+    val firstHash = Utilities.hashFiles(Seq(fooFile, barFile), tempDirectory)
+    val secondHash = Utilities.hashFiles(Seq(fooFile, barFile), tempDirectory)
 
     firstHash shouldBe secondHash
   }

@@ -59,8 +59,9 @@ object Utilities {
     */
   def hashFiles(filesToHash: Seq[File], rootDir: File): String = {
     // Resolve the filenames relative to the root directory.
-    val rootDirPath = rootDir.toPath
-    val relativizedNames = filesToHash.map(_.toPath).map(rootDirPath.relativize).map(_.toString)
+    val rootDirPath = rootDir.toPath.normalize
+    val relativizedNames =
+      filesToHash.map(_.toPath.normalize).map(rootDirPath.relativize).map(_.toString)
     // Create a hash of the sorted names, joined by an empty string.
     val nameHash = Hash.toHex(Hash(relativizedNames.sorted.mkString))
 
