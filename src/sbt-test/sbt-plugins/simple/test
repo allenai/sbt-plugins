@@ -13,12 +13,12 @@ $ exec git commit -m "initial commit"
 
 # Make sure all our code compiles, including:
 # core/src/it test code that depends on core/src/test code
-> it:compile
+> core/it:compile
 
 # Style plugin tests.
 > checkStyle
-> styleCheckStrict
--> test:styleCheckStrict
+> core/styleCheckStrict
+-> core/test:styleCheckStrict
 
 # Node plugin tests.
 -$ exists webapp/public
@@ -45,12 +45,6 @@ $ exists webapp/target/universal/stage/public
 > webApp/stage
 $ exists webapp/stubbed.txt
 
-# WebService plugin tests.
-> webService/reStart
-$ sleep 2000
-$ exec curl http://0.0.0.0:8888
-> webService/reStop
-
 # Git-hook generation tests.
 -$ exists .git/hooks/pre-commit
 -$ exists .git/hooks/scalariform.jar
@@ -63,14 +57,6 @@ $ exists .git/hooks/scalariform.jar
 # We can't test the full deploy process in a contained way because of the system commands involved,
 # but by testing config generation we at least run through the parsing logic.
 # Test generating config from within the webservice project.
-> project webService
--$ exists webservice/target/deploy/localhost/webservice/env.conf
-> generateEnvConfig test
-$ exists webservice/target/deploy/localhost/webservice/env.conf
-$ delete webservice/target/deploy/localhost/webservice/env.conf
-
-# Test generating config in webservice from another project.
-> project simple
 -$ exists webservice/target/deploy/localhost/webservice/env.conf
 > webService/generateEnvConfig test
 $ exists webservice/target/deploy/localhost/webservice/env.conf
@@ -78,3 +64,29 @@ $ delete webservice/target/deploy/localhost/webservice/env.conf
 
 # Test generation for non-configured env fails.
 -> webService/generateEnvConfig notAnEnv
+
+# Test that docker dependency staging works.
+> docker/dockerDependencyStage
+$ exists docker/target/docker/dependencies/Dockerfile
+# Assert that the joda-time dependency was added.
+$ exists docker/target/docker/dependencies/lib/joda-time.joda-time-2.4.jar
+
+# Test that dockerMainStage doesn't work without a Dockerfile.
+-> docker/dockerMainStage
+
+# Test that docker main project staging works.
+$ touch docker/src/main/docker/Dockerfile
+> docker/dockerMainStage
+# Test that the default mappings work.
+$ exists docker/target/docker/main/Dockerfile
+$ exists docker/target/docker/main/bin/script.sh
+$ exists docker/target/docker/main/conf/application.conf
+# Test that the custom mappings work.
+$ exists docker/target/docker/main/bar/foo.txt
+$ exists docker/target/docker/main/sourcey/src.txt
+# Test that the project libs are present.
+$ exists docker/target/docker/main/lib/core.core-0.1-SNAPSHOT.jar
+$ exists docker/target/docker/main/lib/docker.docker-0.1-SNAPSHOT.jar
+
+# Test that we can re-run staging without error.
+> docker/dockerMainStage
