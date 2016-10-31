@@ -72,8 +72,7 @@ object DockerBuildPlugin extends AutoPlugin {
     )
 
     val dockerWorkdir: SettingKey[String] = settingKey[String](
-      "The value to append to \"/local/deploy/\" when generating WORKDIR for your Dockerfile. " +
-        "Defaults to `dockerImageName.value`."
+      "The value to for WORKDIR when generating your Dockerfile. Defaults to \"/stage\"."
     )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,9 +192,7 @@ object DockerBuildPlugin extends AutoPlugin {
     // Create the Dockerfile for the dependency image.
     val dockerfileContents = s"""
       |FROM ${dockerImageBase.value}
-      |
-      |WORKDIR /local/deploy/${dockerWorkdir.value}
-      |
+      |WORKDIR ${dockerWorkdir.value}
       |COPY lib lib
       |""".stripMargin
     IO.write(dependencyDockerfile.value, dockerfileContents)
@@ -284,7 +281,7 @@ object DockerBuildPlugin extends AutoPlugin {
     dockerImageNamePrefix := Keys.organization.value.stripPrefix("org.allenai."),
     dockerImageName := Keys.name.value,
     dockerImageBase := DEFAULT_BASE_IMAGE,
-    dockerWorkdir := dockerImageName.value,
+    dockerWorkdir := "/stage",
     dockerDependencyStage := dependencyStageDef.value,
     dockerMainStage := mainImageStageDef.value
   )
