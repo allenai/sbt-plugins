@@ -6,10 +6,12 @@ import sbt.{
   taskKey,
   AutoPlugin,
   Def,
+  IO,
   Keys,
   PathFinder,
   Plugins,
   SettingKey,
+  Task,
   TaskKey
 }
 import sbt.plugins.JvmPlugin
@@ -62,14 +64,15 @@ object DockerBuildPlugin extends AutoPlugin {
     )
 
     val dockerCopyMappings: SettingKey[Seq[(File, String)]] = settingKey[Seq[(File, String)]](
-      "Mappings to add to the Docker image. See " +
+      "Mappings to add to the Docker image. Relative file paths will be interpreted as being " +
+        "relative to the source directory. See " +
         "http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html for detailed " +
-        "info on sbt mappings. Defaults to mapping src/main/{bin,conf} to the {bin,conf} on the " +
+        "info on sbt mappings. Defaults to mapping src/main/{bin,conf} to {bin,conf} on the " +
         "image."
     )
 
     val dockerWorkdir: SettingKey[String] = settingKey[String](
-      "The WORKDIR value for your Dockerfile. Defaults to /local/deploy/`dockerImageName.value`."
+      "The value to for WORKDIR when generating your Dockerfile. Defaults to \"/stage\"."
     )
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,13 +88,14 @@ object DockerBuildPlugin extends AutoPlugin {
 
     val dockerDependencyStage: TaskKey[File] = taskKey[File](
       "Builds a staged directory under target/docker/dependencies containing project " +
-        "dependencies. This will include a generated Dockerfile."
+        "dependencies. This will include a generated Dockerfile. This returns the staging " +
+        "directory location."
     )
 
     val dockerMainStage: TaskKey[File] = taskKey[File](
       "Builds a staged directory under target/docker/main containing the staged project, minus " +
         "dependencies. If a Dockerfile is present in `dockerfileLocation.value`, it will be " +
-        "placed in the staging directory."
+        "placed in the staging directory. This returns the staging directory location."
     )
 
     val dockerBuild: TaskKey[String] = taskKey[String](
@@ -112,23 +116,173 @@ object DockerBuildPlugin extends AutoPlugin {
   /** The default copy mapping, set to copy src/main/{bin,conf} to {bin,conf} in the docker image.
     */
   lazy val defaultCopyMappings = Def.setting {
-    val sourceMain = Keys.sourceDirectory.value.toPath.resolve("main")
-    // Copy src/main/{bin,conf} to the staging directory.
-    // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
-    // for more info on sbt mappings.
-    Seq("bin", "conf").map { dir =>
-      PathFinder(sourceMain.resolve(dir).toFile).***.pair(relativeTo(sourceMain.toFile))
-    }.flatten
+    Seq("bin", "conf").map { dir => (new File(dir), dir) }
+  }
+
+  /** The full image name, derived from the user-provided settings. */
+  lazy val fullImageName: Def.Initialize[String] = Def.setting {
+    if (dockerImageNamePrefix.value.nonEmpty) {
+      dockerImageRegistryHost.value + '/' + dockerImageNamePrefix.value + '/' +
+        dockerImageName.value
+    } else {
+      dockerImageRegistryHost.value + '/' + dockerImageName.value
+    }
+  }
+
+  /** The full name of the dependency image. */
+  lazy val dependencyImageName: Def.Initialize[String] = Def.setting {
+    fullImageName.value + "-dependencies"
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Common settings used across tasks.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** The src/main directory. This does not appear to be a setting key in sbt. */
+  lazy val sourceMain: Def.Initialize[File] = Def.setting {
+    new File(Keys.sourceDirectory.value, "main")
+  }
+
+  /** The location of the docker target directory containing all output for the docker plugin. */
+  lazy val dockerTargetDir: Def.Initialize[File] = Def.setting {
+    new File(Keys.target.value, "docker")
+  }
+
+  /** The location of the staged dependency image. */
+  lazy val dependencyImageDir: Def.Initialize[File] = Def.setting {
+    new File(dockerTargetDir.value, "dependencies")
+  }
+
+  /** The location of the staged main image. */
+  lazy val mainImageDir: Def.Initialize[File] = Def.setting {
+    new File(dockerTargetDir.value, "main")
+  }
+
+  /** The location of the staged dependency image's library directory, containing all staged jars.
+    */
+  lazy val dependencyLibDir: Def.Initialize[File] = Def.setting {
+    new File(dependencyImageDir.value, "lib")
+  }
+
+  /** The location of the staged dependency image's Dockerfile. */
+  lazy val dependencyDockerfile: Def.Initialize[File] = Def.setting {
+    new File(dependencyImageDir.value, "Dockerfile")
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Definitions for plugin tasks.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** Task to stage a docker image containing the dependencies of the current project. This is used
+    * to build a base image for the main project image.
+    *
+    * The result of this task is the directory containing the staged image. The directory will
+    * contain a Dockerfile to build the image and a `lib` folder with all dependency jars.
+    */
+  lazy val dependencyStageDef: Def.Initialize[Task[File]] = Def.task {
+    val logger = Keys.streams.value.log
+    logger.info("Staging dependency image ...")
+
+    // Create the destination directory.
+    val imageDirectory = dependencyImageDir.value
+    IO.createDirectory(imageDirectory)
+    val lib = dependencyLibDir.value
+    IO.createDirectory(lib)
+
+    // Create the Dockerfile for the dependency image.
+    val dockerfileContents = s"""
+      |FROM ${dockerImageBase.value}
+      |WORKDIR ${dockerWorkdir.value}
+      |COPY lib lib
+      |""".stripMargin
+    IO.write(dependencyDockerfile.value, dockerfileContents)
+
+    // Copy all of the library dependencies, saving the end location.
+    val copiedFiles: Seq[File] = HelperDefs.remoteDependencies.value.map {
+      case (file, destination) =>
+        val destinationFile = new File(lib, destination)
+        // Don't push bytes around unnecessarily. Note that this might leave stale snapshot
+        // (dynamic) jars around long if they aren't named in a standard way.
+        // A `clean` will wipe these out if needed.
+        if (!destinationFile.exists || destinationFile.getName.contains("-SNAPSHOT")) {
+          IO.copyFile(file, destinationFile)
+        }
+        destinationFile
+    }
+
+    // Remove any items in `lib` that are stale.
+    val staleItems = lib.listFiles.toSet -- copiedFiles
+    staleItems.foreach(_.delete())
+
+    imageDirectory
+  }
+
+  /** Task to stage the main docker image for the project. */
+  lazy val mainImageStageDef: Def.Initialize[Task[File]] = Def.task {
+    val logger = Keys.streams.value.log
+
+    val dockerfile = dockerfileLocation.value
+    if (!dockerfile.exists) {
+      sys.error(s"No Dockerfile found at $dockerfile .\n" +
+        "Maybe you should generate one with the `generateDockerfile` task?")
+    }
+
+    logger.info("Staging main image ...")
+
+    // Create the destination directory.
+    val imageDirectory = mainImageDir.value
+    IO.createDirectory(imageDirectory)
+
+    // Create the destination for libraries.
+    val lib = new File(imageDirectory, "lib")
+    if (!lib.exists) {
+      IO.createDirectory(lib)
+    }
+
+    // Copy the Dockerfile.
+    IO.copyFile(dockerfile, new File(imageDirectory, "Dockerfile"))
+    // Copy the mappings.
+    dockerCopyMappings.value.foreach {
+      case (maybeRelativeSource, relativeDestination) =>
+        // Make any relative path relative to the source directory.
+        val source = if (maybeRelativeSource.isAbsolute) {
+          maybeRelativeSource
+        } else {
+          new File(sourceMain.value, maybeRelativeSource.toString)
+        }
+        if (source.exists) {
+          val destination = new File(imageDirectory, relativeDestination)
+          if (source.isDirectory) {
+            IO.createDirectory(destination)
+            IO.copyDirectory(source, destination)
+          } else {
+            IO.copyFile(source, destination)
+          }
+        }
+    }
+
+    // Copy the local project jars.
+    HelperDefs.localDependencies.value.foreach {
+      case (file, destination) =>
+        val destinationFile = new File(lib, destination)
+        IO.copyFile(file, destinationFile)
+    }
+
+    imageDirectory
   }
 
   /** Adds the settings to configure the `dockerBuild` command. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    dockerfileLocation := Keys.sourceDirectory.value.toPath.resolve("docker/Dockerfile").toFile,
+    dockerfileLocation := {
+      new File(sourceMain.value, "docker" + File.separatorChar + "Dockerfile")
+    },
     dockerCopyMappings := defaultCopyMappings.value,
     dockerImageRegistryHost := AI2_PRIVATE_REGISTRY,
     dockerImageNamePrefix := Keys.organization.value.stripPrefix("org.allenai."),
     dockerImageName := Keys.name.value,
     dockerImageBase := DEFAULT_BASE_IMAGE,
-    dockerWorkdir := "/local/deploy/" + dockerImageName.value
+    dockerWorkdir := "/stage",
+    dockerDependencyStage := dependencyStageDef.value,
+    dockerMainStage := mainImageStageDef.value
   )
 }

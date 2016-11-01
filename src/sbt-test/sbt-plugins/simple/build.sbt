@@ -1,22 +1,16 @@
-import Dependencies._
-
 import org.allenai.plugins.StylePlugin.StyleKeys
 
 name := "simple"
 
-lazy val core = project.in(file("core")).settings(
-  libraryDependencies ++= Seq(
-    jodaTime, // declared in Dependencies
-    sprayCan, // declared in CoreDependencies
-    sprayRouting,
-    akkaActor,
-    sprayJson
-  )
-)
+// Core project with shared code for testing things.
+lazy val core = project.in(file("core"))
 
 lazy val cli = project.in(file("cli")).dependsOn(core).enablePlugins(CliPlugin)
 
-lazy val docker = project.in(file("docker")).enablePlugins(DockerBuildPlugin)
+lazy val docker = project.in(file("docker")).dependsOn(core)
+  .enablePlugins(DockerBuildPlugin)
+  .settings(libraryDependencies += "joda-time" % "joda-time" % "2.4")
+
 
 lazy val stubbedDeployNpmBuild = taskKey[Unit]("Verify stubbing the deploy npm build works")
 
