@@ -68,14 +68,25 @@ $ delete webservice/target/deploy/localhost/webservice/env.conf
 # Test that docker dependency staging works.
 > docker/dockerDependencyStage
 $ exists docker/target/docker/dependencies/Dockerfile
+# Test that we get the startup script copied.
+$ exists docker/target/docker/dependencies/bin/run-docker.sh
 # Assert that the joda-time dependency was added.
 $ exists docker/target/docker/dependencies/lib/joda-time.joda-time-2.4.jar
 
 # Test that dockerMainStage doesn't work without a Dockerfile.
 -> docker/dockerMainStage
 
+# Test that we can generate a Dockerfile.
+> docker/generateDockerfile
+$ exists docker/src/main/docker/Dockerfile
+
+# Test that additions to the Dockerfile are retained.
+> docker/appendToDockerfile
+> docker/generateDockerfile
+$ exists docker/src/main/docker/Dockerfile
+$ exec grep TESTING docker/src/main/docker/Dockerfile
+
 # Test that docker main project staging works.
-$ touch docker/src/main/docker/Dockerfile
 > docker/dockerMainStage
 # Test that the default mappings work.
 $ exists docker/target/docker/main/Dockerfile

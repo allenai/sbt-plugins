@@ -41,6 +41,10 @@ object Utilities {
   def copyResourceToFile(clazz: Class[_], resourceName: String, destination: File): Unit = {
     val contents = {
       val is = clazz.getResourceAsStream(resourceName)
+      if (is == null) {
+        throw new NullPointerException("Resource \"" + resourceName + "\" not found for class " +
+          clazz)
+      }
       try {
         IO.readBytes(is)
       } finally {
