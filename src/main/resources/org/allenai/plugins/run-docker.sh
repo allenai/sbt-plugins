@@ -58,4 +58,4 @@ JAVA_CMD=(
 )
 
 echo Running "${JAVA_CMD[@]} $@" . . .
-${JAVA_CMD[@]} "$@"
+${JAVA_CMD[@]} $@
