@@ -309,7 +309,13 @@ $DOCKERFILE_SIGIL
     val dockerfile = dockerfileLocation.value
     val existingContents = if (dockerfile.exists) {
       val lines = IO.readLines(dockerfile)
-      lines.dropWhile(_ != DOCKERFILE_SIGIL).tail.mkString("\n")
+      val remainder = lines.dropWhile(_ != DOCKERFILE_SIGIL)
+      if (remainder.nonEmpty) {
+        remainder.tail.mkString("\n")
+      } else {
+        logger.warn(s"Overwriting Dockerfile at $dockerfile . . .")
+        ""
+      }
     } else {
       ""
     }
