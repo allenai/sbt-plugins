@@ -90,7 +90,6 @@ $ exec grep TESTING docker/src/main/docker/Dockerfile
 > docker/dockerMainStage
 # Test that the default mappings work.
 $ exists docker/target/docker/main/Dockerfile
-$ exists docker/target/docker/main/bin/script.sh
 $ exists docker/target/docker/main/conf/application.conf
 # Test that the custom mappings work.
 $ exists docker/target/docker/main/bar/foo.txt
