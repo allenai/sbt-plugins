@@ -114,8 +114,14 @@ class SbtLogOutput[T <: FileSpec](logger: Logger) extends ScalastyleOutput[T] {
     case InfoLevel => logger.info(msg)
   }
 
-  private[this] def location(file: T, line: Option[Int], column: Option[Int]): String =
-    (file.name +
-      line.map(n => ":" + n + column.map(":" + _).getOrElse(""))
-      .getOrElse(""))
+  private[this] def location(file: T, line: Option[Int], column: Option[Int]): String = {
+    val location = new StringBuilder(file.name)
+    if (line.nonEmpty) {
+      location.append(':').append(line.get)
+      if (column.nonEmpty) {
+        location.append(':').append(column.get)
+      }
+    }
+    location.toString
+  }
 }
