@@ -86,9 +86,8 @@ object VersionInjectorPlugin extends AutoPlugin {
   val gitSha1Task = gitSha1 := (gitCommand("rev-parse", "HEAD").!!).trim
   val gitRemotesTask = gitRemotes := {
     val remotes = gitCommand("remote").lines.toList
-    for (remote <- remotes) yield {
-      val url = (gitCommand("config", "--get", s"remote.${remote}.url").!!).trim
-      url
+    remotes.map { remote =>
+      (gitCommand("config", "--get", s"remote.${remote}.url").!!).trim
     }
   }
 
@@ -101,15 +100,29 @@ object VersionInjectorPlugin extends AutoPlugin {
     resourceManaged.in(Compile).value / organization.value / cleanArtifactName(name.value)
   }
 
+  /** Generates the given resource file if the current contents differ from the given contents. This
+    * keeps the timestamp on the file from changing, which in turn makes the generated jar's
+    * contents stable between builds.
+    */
+  def generateIfUpdated(file: File, newContents: String): Unit = {
+    val currentContents = if (file.exists) {
+      Some(IO.read(file))
+    } else {
+      None
+    }
+
+    if (currentContents != Some(newContents)) {
+      IO.write(file, newContents)
+    }
+  }
+
   val injectArtifactTask = injectArtifact := {
     val artifactConfFile = injectedConfFilesDir.value / "artifact.conf"
     val artifactContents = s"""name: "${name.value}"
                               |version: "${version.value}"
                               |""".stripMargin
 
-    streams.value.log.debug("Generating artifact.conf...")
-
-    IO.write(artifactConfFile, artifactContents)
+    generateIfUpdated(artifactConfFile, artifactContents)
     artifactConfFile
   }
 
@@ -123,7 +136,8 @@ object VersionInjectorPlugin extends AutoPlugin {
                          |remotes: [$remotesText]
                          |date: "${gitCommitDate.value}"
                          |""".stripMargin
-    IO.write(gitConfFile, gitContents)
+
+    generateIfUpdated(gitConfFile, gitContents)
     gitConfFile
   }
 
