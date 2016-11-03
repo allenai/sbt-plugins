@@ -24,17 +24,20 @@ object WebappPlugin extends AutoPlugin {
     // Expect the node project in a "webapp" subdirectory.
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
     // Run "npm watch" when we run a re-start.
+    // TODO(jkinkead): The below triggeres a warning due to use of `<<=`. We should figure out how
+    // to replicate the below. It is tricky because `reStart` is in InputTask, not a regular Task.
     Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.nwatch in Npm),
     // Kill background watches on re-stop.
-    Revolver.reStop <<= Revolver.reStop.dependsOn(NodeKeys.unwatch in Npm),
+    Revolver.reStop := Def.taskDyn(NodeKeys.unwatch.in(Npm).map(_ => Revolver.reStop.value)).value,
     // Run client-side tests when tests are run.
-    test in Test <<= (test in Test).dependsOn(test in Npm),
+    test in Test := Def.taskDyn(test.in(Npm).map(_ => test.in(Test).value)).value,
     // Clean node files on clean.
     cleanFiles += (NodeKeys.nodeProjectTarget in Npm).value,
     // Build the node project on stage (for deploys).
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(DeployPlugin.autoImport.deployNpmBuild),
+    UniversalPlugin.autoImport.stage := Def.taskDyn {
+      DeployPlugin.autoImport.deployNpmBuild.map(_ => UniversalPlugin.autoImport.stage.value)
+    }.value,
     // Copy the built node project into our staging directory, too!
-    mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map MappingsHelper.directory
+    mappings.in(Universal) ++= MappingsHelper.directory(NodeKeys.nodeProjectTarget.in(Npm).value)
   )
 }

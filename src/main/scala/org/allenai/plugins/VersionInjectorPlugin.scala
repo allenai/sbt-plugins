@@ -61,7 +61,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     gitCommitDateTask,
     gitSha1Task,
     gitRemotesTask,
-    resourceGenerators in Compile <+= injectVersion
+    // TODO(jkinkead): The below triggers a warning, but the suggested replacement doesn't work.
+    resourceGenerators.in(Compile) <+= injectVersion
   )
 
   private def executableName(command: String) = {
@@ -92,39 +93,40 @@ object VersionInjectorPlugin extends AutoPlugin {
     }
   }
 
-  val injectVersionTask = injectVersion <<= (injectArtifact in Compile, injectGit in Compile) map {
-    (artifactFile, gitFile) => Seq(artifactFile, gitFile)
+  val injectVersionTask = injectVersion := {
+    Seq(injectArtifact.in(Compile).value, injectGit.in(Compile).value)
   }
 
-  val injectArtifactTask =
-    injectArtifact <<= (resourceManaged in Compile, organization, name, version, streams) map {
-      (resourceManaged, org, name, version, s) =>
-        val artifactConfFile = resourceManaged / org / cleanArtifactName(name) / "artifact.conf"
-        val artifactContents =
-          "name: \"" + name + "\"\n" +
-            "version: \"" + version + "\""
+  /** The directory the the git and artifact conf files go into. */
+  lazy val injectedConfFilesDir: Def.Initialize[File] = Def.setting {
+    resourceManaged.in(Compile).value / organization.value / cleanArtifactName(name.value)
+  }
 
-        s.log.debug(s"Generating artifact.conf managed resource... (name|version: $name|$version)")
+  val injectArtifactTask = injectArtifact := {
+    val artifactConfFile = injectedConfFilesDir.value / "artifact.conf"
+    val artifactContents = s"""name: "${name.value}"
+                              |version: "${version.value}"
+                              |""".stripMargin
 
-        IO.write(artifactConfFile, artifactContents)
-        artifactConfFile
-    }
+    streams.value.log.debug("Generating artifact.conf...")
 
-  val injectGitTask =
-    injectGit <<= (resourceManaged in Compile, organization, name, version, streams, gitRemotes, gitSha1, gitCommitDate) map { // scalastyle:ignore
-      (resourceManaged, org, name, version, s, remotes, sha1, date) =>
-        val gitConfFile = resourceManaged / org / cleanArtifactName(name) / "git.conf"
+    IO.write(artifactConfFile, artifactContents)
+    artifactConfFile
+  }
 
-        s.log.debug(s"Generating git.conf managed resource... (sha1: ${sha1})")
+  val injectGitTask = injectGit := {
+    val gitConfFile = injectedConfFilesDir.value / "git.conf"
 
-        def quote(s: String) = "\"" + s + "\""
-        val gitContents =
-          "sha1: " + quote(sha1) + "\n" +
-            "remotes: " + (remotes map quote).mkString("[", ", ", "]") + "\n" +
-            "date: " + quote(date.toString)
-        IO.write(gitConfFile, gitContents)
-        gitConfFile
-    }
+    streams.value.log.debug(s"Generating git.conf managed resource...")
+
+    val remotesText = gitRemotes.value.mkString("\"", "\", \"", "\"")
+    val gitContents = s"""sha1: "${gitSha1.value}"
+                         |remotes: [$remotesText]
+                         |date: "${gitCommitDate.value}"
+                         |""".stripMargin
+    IO.write(gitConfFile, gitContents)
+    gitConfFile
+  }
 
   // Gives us the git most recent commits for all the local projects that this project depends on
   // We have to use a dynamic task because generating tasks based on project dependencies
