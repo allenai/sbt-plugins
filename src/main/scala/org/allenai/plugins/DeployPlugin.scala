@@ -127,8 +127,9 @@ object DeployPlugin extends AutoPlugin {
     // By default, this only depends on staging and generating the cache key.
     preDeploy := { stageAndCacheKey.value },
     // Create the required run-class.sh script before staging.
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(CoreSettingsPlugin.autoImport.generateRunClass),
+    UniversalPlugin.autoImport.stage := UniversalPlugin.autoImport.stage.dependsOn(
+      CoreSettingsPlugin.autoImport.generateRunClass
+    ).value,
 
     // JavaAppPackaging creates non-daemon start scripts by default. Since we
     // provide our own run-class.sh script meant for running a daemon process,
