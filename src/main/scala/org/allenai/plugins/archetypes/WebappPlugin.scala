@@ -24,17 +24,17 @@ object WebappPlugin extends AutoPlugin {
     // Expect the node project in a "webapp" subdirectory.
     NodeKeys.nodeProjectDir in Npm := (baseDirectory in thisProject).value / "webapp",
     // Run "npm watch" when we run a re-start.
-    Revolver.reStart <<= Revolver.reStart.dependsOn(NodeKeys.nwatch in Npm),
+    Revolver.reStart := Revolver.reStart.dependsOn(NodeKeys.nwatch.in(Npm)).evaluated,
     // Kill background watches on re-stop.
-    Revolver.reStop <<= Revolver.reStop.dependsOn(NodeKeys.unwatch in Npm),
+    Revolver.reStop := Revolver.reStop.dependsOn(NodeKeys.unwatch.in(Npm)).value,
     // Run client-side tests when tests are run.
-    test in Test <<= (test in Test).dependsOn(test in Npm),
+    test.in(Test) := test.in(Test).dependsOn(test.in(Npm)).value,
     // Clean node files on clean.
     cleanFiles += (NodeKeys.nodeProjectTarget in Npm).value,
     // Build the node project on stage (for deploys).
-    UniversalPlugin.autoImport.stage <<=
-      UniversalPlugin.autoImport.stage.dependsOn(DeployPlugin.autoImport.deployNpmBuild),
+    UniversalPlugin.autoImport.stage :=
+      UniversalPlugin.autoImport.stage.dependsOn(DeployPlugin.autoImport.deployNpmBuild).value,
     // Copy the built node project into our staging directory, too!
-    mappings in Universal <++= (NodeKeys.nodeProjectTarget in Npm) map MappingsHelper.directory
+    mappings.in(Universal) ++= MappingsHelper.directory(NodeKeys.nodeProjectTarget.in(Npm).value)
   )
 }

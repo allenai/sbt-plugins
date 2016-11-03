@@ -37,11 +37,13 @@ object StylePlugin extends AutoPlugin {
       inConfig(Compile)(configSettings) ++
       inConfig(Test)(configSettings) ++
       Seq(
-        // Check style on compile.
-        compileInputs in (Test, compile) <<=
-          (compileInputs in (Test, compile)) dependsOn (StyleKeys.styleCheck in Test),
-        compileInputs in (Compile, compile) <<=
-          (compileInputs in (Compile, compile)) dependsOn (StyleKeys.styleCheck in Compile)
+        // Check style before compile.
+        compileInputs.in(Test, compile) := {
+          compileInputs.in(Test, compile).dependsOn(StyleKeys.styleCheck.in(Test)).value
+        },
+        compileInputs.in(Compile, compile) := {
+          compileInputs.in(Compile, compile).dependsOn(StyleKeys.styleCheck.in(Compile)).value
+        }
       )
 
   val styleCheckTask = StyleKeys.styleCheck := {
@@ -100,22 +102,26 @@ class SbtLogOutput[T <: FileSpec](logger: Logger) extends ScalastyleOutput[T] {
     case EndFile(file) => logger.verbose("end file " + file)
     case StyleError(file, clazz, key, level, args, line, column, customMessage) => {
       plevel(level)(location(file, line, column) + ": " +
-          ScalastyleOutput.findMessage(messageHelper, key, args, customMessage))
+        ScalastyleOutput.findMessage(messageHelper, key, args, customMessage))
     }
     case StyleException(file, clazz, message, stacktrace, line, column) =>
       logger.error(location(file, line, column) + ": " + message)
   }
 
-  private[this]
-  def plevel(level: Level)(msg: => String): Unit = level match {
+  private[this] def plevel(level: Level)(msg: => String): Unit = level match {
     case ErrorLevel => logger.error(msg)
     case WarningLevel => logger.warn(msg)
     case InfoLevel => logger.info(msg)
   }
 
-  private[this]
-  def location(file: T, line: Option[Int], column: Option[Int]): String =
-    (file.name +
-     line.map(n => ":" + n + column.map(":" + _).getOrElse(""))
-         .getOrElse(""))
+  private[this] def location(file: T, line: Option[Int], column: Option[Int]): String = {
+    val location = new StringBuilder(file.name)
+    if (line.nonEmpty) {
+      location.append(':').append(line.get)
+      if (column.nonEmpty) {
+        location.append(':').append(column.get)
+      }
+    }
+    location.toString
+  }
 }
