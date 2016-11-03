@@ -190,8 +190,8 @@ object NodeJsPlugin extends AutoPlugin {
     npmUnwatchTask,
     npmMkNodeTarget,
     // Ensure the target directory exists prior to building.
-    (build in Npm) <<= (build in Npm).dependsOn(mkNodeTarget in Npm),
-    (nwatch in Npm) <<= (nwatch in Npm).dependsOn(mkNodeTarget in Npm),
+    build.in(Npm) := Def.taskDyn(mkNodeTarget.in(Npm).map(_ => build.in(Npm).value)).value,
+    nwatch.in(Npm) := Def.taskDyn(mkNodeTarget.in(Npm).map(_ => nwatch.in(Npm).value)),
     commands += npm
   )
 
