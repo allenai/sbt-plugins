@@ -192,6 +192,8 @@ object CoreSettingsPlugin extends AutoPlugin {
       Seq(
         generateRunClassTask,
         fork := true, // Forking for run, test is required sometimes, so fork always.
+        // Use a sensible default for the logback appname.
+        javaOptions += s"-Dlogback.appname=${name.value}",
         scalaVersion := CoreDependencies.defaultScalaVersion,
         scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
         javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
