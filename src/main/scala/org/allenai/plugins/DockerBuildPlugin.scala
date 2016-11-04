@@ -179,25 +179,6 @@ object DockerBuildPlugin extends AutoPlugin {
     new File(dockerTargetDir.value, "main")
   }
 
-  /** The location of the staged dependency image's library directory, containing all staged jars.
-    */
-  lazy val dependencyLibDir: Def.Initialize[File] = Def.setting {
-    new File(dependencyImageDir.value, "lib")
-  }
-
-  /** The location of the staged dependency image's Dockerfile. */
-  lazy val dependencyDockerfile: Def.Initialize[File] = Def.setting {
-    new File(dependencyImageDir.value, "Dockerfile")
-  }
-
-  /** The location of the staged dependency image's bin directory, containing the startup script. */
-  lazy val dependencyImageBinDir: Def.Initialize[File] = Def.setting {
-    new File(dependencyImageDir.value, "bin")
-  }
-
-  /** The location of the staged dependency image's startup script. */
-  lazy val dependencyImageStartupScript: Def.Initialize[File] = Def.setting {
-    new File(dependencyImageBinDir.value, STARTUP_SCRIPT_NAME)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -344,7 +325,7 @@ $DOCKERFILE_SIGIL
     // Create the destination directory.
     val imageDirectory = dependencyImageDir.value
     IO.createDirectory(imageDirectory)
-    val lib = dependencyLibDir.value
+    val lib = new File(dependencyImageDir.value, "lib")
     IO.createDirectory(lib)
 
     // Create the Dockerfile for the dependency image.
@@ -354,14 +335,15 @@ $DOCKERFILE_SIGIL
       |COPY bin bin
       |COPY lib lib
       |""".stripMargin
-    IO.write(dependencyDockerfile.value, dockerfileContents)
+    val dependencyDockerfile = new File(dependencyImageDir.value, "Dockerfile")
+    IO.write(dependencyDockerfile, dockerfileContents)
 
     // Copy the startup script.
-    val bin = dependencyImageBinDir.value
+    val bin = new File(dependencyImageDir.value, "bin")
     if (!bin.exists) {
       IO.createDirectory(bin)
     }
-    val startupScriptDestination = dependencyImageStartupScript.value
+    val startupScriptDestination = new File(bin, STARTUP_SCRIPT_NAME)
     Utilities.copyResourceToFile(getClass, STARTUP_SCRIPT_NAME, startupScriptDestination)
     startupScriptDestination.setExecutable(true)
 
