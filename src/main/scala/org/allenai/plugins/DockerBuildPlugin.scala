@@ -9,6 +9,7 @@ import sbt.{
   Def,
   IO,
   Keys,
+  Logger,
   PathFinder,
   Plugins,
   SettingKey,
@@ -18,6 +19,8 @@ import sbt.{
 import sbt.plugins.JvmPlugin
 
 import java.io.File
+
+import scala.sys.process.Process
 
 /** Plugin for building docker images. */
 object DockerBuildPlugin extends AutoPlugin {
@@ -118,9 +121,14 @@ object DockerBuildPlugin extends AutoPlugin {
         "placed in the staging directory. This returns the staging directory location."
     )
 
+    val dockerDependencyBuild: TaskKey[String] = taskKey[String](
+      "Builds the dependency image for project, returning the image ID with unique tag. This is " +
+        "not manually run as part of a normal workflow, but can be useful for debugging."
+    )
+
     val dockerBuild: TaskKey[String] = taskKey[String](
-      "Builds a docker image for this project, returning the image ID. This requires that a " +
-        "Dockerfile exist at `dockerfileLocation.value`."
+      "Builds a docker image for this project, returning the image ID with unique tag. This " +
+        "requires that a Dockerfile exist at `dockerfileLocation.value`."
     )
 
     val dockerRun: TaskKey[Unit] = taskKey[Unit](
@@ -156,8 +164,58 @@ object DockerBuildPlugin extends AutoPlugin {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Common settings used across tasks.
+  // Common settings / tasks / utilities used across tasks.
   //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** Builds a docker image in the given directory. Before building, hash the contents, and check to
+    * see if the hash is different from what's in the given hash file. If the contents are
+    * unchanged, docker is not invoked. If the contents have checked, the old image is untagged, and
+    * the new image is built with the tags "latest" and a tag with the contents hash.
+    * @return the full image name, with the content hash tag included
+    */
+  def buildImageIfUpdated(
+    imageDir: File,
+    imageName: String,
+    hashFile: File,
+    logger: Logger
+  ): String = {
+    // Calculate the checksum of the contents of the main image.
+    val allFiles = PathFinder(imageDir).***.filter(_.isFile).get
+    val newHash = Utilities.hashFiles(allFiles, imageDir)
+
+    val oldHash = if (hashFile.exists) {
+      IO.read(hashFile)
+    } else {
+      ""
+    }
+
+    val imageNameWithLabel = imageName + ':' + newHash
+    if (newHash != oldHash) {
+      // Build a new docker image.
+      val buildCommand =
+        Seq("docker", "build", "-t", imageName, "-t", imageNameWithLabel, imageDir.toString)
+      logger.info("Building image...")
+      val exitCode = Process(buildCommand).!
+      if (exitCode != 0) {
+        sys.error("Error running " + buildCommand.mkString(" "))
+      }
+
+      if (oldHash != "") {
+        logger.info("Removing stale image...")
+        // Remove the old image label. Note that we ignore any errors - we don't care if the image
+        // doesn't exist or if the remove fails.
+        val untagCommand = Seq("docker", "rmi", imageName + ':' + oldHash)
+        Process(untagCommand).!
+      }
+
+      // Write out the hash file.
+      IO.write(hashFile, newHash)
+    } else {
+      logger.info("Image unchanged.")
+    }
+
+    imageNameWithLabel
+  }
 
   /** The src/main directory. This does not appear to be a setting key in sbt. */
   lazy val sourceMain: Def.Initialize[File] = Def.setting {
@@ -179,6 +237,11 @@ object DockerBuildPlugin extends AutoPlugin {
     new File(dockerTargetDir.value, "main")
   }
 
+  /** Task which requires that `docker` exists on the commandline path. */
+  lazy val requireDocker: Def.Initialize[Task[Unit]] = Def.task {
+    if (Process(Seq("which", "docker")).!(Utilities.NIL_PROCESS_LOGGER) != 0) {
+      sys.error("`docker` not found on path. Please install the docker client before using this.")
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -367,6 +430,27 @@ $DOCKERFILE_SIGIL
     imageDirectory
   }
 
+  /** Task to build a docker image containing the dependencies of the current project. This is used
+    * as a base image for the main project image.
+    */
+  lazy val dependencyBuildDef: Def.Initialize[Task[String]] = Def.task {
+    // This task requires docker to be installed.
+    requireDocker.value
+
+    // This task requires that the docker dependency stage have been run.
+    dockerDependencyStage.value
+
+    val logger = Keys.streams.value.log
+    logger.info("Building dependency image...")
+
+    buildImageIfUpdated(
+      dependencyImageDir.value,
+      dependencyImageName.value,
+      new File(dockerTargetDir.value, "dependencies.sha1"),
+      logger
+    )
+  }
+
   /** Task to stage the main docker image for the project. */
   lazy val mainImageStageDef: Def.Initialize[Task[File]] = Def.task {
     val logger = Keys.streams.value.log
@@ -426,6 +510,26 @@ $DOCKERFILE_SIGIL
     imageDirectory
   }
 
+  /** Task to build the main docker image for the project. This returns the image ID. */
+  lazy val mainImageBuildDef: Def.Initialize[Task[String]] = Def.task {
+    // This task requires docker to be installed.
+    requireDocker.value
+
+    // This task requires that the dependency image be created, and that the main image be staged.
+    mainImageStageDef.value
+    dependencyBuildDef.value
+
+    val logger = Keys.streams.value.log
+    logger.info("Building main image...")
+
+    buildImageIfUpdated(
+      mainImageDir.value,
+      fullImageName.value,
+      new File(dockerTargetDir.value, "main.sha1"),
+      logger
+    )
+  }
+
   /** Adds the settings to configure the `dockerBuild` command. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     dockerfileLocation := {
@@ -441,6 +545,8 @@ $DOCKERFILE_SIGIL
     dockerWorkdir := "/stage",
     generateDockerfile := generateDockerfileDef.value,
     dockerDependencyStage := dependencyStageDef.value,
-    dockerMainStage := mainImageStageDef.value
+    dockerMainStage := mainImageStageDef.value,
+    dockerDependencyBuild := dependencyBuildDef.value,
+    dockerBuild := mainImageBuildDef.value
   )
 }
