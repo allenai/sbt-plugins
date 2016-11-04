@@ -19,6 +19,8 @@ import sbt.{
 
 import java.io.File
 
+import scala.sys.process.Process
+
 /** Helper tasks for building plugins. */
 object HelperDefs {
   /** Task initializer to look up non-local runtime dependency artifacts for the current project.
@@ -94,6 +96,29 @@ object HelperDefs {
           aggTask.map { aggPairs: Seq[(File, String)] => aggPairs :+ currPair }
         }
       }
+    }
+  }
+
+  /** Task initializer to check if a git repository is present. Returns true if running in a git
+    * repository, false otherwise.
+    */
+  lazy val gitRepoPresentDef: Def.Initialize[Task[Boolean]] = Def.task {
+    Process(Seq("git", "status")).!(Utilities.NIL_PROCESS_LOGGER) != 0
+  }
+
+  /** Task initializer to check if a git repository is present and clean. Returns an error message
+    * if not running in a git repository, if there are uncommitted changes, or if there are
+    * untracked files.
+    */
+  lazy val gitRepoCleanDef: Def.Initialize[Task[Option[String]]] = Def.task {
+    if (!gitRepoPresentDef.value) {
+      Some("Git repository is missing")
+    } else if (Process(Seq("git", "diff", "--shortstat")).!! != "") {
+      Some("Git repository is dirty")
+    } else if (Process(Seq("git", "clean", "-n")).!! != "") {
+      Some("Git repository has untracked files")
+    } else {
+      None
     }
   }
 }

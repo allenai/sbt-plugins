@@ -4,8 +4,14 @@ import sbt.{ Artifact, Hash, IO, ModuleID }
 
 import java.io.File
 
+import scala.sys.process.ProcessLogger
+
 /** Helper methods and values for building plugins. */
 object Utilities {
+  /** A ProcessLogger which ignores all input. This is equivalent to piping the output to /dev/null.
+    */
+  val NIL_PROCESS_LOGGER = ProcessLogger(line => ())
+
   /** Construct a unique jar name from the given module and artifact data. This will be of the form:
     * {{{
     * "${module.organization}.${module.name}-${artifact.name}-" +

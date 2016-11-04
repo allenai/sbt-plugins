@@ -16,7 +16,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.sys.process.{ Process, ProcessLogger }
 import scala.util.{ Failure, Success, Try }
 
 /** Plugin to deploy a project to an ec2 instance. Handles copying binaries and config files,
@@ -556,8 +555,7 @@ object DeployPlugin extends AutoPlugin {
   /** Task that checks for a git repository in the project's directory. */
   lazy val gitRepoPresentTask = gitRepoPresent := {
     // Validate that we are, in fact, in a git repository.
-    // TODO(schmmd): Use JGit instead (http://www.eclipse.org/jgit/)
-    if (Process(Seq("git", "status")).!(ProcessLogger(line => ())) != 0) {
+    if (HelperDefs.gitRepoPresentDef.value) {
       throw new IllegalStateException("Not in git repository, exiting.")
     }
 
@@ -566,24 +564,10 @@ object DeployPlugin extends AutoPlugin {
 
   /** Task that checks if the project's git repository is clean. */
   lazy val gitRepoCleanTask = gitRepoClean := {
-    // Dependencies
-    gitRepoPresent.value
-
-    val log = DeployLogger(streams.value.log)
-
-    // Validate that the git repository is clean.
-    if (Process(Seq("git", "diff", "--shortstat")).!! != "") {
-      throw new IllegalStateException("Git repository is dirty, exiting.")
+    HelperDefs.gitRepoCleanDef.value match {
+      case None => streams.value.log.info("Git repository is clean.")
+      case Some(error) => throw new IllegalStateException(error)
     }
-
-    log.info("Git repository is clean.")
-
-    // Validate that the git repository has no untracked files.
-    if (Process(Seq("git", "clean", "-n")).!! != "") {
-      throw new IllegalStateException("Git repository has untracked files, exiting.")
-    }
-
-    log.info("Git repository contains no untracked files.")
   }
 
   /* ==========>  The main deploy task.  <========== */
