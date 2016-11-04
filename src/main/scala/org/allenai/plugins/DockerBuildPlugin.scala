@@ -76,7 +76,7 @@ object DockerBuildPlugin extends AutoPlugin {
 
     val dockerCopyMappings: SettingKey[Seq[(File, String)]] = settingKey[Seq[(File, String)]](
       "Mappings to add to the Docker image. Relative file paths will be interpreted as being " +
-        "relative to the source directory. See " +
+        "relative to the base directory (`baseDirectory.value`). See " +
         "http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html for detailed " +
         "info on sbt mappings. Defaults to mapping src/main/{bin,conf} to {bin,conf} on the " +
         "image."
@@ -137,7 +137,7 @@ object DockerBuildPlugin extends AutoPlugin {
   lazy val defaultCopyMappings = Def.setting {
     // TODO(jkinkead): Update this to use src/main/conf instead of src/main/resources, since the
     // `resources` directory is a special-use directory for files bundled into jars.
-    Seq((new File("resources"), "conf"))
+    Seq((new File(sourceMain.value, "resources"), "conf"))
   }
 
   /** The full image name, derived from the user-provided settings. */
@@ -216,7 +216,15 @@ object DockerBuildPlugin extends AutoPlugin {
     val dockerCopyMappingsText = {
       // Generate the tuples.
       val tupleValues = dockerCopyMappings.value.map {
-        case (file, destination) => s"""(file("$file"), "$destination")"""
+        case (file, destination) =>
+          val basePath = Keys.baseDirectory.value.toPath
+          // Relativize the file to the project root.
+          val relativeFile = if (file.isAbsolute) {
+            basePath.relativize(file.toPath).toFile
+          } else {
+            file
+          }
+          s"""(file("$relativeFile"), "$destination")"""
       }.mkString("#     ", ",\n#     ", "\n")
       // Turn into an sbt setting.
       "#   dockerCopyMappings := Seq(\n" + tupleValues + "#   )"
@@ -404,11 +412,11 @@ $DOCKERFILE_SIGIL
     // Copy the mappings.
     dockerCopyMappings.value.foreach {
       case (maybeRelativeSource, relativeDestination) =>
-        // Make any relative path relative to the source directory.
+        // Make any relative path relative to the base directory.
         val source = if (maybeRelativeSource.isAbsolute) {
           maybeRelativeSource
         } else {
-          new File(sourceMain.value, maybeRelativeSource.toString)
+          new File(Keys.baseDirectory.value, maybeRelativeSource.toString)
         }
         val destination = new File(imageDirectory, relativeDestination)
         if (source.exists) {
