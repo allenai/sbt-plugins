@@ -302,7 +302,7 @@ $DOCKERFILE_SIGIL
       if (remainder.nonEmpty) {
         remainder.tail.mkString("\n")
       } else {
-        logger.warn(s"Overwriting Dockerfile at $dockerfile . . .")
+        logger.warn(s"Overwriting Dockerfile at $dockerfile...")
         ""
       }
     } else {
