@@ -138,6 +138,18 @@ object DockerBuildPlugin extends AutoPlugin {
     val dockerKill: TaskKey[Unit] = taskKey[Unit](
       "Kills any currently-running docker container for this project."
     )
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // The following keys expose information about the docker file being generated.
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    val dockerDependencyImageTag: TaskKey[String] = taskKey[String](
+      "Generates and prints the tag of the dependency image that `dockerBuild` will produce."
+    )
+
+    val dockerMainImageTag: TaskKey[String] = taskKey[String](
+      "Generates and prints the tag of the main image that `dockerBuild` will produce."
+    )
   }
   import autoImport._
 
@@ -171,6 +183,15 @@ object DockerBuildPlugin extends AutoPlugin {
   // Common settings / tasks / utilities used across tasks.
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
+  def hashDirectory(imageDir: File): String = {
+    val allFiles = PathFinder(imageDir).***.filter(_.isFile).get
+    Utilities.hashFiles(allFiles, imageDir)
+  }
+
+  def imageNameWithLabel(imageDir: File, imageName: String): String = {
+    imageName + ':' + hashDirectory(imageDir)
+  }
+
   /** Builds a docker image in the given directory. Before building, hash the contents, and check to
     * see if the hash is different from what's in the given hash file. If the contents are
     * unchanged, docker is not invoked. If the contents have checked, the old image is untagged, and
@@ -183,9 +204,7 @@ object DockerBuildPlugin extends AutoPlugin {
     hashFile: File,
     logger: Logger
   ): String = {
-    // Calculate the checksum of the contents of the main image.
-    val allFiles = PathFinder(imageDir).***.filter(_.isFile).get
-    val newHash = Utilities.hashFiles(allFiles, imageDir)
+    val newHash = hashDirectory(imageDir)
 
     val oldHash = if (hashFile.exists) {
       IO.read(hashFile)
@@ -534,6 +553,20 @@ $DOCKERFILE_SIGIL
     )
   }
 
+  lazy val dependencyImageTagDef: Def.Initialize[Task[String]] = Def.task {
+    val imageTag = imageNameWithLabel(dependencyImageDir.value, dependencyImageName.value)
+    val logger = Keys.streams.value.log
+    logger.info(imageTag)
+    imageTag
+  }
+
+  lazy val mainImageTagDef: Def.Initialize[Task[String]] = Def.task {
+    val imageTag = imageNameWithLabel(mainImageDir.value, mainImageName.value)
+    val logger = Keys.streams.value.log
+    logger.info(imageTag)
+    imageTag
+  }
+
   /** Adds the settings to configure the `dockerBuild` command. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     dockerfileLocation := {
@@ -551,6 +584,8 @@ $DOCKERFILE_SIGIL
     dockerDependencyStage := dependencyStageDef.value,
     dockerMainStage := mainImageStageDef.value,
     dockerDependencyBuild := dependencyBuildDef.value,
-    dockerBuild := mainImageBuildDef.value
+    dockerBuild := mainImageBuildDef.value,
+    dockerDependencyImageTag := dependencyImageTagDef.value,
+    dockerMainImageTag := mainImageTagDef.value
   )
 }
