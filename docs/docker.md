@@ -10,13 +10,13 @@ This plugin requires you have access to the `docker` command in your shell.  See
 
 If you don't have a [Dockerfile](https://docs.docker.com/engine/reference/builder/):
 
-0. Generate a  for your project. This can be done automatically with the [generateDockerfile](#generateDockerfile) task.
+0. Generate a  for your project. This can be done automatically with the [generateDockerfile](#generatedockerfile) task.
 
 Once you have a Dockerfile:
 
-1. Run [dockerBuild](#dockerBuild) to build your image.
-2. Run [dockerRun](#dockerRun) to run your image in a container locally.
-3. Run [dockerPush](#dockerPush) to push your image to a registry.
+1. Run [dockerBuild](#dockerbuild) to build your image.
+2. Run [dockerRun](#dockerrun) to run your image in a container locally.
+3. Run [dockerPush](#dockerpush) to push your image to a registry.
 
 ## Command Details
 
