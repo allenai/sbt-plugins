@@ -240,7 +240,7 @@ object DockerBuildPlugin extends AutoPlugin {
   /** Task which requires that `docker` exists on the commandline path. */
   lazy val requireDocker: Def.Initialize[Task[Unit]] = Def.task {
     if (Process(Seq("which", "docker")).!(Utilities.NIL_PROCESS_LOGGER) != 0) {
-      sys.error("`docker` not found on path. Please install the docker client before using this.")
+      sys.error("`docker` not found on path. Please install the docker client.")
     }
   }
 
