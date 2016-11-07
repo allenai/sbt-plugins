@@ -148,19 +148,23 @@ object DockerBuildPlugin extends AutoPlugin {
     Seq((new File(sourceMain.value, "resources"), "conf"))
   }
 
-  /** The full image name, derived from the user-provided settings. */
-  lazy val fullImageName: Def.Initialize[String] = Def.setting {
+  /** The image name minus the repository host. */
+  lazy val mainImageNameSuffix: Def.Initialize[String] = Def.setting {
     if (dockerImageNamePrefix.value.nonEmpty) {
-      dockerImageRegistryHost.value + '/' + dockerImageNamePrefix.value + '/' +
-        dockerImageName.value
+      dockerImageNamePrefix.value + '/' + dockerImageName.value
     } else {
-      dockerImageRegistryHost.value + '/' + dockerImageName.value
+      dockerImageName.value
     }
+  }
+
+  /** The full image name, derived from the user-provided settings. */
+  lazy val mainImageName: Def.Initialize[String] = Def.setting {
+    dockerImageRegistryHost.value + '/' + mainImageNameSuffix.value
   }
 
   /** The full name of the dependency image. */
   lazy val dependencyImageName: Def.Initialize[String] = Def.setting {
-    fullImageName.value + "-dependencies"
+    mainImageName.value + "-dependencies"
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,12 +320,12 @@ $exposeText
 
 # The variable determining which typesafe config file to use. You can override this with the -e
 # flag:
-#   docker run -e CONFIG_ENV=prod ${fullImageName.value}
+#   docker run -e CONFIG_ENV=prod ${mainImageName.value}
 # Note the default is "dev".
 ENV CONFIG_ENV $${CONFIG_ENV:-dev}
 
 # The arguments to send to the JVM. These can be overridden at runtime with the -e flag:
-#   docker run -e JVM_ARGS="-Xms=1G -Xmx=1G" ${fullImageName.value}
+#   docker run -e JVM_ARGS="-Xms=1G -Xmx=1G" ${mainImageName.value}
 #
 # sbt setting:
 #   javaOptions := Seq($javaOptionsText)
@@ -329,7 +333,7 @@ ENV JVM_ARGS $${JVM_ARGS:-$jvmArgsText}
 
 # The main class to execute when using the ENTRYPOINT command. You can override this at runtime with
 # the -e flag:
-#   docker run -e JAVA_MAIN=org.allenai.HelloWorld ${fullImageName.value}
+#   docker run -e JAVA_MAIN=org.allenai.HelloWorld ${mainImageName.value}
 # sbt setting:
 $mainClassText
 $javaMainText
@@ -342,7 +346,7 @@ $javaMainText
 CMD [$dockerMainArgsText]
 
 # The script for this application to run. This can be overridden with the --entrypoint flag:
-#   docker run --entrypoint /bin/bash ${fullImageName.value}
+#   docker run --entrypoint /bin/bash ${mainImageName.value}
 ENTRYPOINT ["bin/$STARTUP_SCRIPT_NAME"]
 
 # The directories in the staging directory which will be mapping into the Docker image.
@@ -383,7 +387,7 @@ $DOCKERFILE_SIGIL
     */
   lazy val dependencyStageDef: Def.Initialize[Task[File]] = Def.task {
     val logger = Keys.streams.value.log
-    logger.info("Staging dependency image ...")
+    logger.info(s"Staging dependency image for ${mainImageNameSuffix.value}...")
 
     // Create the destination directory.
     val imageDirectory = dependencyImageDir.value
@@ -441,7 +445,7 @@ $DOCKERFILE_SIGIL
     dockerDependencyStage.value
 
     val logger = Keys.streams.value.log
-    logger.info("Building dependency image...")
+    logger.info(s"Building dependency image for ${mainImageNameSuffix.value}...")
 
     buildImageIfUpdated(
       dependencyImageDir.value,
@@ -461,7 +465,7 @@ $DOCKERFILE_SIGIL
         "Maybe you should generate one with the `generateDockerfile` task?")
     }
 
-    logger.info("Staging main image ...")
+    logger.info(s"Staging main image ${mainImageNameSuffix.value}...")
 
     // Create the destination directory.
     val imageDirectory = mainImageDir.value
@@ -520,11 +524,11 @@ $DOCKERFILE_SIGIL
     dependencyBuildDef.value
 
     val logger = Keys.streams.value.log
-    logger.info("Building main image...")
+    logger.info(s"Building main image ${mainImageNameSuffix.value}...")
 
     buildImageIfUpdated(
       mainImageDir.value,
-      fullImageName.value,
+      mainImageName.value,
       new File(dockerTargetDir.value, "main.sha1"),
       logger
     )
