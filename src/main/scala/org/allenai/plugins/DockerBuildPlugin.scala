@@ -252,15 +252,15 @@ object DockerBuildPlugin extends AutoPlugin {
   }
 
   /** Stops the given docker container. This will first rename the container to a UUID, then run
-    * `docker stop` against the new name. Only the rename will block. The rename is done to avoid
-    * race conditions in the docker daemon: It doesn't clean up the name of a stopped container
-    * before `docker stop` exits, so immediately restarting the container results in an error.
+    * `docker stop` against the new name. The rename is done to avoid race conditions in the docker
+    * daemon: It doesn't clean up the name of a stopped container before `docker stop` exits, so
+    * immediately restarting the container results in an error.
     */
   def stopContainer(container: String, logger: Logger): Unit = {
     logger.info(s"Stopping $container...")
     val newName = container + '-' + UUID.randomUUID.toString
     Process(Seq("docker", "rename", container, newName)).!(Utilities.NIL_PROCESS_LOGGER)
-    Process(Seq("docker", "stop", newName)).run(Utilities.NIL_PROCESS_LOGGER)
+    Process(Seq("docker", "stop", newName)).!(Utilities.NIL_PROCESS_LOGGER)
   }
 
   /** The src/main directory. This does not appear to be a setting key in sbt. */
