@@ -406,6 +406,7 @@ $DOCKERFILE_SIGIL
     val dockerfileContents = s"""
       |FROM ${dockerImageBase.value}
       |WORKDIR ${dockerWorkdir.value}
+      |STOPSIGNAL SIGINT
       |COPY bin bin
       |COPY lib lib
       |""".stripMargin
