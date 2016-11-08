@@ -528,8 +528,8 @@ $DOCKERFILE_SIGIL
     requireDocker.value
 
     // This task requires that the dependency image be created, and that the main image be staged.
-    mainImageStageDef.value
-    dependencyBuildDef.value
+    dockerDependencyBuild.value
+    dockerMainStage.value
 
     val logger = Keys.streams.value.log
     logger.info(s"Building main image ${mainImageNameSuffix.value}...")
