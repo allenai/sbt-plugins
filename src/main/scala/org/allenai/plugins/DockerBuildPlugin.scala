@@ -1,11 +1,9 @@
 package org.allenai.plugins
 
 import sbt.{
-  relativeTo,
   settingKey,
   taskKey,
   AutoPlugin,
-  Compile,
   Def,
   IO,
   Keys,
