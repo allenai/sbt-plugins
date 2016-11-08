@@ -236,6 +236,11 @@ object DockerBuildPlugin extends AutoPlugin {
     new File(dockerTargetDir.value, "dependencies")
   }
 
+  /** The location of the built dependency image's hash file. */
+  lazy val dependencyHashFile: Def.Initialize[File] = Def.setting {
+    new File(dockerTargetDir.value, "dependencies.sha1")
+  }
+
   /** The location of the staged main image. */
   lazy val mainImageDir: Def.Initialize[File] = Def.setting {
     new File(dockerTargetDir.value, "main")
@@ -450,7 +455,7 @@ $DOCKERFILE_SIGIL
     buildImageIfUpdated(
       dependencyImageDir.value,
       dependencyImageName.value,
-      new File(dockerTargetDir.value, "dependencies.sha1"),
+      dependencyHashFile.value,
       logger
     )
   }
@@ -525,6 +530,10 @@ $DOCKERFILE_SIGIL
 
     val logger = Keys.streams.value.log
     logger.info(s"Building main image ${mainImageNameSuffix.value}...")
+
+    // Copy in the dependency hash file in order to include it in our image hash. This ensures we
+    // rebuild if dependencies change, even if the source code remains the same.
+    IO.copyFile(dependencyHashFile.value, new File(mainImageDir.value, "dependencies.sha1"))
 
     buildImageIfUpdated(
       mainImageDir.value,
