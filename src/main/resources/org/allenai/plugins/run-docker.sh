@@ -24,38 +24,44 @@ if [ -z "$JAVA_MAIN" ]; then
   exit 1
 fi
 
+JAVA_CMD=(java)
+
 # Set default memory settings JVM_ARGS if undefined.
 if [ -z "$JVM_ARGS" ]; then
   JVM_ARGS="-Xms512m -Xmx512m"
 fi
+
+JAVA_CMD+=($JVM_ARGS)
 
 # Change to the root of the install.
 SCRIPT_DIR=`dirname $0`
 cd "$SCRIPT_DIR/.."
 
 # Configure JVM logging.
-LOGBACK_CONF=("-Dlogback.appname=ai2service")
+JAVA_CMD+=("-Dlogback.appname=ai2service")
 if [ -e conf/logback.xml ]; then
-  LOGBACK_CONF+=("-Dlogback.configurationFile=conf/logback.xml")
+  JAVA_CMD+=("-Dlogback.configurationFile=conf/logback.xml")
 fi
-CONF_FILE="-Dconfig.file=conf/application.conf"
 # Use a per-env config, if it exists.
 if [ -e conf/$CONFIG_ENV.conf ]; then
-  CONF_FILE="-Dconfig.file=conf/$CONFIG_ENV.conf"
+  JAVA_CMD+=("-Dconfig.file=conf/$CONFIG_ENV.conf")
+elif [ -e conf/application.conf ]; then
+  # Use the default application.conf, if it exists.
+  JAVA_CMD+=("-Dconfig.file=conf/application.conf")
 fi
 
 # Add a cache key define, if it exists.
-CACHE_KEY=""
 if [ -e conf/cacheKey.sha1 ]; then
   CACHE_KEY_CONTENTS=$(<conf/cacheKey.sha1)
-  CACHE_KEY="-Dapplication.cacheKey=$CACHE_KEY_CONTENTS"
+  JAVA_CMD+=("-Dapplication.cacheKey=$CACHE_KEY_CONTENTS")
 fi
 
-# Generate the classpath & full command.
+# Generate the classpath.
 CLASSPATH=`find lib -name '*.jar' | tr "\\n" :`
-JAVA_CMD=(
-  java $JVM_ARGS -classpath "$CLASSPATH" "$CONF_FILE" "$CACHE_KEY" ${LOGBACK_CONF[@]} "$JAVA_MAIN"
-)
+JAVA_CMD+=(-classpath "$CLASSPATH")
 
-echo Running "${JAVA_CMD[@]} $@" . . .
-${JAVA_CMD[@]} $@
+# Add the main class as the last argument.
+JAVA_CMD+=("$JAVA_MAIN")
+
+echo Running "${JAVA_CMD[@]} $@" ...
+exec ${JAVA_CMD[@]} $@
