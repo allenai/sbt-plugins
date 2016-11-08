@@ -22,8 +22,12 @@ import scala.sys.process.Process
 
 /** Plugin for building docker images. */
 object DockerBuildPlugin extends AutoPlugin {
+  /** AI2's private Docker registry. Used as the default value for the dockerImageRegistryHost
+    * setting.
+    */
   val AI2_PRIVATE_REGISTRY = "allenai-docker-private-docker.bintray.io"
 
+  /** The default value for the dockerImageBase setting. */
   val DEFAULT_BASE_IMAGE = AI2_PRIVATE_REGISTRY + "/oracle-java:8"
 
   /** The name of the startup script, located in this class's resources. This will also be the name
