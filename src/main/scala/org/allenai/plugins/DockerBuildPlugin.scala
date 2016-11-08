@@ -4,6 +4,7 @@ import sbt.{
   settingKey,
   taskKey,
   AutoPlugin,
+  ConsoleLogger,
   Def,
   IO,
   Keys,
@@ -17,7 +18,10 @@ import sbt.{
 import sbt.plugins.JvmPlugin
 
 import java.io.File
+import java.lang.Runtime
+import java.util.UUID
 
+import scala.collection.mutable
 import scala.sys.process.Process
 
 /** Plugin for building docker images. */
@@ -39,6 +43,24 @@ object DockerBuildPlugin extends AutoPlugin {
     * user-provided additions.
     */
   val DOCKERFILE_SIGIL = "#+" * 50
+
+  /** Set of names of currently-running docker containers. Access is synchronized on
+    * `runningContainers`.
+    */
+  private val runningContainers = mutable.Set.empty[String]
+  // Set up a shutdown hook to stop any running containers when we exit.
+  Runtime.getRuntime.addShutdownHook(
+    new Thread(new Runnable {
+      override def run(): Unit = {
+        runningContainers.synchronized {
+          runningContainers.foreach { container =>
+            stopContainer(container, ConsoleLogger(System.out))
+          }
+          runningContainers.clear()
+        }
+      }
+    })
+  )
 
   /** Requires the JvmPlugin, since this will be building a jar dependency tree. */
   override def requires: Plugins = JvmPlugin
@@ -91,6 +113,12 @@ object DockerBuildPlugin extends AutoPlugin {
       "The value(s) to use for EXPOSE when generating your Dockerfile. Defaults to `Seq.empty`."
     )
 
+    val dockerPortMappings: SettingKey[Seq[(Int, Int)]] = settingKey[Seq[(Int, Int)]](
+      "The port mapping(s) to use when running your docker image via `dockerRun`, as " +
+        "(hostPort, containerPort). Defaults to mapping all of the values `dockerPorts.value` " +
+        "to themselves (identity mapping)."
+    )
+
     val dockerMainArgs: SettingKey[Seq[String]] = settingKey[Seq[String]](
       "The value to use for CMD in order to pass default arguments to your application. Defaults " +
         "to `Seq.empty`."
@@ -137,8 +165,8 @@ object DockerBuildPlugin extends AutoPlugin {
       "Builds a docker image for this project, then runs it locally in a container."
     )
 
-    val dockerKill: TaskKey[Unit] = taskKey[Unit](
-      "Kills any currently-running docker container for this project."
+    val dockerStop: TaskKey[Unit] = taskKey[Unit](
+      "Stops any currently-running docker container for this project."
     )
   }
   import autoImport._
@@ -221,6 +249,18 @@ object DockerBuildPlugin extends AutoPlugin {
     }
 
     imageNameWithLabel
+  }
+
+  /** Stops the given docker container. This will first rename the container to a UUID, then run
+    * `docker stop` against the new name. Only the rename will block. The rename is done to avoid
+    * race conditions in the docker daemon: It doesn't clean up the name of a stopped container
+    * before `docker stop` exits, so immediately restarting the container results in an error.
+    */
+  def stopContainer(container: String, logger: Logger): Unit = {
+    logger.info(s"Stopping $container...")
+    val newName = container + '-' + UUID.randomUUID.toString
+    Process(Seq("docker", "rename", container, newName)).!(Utilities.NIL_PROCESS_LOGGER)
+    Process(Seq("docker", "stop", newName)).run(Utilities.NIL_PROCESS_LOGGER)
   }
 
   /** The src/main directory. This does not appear to be a setting key in sbt. */
@@ -546,6 +586,45 @@ $DOCKERFILE_SIGIL
     )
   }
 
+  /** Task to execute `docker run` in the background. Note that this doesn't use -d, since we want
+    * stdout to show up in the sbt console. This will stop any currently-running image, if we've
+    * already started one for this sbt instance.
+    */
+  lazy val dockerRunDef: Def.Initialize[Task[Unit]] = Def.task {
+    // This task requires that our main image be built.
+    dockerBuild.value
+
+    val logger = Keys.streams.value.log
+    logger.info(s"Running image ${mainImageNameSuffix.value}...")
+
+    val containerName = dockerImageName.value
+    runningContainers.synchronized {
+      // Stop any currently-executing container.
+      if (runningContainers(containerName)) {
+        stopContainer(containerName, logger)
+      }
+      // Don't run with -d, since we want to see the output.
+      val baseCommand = Seq("docker", "run", "--rm", "--name", containerName)
+      // Build the port arguments.
+      val portArgs: Seq[String] = dockerPortMappings.value.flatMap {
+        case (hostPort, containerPort) => Seq("-p", s"$hostPort:$containerPort")
+      }
+      // Start up the container.
+      Process(baseCommand ++ portArgs :+ mainImageName.value).run()
+      // Save it to the list of running containers.
+      runningContainers.add(containerName)
+    }
+  }
+
+  /** Task to stop the currently-running docker container, if it exists. */
+  lazy val dockerStopDef: Def.Initialize[Task[Unit]] = Def.task {
+    // Block while stopping, then remove the image (if we're tracking it).
+    runningContainers.synchronized {
+      stopContainer(dockerImageName.value, Keys.streams.value.log)
+      runningContainers.remove(dockerImageName.value)
+    }
+  }
+
   /** Adds the settings to configure the `dockerBuild` command. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     dockerfileLocation := {
@@ -557,12 +636,18 @@ $DOCKERFILE_SIGIL
     dockerImageName := Keys.name.value,
     dockerImageBase := DEFAULT_BASE_IMAGE,
     dockerPorts := Seq.empty,
+    dockerPortMappings := {
+      val exposedPorts = dockerPorts.value
+      exposedPorts.zip(exposedPorts)
+    },
     dockerMainArgs := Seq.empty,
     dockerWorkdir := "/stage",
     generateDockerfile := generateDockerfileDef.value,
     dockerDependencyStage := dependencyStageDef.value,
     dockerMainStage := mainImageStageDef.value,
     dockerDependencyBuild := dependencyBuildDef.value,
-    dockerBuild := mainImageBuildDef.value
+    dockerBuild := mainImageBuildDef.value,
+    dockerRun := dockerRunDef.value,
+    dockerStop := dockerStopDef.value
   )
 }
