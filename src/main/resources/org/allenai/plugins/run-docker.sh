@@ -8,15 +8,14 @@
 #            "-Xms512m -Xmx512m".
 # CONFIG_ENV - Controls which Typesafe config is used in the application. The file
 #              conf/${CONFIG_ENV}.conf will be used if it exists; else, conf/application.conf will
-#              be used.
+#              be used if it exists.
 #
 # All arguments will be passed on to the underlying JVM application.
 #
 # In addition to behavior described above, this will:
-# - set the system property logback.appname to "ai2service"
 # - set the system property logback.configurationFile to conf/logback.xml, if that file exists
 # - set the system property application.cacheKey to the contents of conf/cacheKey.sha1, if that
-#   exists
+#   file exists
 
 # Require JAVA_MAIN.
 if [ -z "$JAVA_MAIN" ]; then
@@ -38,7 +37,6 @@ SCRIPT_DIR=`dirname $0`
 cd "$SCRIPT_DIR/.."
 
 # Configure JVM logging.
-JAVA_CMD+=("-Dlogback.appname=ai2service")
 if [ -e conf/logback.xml ]; then
   JAVA_CMD+=("-Dlogback.configurationFile=conf/logback.xml")
 fi
