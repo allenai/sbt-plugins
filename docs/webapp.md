@@ -19,7 +19,7 @@ By default, the `sbt-webapp` plugin sets the `sbt-node-js` settings for the weba
 
 Note: these files are relative to your project, so they will be at the same level as `src` and `target` in your project directory.
 
-Additionally, the `sbt-webapp` plugin adds the `buildDir` to the `mappings in Universal` setting to ensure the `buildDir` (default is `public`) is deployed along with the application.
+Additionally, the `sbt-webapp` plugin adds the `buildDir` to the `mappings.in(Universal)` setting to ensure the `buildDir` (default is `public`) is deployed along with the application.
 
 ## Overriding Default Settings
 
@@ -28,11 +28,11 @@ You can change any of the settings for `sbt-node-js` and `sbt-deploy` plugins in
 ```scala
 // in build.sbt
 enablePlugins(WebappPlugin)
-nodeProjectDir in Npm := file("clientapp")
-nodeProjectTarget in Npm := file("client-build")
+nodeProjectDir.in(Npm) := file("clientapp")
+nodeProjectTarget.in(Npm) := file("client-build")
 ```
 
-Note: if you change `nodeProjectDirectory`, the `mappings in Universal` will automatically use the overridden value and package it up during deploy.
+Note: if you change `nodeProjectDirectory`, the `mappings.in(Universal)` will automatically use the overridden value and package it up during deploy.
 
 
 ## Developing with sbt-revolver

@@ -41,7 +41,7 @@ $ exists webapp/target/universal/stage/public
 > clean
 
 # Test it is possible to stub out the deploy NPM build
-> set deployNpmBuild in webApp := (stubbedDeployNpmBuild in webApp).value
+> set deployNpmBuild.in(webApp) := stubbedDeployNpmBuild.in(webApp).value
 > webApp/stage
 $ exists webapp/stubbed.txt
 

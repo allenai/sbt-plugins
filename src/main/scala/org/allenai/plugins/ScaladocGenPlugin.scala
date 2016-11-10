@@ -30,7 +30,7 @@ object ScaladocGenPlugin extends AutoPlugin {
 
   /** The list of all classpaths for all aggregate projects. */
   lazy val aggregateFullClasspath: Def.Initialize[Task[Seq[Seq[Attributed[File]]]]] = Def.taskDyn {
-    (fullClasspath in Compile).all(aggregateFilter.value)
+    fullClasspath.in(Compile).all(aggregateFilter.value)
   }
 
   // The following code is adapted from http://stackoverflow.com/q/16934488#31322970 .
@@ -90,7 +90,7 @@ object ScaladocGenPlugin extends AutoPlugin {
     * task, then subs in the correctly-formatted Javadoc link in place of the badly-formatted
     * Scaladoc link.
     */
-  lazy val fixJavadocSetting = doc in ScalaUnidoc := {
+  lazy val fixJavadocSetting = doc.in(ScalaUnidoc) := {
     // Build up a regular expression that matches any of the external javadoc links we have.
     val externalUrls =
       scaladocGenJavadocUrl.value +: scaladocGenExtraJavadocMap.value.values.toVector
@@ -102,7 +102,7 @@ object ScaladocGenPlugin extends AutoPlugin {
     val captureUrlAndFragment = s""""($anyUrl)#([^"]*)"""".r
 
     // Run the doc task, and get the folder it generated the HTML files into.
-    val docFolder: File = (doc in ScalaUnidoc).value
+    val docFolder: File = doc.in(ScalaUnidoc).value
     val htmlFiles: Iterable[File] = (docFolder ** "*.html").get
     // Replace all the Javadoc links in the generated files.
     htmlFiles foreach { file =>
@@ -182,8 +182,8 @@ object ScaladocGenPlugin extends AutoPlugin {
     *
     * The name reflects the error you will see: A null `gitCurrentBranch` setting.
     */
-  lazy val fixNullCurrentBranch = (SbtGit.GitKeys.gitReader in ThisBuild) := {
-    var currentRoot = (baseDirectory in ThisBuild).value
+  lazy val fixNullCurrentBranch = SbtGit.GitKeys.gitReader.in(ThisBuild) := {
+    var currentRoot = baseDirectory.in(ThisBuild).value
     while (currentRoot.exists && !(currentRoot / ".git").exists) {
       currentRoot = currentRoot / ".."
     }
@@ -220,7 +220,7 @@ object ScaladocGenPlugin extends AutoPlugin {
         autoAPIMappings := true,
         // This adds the output of Unidoc to the SbtSite plugin's mappings - meaning, this will end
         // up in the `latest/api` directory of the site synced to github pages.
-        SbtSite.site.addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), "latest/api")
+        SbtSite.site.addMappingsToSiteDir(mappings.in(ScalaUnidoc, packageDoc), "latest/api")
       )
   }
 }

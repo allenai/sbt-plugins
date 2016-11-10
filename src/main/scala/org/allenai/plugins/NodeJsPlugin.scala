@@ -86,54 +86,54 @@ object NodeJsPlugin extends AutoPlugin {
 
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
-  val npmInstallTask = install in Npm := {
+  val npmInstallTask = install.in(Npm) := {
     execInstall(
-      (nodeProjectDir in Npm).value,
-      (environment in Npm).value,
-      (npmLogLevel in Npm).value
+      nodeProjectDir.in(Npm).value,
+      environment.in(Npm).value,
+      npmLogLevel.in(Npm).value
     )
   }
 
-  val npmTestTask = test in Npm := {
-    (install in Npm).value
+  val npmTestTask = test.in(Npm) := {
+    install.in(Npm).value
     exec(
       "run test",
-      (nodeProjectDir in Npm).value,
-      (environment in Npm).value,
-      (npmLogLevel in Npm).value
+      nodeProjectDir.in(Npm).value,
+      environment.in(Npm).value,
+      npmLogLevel.in(Npm).value
     )
   }
 
-  val npmCleanTask = clean in Npm := {
+  val npmCleanTask = clean.in(Npm) := {
     exec(
       "run clean",
-      (nodeProjectDir in Npm).value,
-      (environment in Npm).value,
-      (npmLogLevel in Npm).value
+      nodeProjectDir.in(Npm).value,
+      environment.in(Npm).value,
+      npmLogLevel.in(Npm).value
     )
   }
 
-  val npmEnvironmentSetting = environment in Npm := {
-    getEnvironment((nodeEnv in Npm).value, (nodeProjectTarget in Npm).value)
+  val npmEnvironmentSetting = environment.in(Npm) := {
+    getEnvironment(nodeEnv.in(Npm).value, nodeProjectTarget.in(Npm).value)
   }
 
-  val npmBuildTask = build in Npm := {
+  val npmBuildTask = build.in(Npm) := {
     execBuild(
-      (nodeProjectDir in Npm).value,
-      (buildScripts in Npm).value,
-      (environment in Npm).value,
-      (npmLogLevel in Npm).value
+      nodeProjectDir.in(Npm).value,
+      buildScripts.in(Npm).value,
+      environment.in(Npm).value,
+      npmLogLevel.in(Npm).value
     )
-    (nodeProjectTarget in Npm).value.listFiles.toSeq
+    nodeProjectTarget.in(Npm).value.listFiles.toSeq
   }
 
-  val npmWatchTask = nwatch in Npm := {
+  val npmWatchTask = nwatch.in(Npm) := {
     val logger = streams.value.log
 
     val projectRef = thisProjectRef.value
-    val dir = (nodeProjectDir in Npm).value
-    val env = (environment in Npm).value
-    val logLev = (npmLogLevel in Npm).value
+    val dir = nodeProjectDir.in(Npm).value
+    val env = environment.in(Npm).value
+    val logLev = npmLogLevel.in(Npm).value
 
     // Check for a running process, and start one if it doesn't exist.
     val newProcessOption = watches.synchronized {
@@ -149,7 +149,7 @@ object NodeJsPlugin extends AutoPlugin {
     }
   }
 
-  val npmUnwatchTask = unwatch in Npm := {
+  val npmUnwatchTask = unwatch.in(Npm) := {
     val logger = streams.value.log
     val processOption = watches.synchronized {
       watches.remove(thisProjectRef.value)
@@ -160,8 +160,8 @@ object NodeJsPlugin extends AutoPlugin {
     }
   }
 
-  val npmMkNodeTarget = mkNodeTarget in Npm := {
-    val targetDir = (nodeProjectTarget in Npm).value
+  val npmMkNodeTarget = mkNodeTarget.in(Npm) := {
+    val targetDir = nodeProjectTarget.in(Npm).value
     if (!targetDir.exists) {
       targetDir.mkdir()
     }
@@ -176,11 +176,11 @@ object NodeJsPlugin extends AutoPlugin {
   // 1) ensure it is a valid node project, and
   // 2) read in some attributes about the project.
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
-    nodeProjectDir in Npm := baseDirectory.value / "webclient",
-    nodeProjectTarget in Npm := baseDirectory.value / "public",
-    buildScripts in Npm := Seq("build"),
-    nodeEnv in Npm := "dev",
-    npmLogLevel in Npm := NpmLogLevel.Warn,
+    nodeProjectDir.in(Npm) := baseDirectory.value / "webclient",
+    nodeProjectTarget.in(Npm) := baseDirectory.value / "public",
+    buildScripts.in(Npm) := Seq("build"),
+    nodeEnv.in(Npm) := "dev",
+    npmLogLevel.in(Npm) := NpmLogLevel.Warn,
     npmEnvironmentSetting,
     npmTestTask,
     npmCleanTask,
@@ -203,9 +203,9 @@ object NodeJsPlugin extends AutoPlugin {
     // we don't care if the command fails here because we are just
     // passing through to the local `npm`
     try {
-      val env = extracted.getOpt(environment in Npm).get
-      val logLev = extracted.getOpt(npmLogLevel in Npm).get
-      exec(args.mkString(" "), extracted.getOpt(nodeProjectDir in Npm).get, env, logLev)
+      val env = extracted.getOpt(environment.in(Npm)).get
+      val logLev = extracted.getOpt(npmLogLevel.in(Npm)).get
+      exec(args.mkString(" "), extracted.getOpt(nodeProjectDir.in(Npm)).get, env, logLev)
       state
     } catch {
       case NpmMissingException => state.fail
