@@ -53,7 +53,7 @@ object CoreSettingsPlugin extends AutoPlugin {
     val logger = streams.value.log
     logger.debug("Generating run-class.sh")
     // Copy the run-class.sh resource into managed resources.
-    val destination = (resourceManaged in Compile).value / "run-class.sh"
+    val destination = resourceManaged.in(Compile).value / "run-class.sh"
     Utilities.copyResourceToFile(this.getClass, "run-class.sh", destination)
 
     destination
@@ -150,7 +150,7 @@ object CoreSettingsPlugin extends AutoPlugin {
   // per subproject.
   override def buildSettings: Seq[Setting[_]] = Seq(
     generateAutoformatGitHook := {
-      val expectedGitHooksDir = (baseDirectory in ThisBuild).value / ".git" / "hooks"
+      val expectedGitHooksDir = baseDirectory.in(ThisBuild).value / ".git" / "hooks"
       val preCommitFile = expectedGitHooksDir / "pre-commit"
       val scalariformFile = expectedGitHooksDir / "scalariform.jar"
       def requireFilesDontExist(files: File*) = {
@@ -209,19 +209,19 @@ object CoreSettingsPlugin extends AutoPlugin {
         },
         // Configure root-level tasks to aggregate accross configs
         format := {
-          (format in Compile).value
-          (format in Test).value
-          (format in IntegrationTest).value
+          format.in(Compile).value
+          format.in(Test).value
+          format.in(IntegrationTest).value
         },
         formatCheck := {
-          (formatCheck in Compile).value
-          (formatCheck in Test).value
-          (formatCheck in IntegrationTest).value
+          formatCheck.in(Compile).value
+          formatCheck.in(Test).value
+          formatCheck.in(IntegrationTest).value
         },
         formatCheckStrict := {
-          (formatCheckStrict in Compile).value
-          (formatCheckStrict in Test).value
-          (formatCheckStrict in IntegrationTest).value
+          formatCheckStrict.in(Compile).value
+          formatCheckStrict.in(Test).value
+          formatCheckStrict.in(IntegrationTest).value
         }
       )
   }

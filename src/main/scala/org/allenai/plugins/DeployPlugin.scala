@@ -113,8 +113,8 @@ object DeployPlugin extends AutoPlugin {
     cleanEnvConfigTask,
     deployDirs := Seq("bin", "conf", "lib", "public"),
     deployTask,
-    envConfigSource := (sourceDirectory in thisProject).value / "main" / "resources",
-    envConfigTarget := (target in thisProject).value / "deploy",
+    envConfigSource := sourceDirectory.in(thisProject).value / "main" / "resources",
+    envConfigTarget := target.in(thisProject).value / "deploy",
     filterNotCacheKeyGenFileNames := Seq(),
     gitRepoCleanTask,
     gitRepoPresentTask,
@@ -142,13 +142,13 @@ object DeployPlugin extends AutoPlugin {
     JavaAppPackaging.autoImport.makeBatScript := None,
 
     // Add root run script.
-    mappings in Universal += {
-      (resourceManaged in Compile).value / "run-class.sh" -> "bin/run-class.sh"
+    mappings.in(Universal) += {
+      resourceManaged.in(Compile).value / "run-class.sh" -> "bin/run-class.sh"
     },
     // Map src/main/resources => conf and src/main/bin => bin.
     // See http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html
     // for more info on sbt mappings.
-    mappings in Universal ++=
+    mappings.in(Universal) ++=
       (sourceDirectory.value / "main" / "resources" ** "*" pair
         rebase(sourceDirectory.value / "main" / "resources", "conf/")) ++
         (sourceDirectory.value / "main" / "bin" ** "*" pair
@@ -188,22 +188,22 @@ object DeployPlugin extends AutoPlugin {
     * Used by the WebappArchetype plugin.
     */
   lazy val npmBuildTask = Def.taskDyn {
-    if ((nodeEnv in thisProject).value == "dev") {
+    if (nodeEnv.in(thisProject).value == "dev") {
       Def.task {
         NodeJsPlugin.execBuild(
-          (NodeKeys.nodeProjectDir in Npm).value,
-          (NodeKeys.buildScripts in Npm).value,
-          NodeJsPlugin.getEnvironment("dev", (NodeKeys.nodeProjectTarget in Npm).value),
-          (NodeKeys.npmLogLevel in Npm).value
+          NodeKeys.nodeProjectDir.in(Npm).value,
+          NodeKeys.buildScripts.in(Npm).value,
+          NodeJsPlugin.getEnvironment("dev", NodeKeys.nodeProjectTarget.in(Npm).value),
+          NodeKeys.npmLogLevel.in(Npm).value
         )
       }
     } else {
       Def.task {
         NodeJsPlugin.execBuild(
-          (NodeKeys.nodeProjectDir in Npm).value,
-          (NodeKeys.buildScripts in Npm).value,
-          NodeJsPlugin.getEnvironment("prod", (NodeKeys.nodeProjectTarget in Npm).value),
-          (NodeKeys.npmLogLevel in Npm).value
+          NodeKeys.nodeProjectDir.in(Npm).value,
+          NodeKeys.buildScripts.in(Npm).value,
+          NodeJsPlugin.getEnvironment("prod", NodeKeys.nodeProjectTarget.in(Npm).value),
+          NodeKeys.npmLogLevel.in(Npm).value
         )
       }
     }
@@ -239,8 +239,8 @@ object DeployPlugin extends AutoPlugin {
     import VersionInjectorPlugin.autoImport.gitLocalSha1
     val logger = streams.value.log
 
-    logger.info(s"Building ${(name in thisProject).value} . . .")
-    val stageDir = (UniversalPlugin.autoImport.stage in thisProject).value
+    logger.info(s"Building ${name.in(thisProject).value} . . .")
+    val stageDir = UniversalPlugin.autoImport.stage.in(thisProject).value
 
     val allFiles = ((stageDir / "lib") * "*.jar").get
     val filteredFilenames = Seq.concat(
@@ -338,7 +338,7 @@ object DeployPlugin extends AutoPlugin {
     */
   lazy val loadDeployConfig = taskKey[Config]("Load top-level deploy configuration.")
   lazy val loadDeployConfigTask = loadDeployConfig := {
-    val workingDirectory = (baseDirectory in thisProject).value
+    val workingDirectory = baseDirectory.in(thisProject).value
     val configFile = workingDirectory / "conf" / "deploy.conf"
     if (!configFile.isFile) {
       throw new IllegalArgumentException(s"'${configFile.getPath}' must be a config file.")
@@ -485,7 +485,7 @@ object DeployPlugin extends AutoPlugin {
 
   /** Task used to clean the target directory for generated environment config. */
   lazy val cleanEnvConfigTask = cleanEnvConfig := {
-    IO.delete((envConfigTarget in thisProject).value)
+    IO.delete(envConfigTarget.in(thisProject).value)
   }
 
   /** Task used to generate the environment config for a given deploy target and overrides. */
@@ -493,8 +493,8 @@ object DeployPlugin extends AutoPlugin {
     val (deployEnv, deployConfig) = parseDeployInputTask.evaluated
     implicit val log = DeployLogger(streams.value.log)
     writeEnvConfig(
-      (envConfigSource in thisProject).value,
-      (envConfigTarget in thisProject).value,
+      envConfigSource.in(thisProject).value,
+      envConfigTarget.in(thisProject).value,
       deployEnv,
       deployConfig
     )
@@ -597,8 +597,8 @@ object DeployPlugin extends AutoPlugin {
 
     // Generate environment config.
     writeEnvConfig(
-      (envConfigSource in thisProject).value,
-      (envConfigTarget in thisProject).value,
+      envConfigSource.in(thisProject).value,
+      envConfigTarget.in(thisProject).value,
       deployTarget,
       parsedConfig
     )
@@ -610,8 +610,8 @@ object DeployPlugin extends AutoPlugin {
     val maybeKeyFile = sys.env.get("AWS_PEM_FILE")
 
     val rootDeployDir = parsedConfig.rootDeployDir
-    val deployedDirs = (deployDirs in thisProject).value
-    val envSrc = (envConfigTarget in thisProject).value
+    val deployedDirs = deployDirs.in(thisProject).value
+    val envSrc = envConfigTarget.in(thisProject).value
 
     // TODO(jkinkead): Allow for a no-op / dry-run flag that only prints the commands.
     val deployErrors: Future[Seq[Throwable]] = {
