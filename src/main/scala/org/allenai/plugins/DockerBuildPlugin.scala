@@ -1,8 +1,6 @@
 package org.allenai.plugins
 
 import sbt.{
-  settingKey,
-  taskKey,
   AutoPlugin,
   ConsoleLogger,
   Def,
@@ -71,7 +69,7 @@ object DockerBuildPlugin extends AutoPlugin {
     // you update these settings in a build.sbt file, you'll want to re-generate your Dockerfiles.
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    val dockerfileLocation: SettingKey[File] = settingKey[File](
+    val dockerfileLocation: SettingKey[File] = Def.settingKey[File](
       "The location of the Dockerfile to use in building the main project image. Defaults to " +
         "`srcDirectory.value + \"docker/Dockerfile\"`, typically \"src/main/docker/Dockerfile\"."
     )
@@ -84,46 +82,46 @@ object DockerBuildPlugin extends AutoPlugin {
     //
     // See the documentation for details on which tags will be used by `dockerBuild` and
     // `dockerPush`.
-    val dockerImageRegistryHost: SettingKey[String] = settingKey[String](
+    val dockerImageRegistryHost: SettingKey[String] = Def.settingKey[String](
       "The base name of the image you're creating. Defaults to " + AI2_PRIVATE_REGISTRY + "."
     )
-    val dockerImageNamePrefix: SettingKey[String] = settingKey[String](
+    val dockerImageNamePrefix: SettingKey[String] = Def.settingKey[String](
       "The image name prefix (\"repository\", in Docker terms) of the image you're creating. " +
         "Defaults to organization.value.stripPrefix(\"org.allenai.\") . " +
         "This is typically the github repository name."
     )
-    val dockerImageName: SettingKey[String] = settingKey[String](
+    val dockerImageName: SettingKey[String] = Def.settingKey[String](
       "The name of the image you're creating. Defaults to the sbt project name (the `name` " +
         "setting key)."
     )
 
-    val dockerImageBase: SettingKey[String] = settingKey[String](
+    val dockerImageBase: SettingKey[String] = Def.settingKey[String](
       "The base image to use when creating your image. Defaults to " + DEFAULT_BASE_IMAGE + "."
     )
 
-    val dockerCopyMappings: SettingKey[Seq[(File, String)]] = settingKey[Seq[(File, String)]](
+    val dockerCopyMappings: SettingKey[Seq[(File, String)]] = Def.settingKey[Seq[(File, String)]](
       "Mappings to add to the Docker image. Relative file paths will be interpreted as being " +
         "relative to the base directory (`baseDirectory.value`). See " +
         "http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html for detailed " +
         "info on sbt mappings. Defaults to mapping src/main/resources to conf on the image."
     )
 
-    val dockerPorts: SettingKey[Seq[Int]] = settingKey[Seq[Int]](
+    val dockerPorts: SettingKey[Seq[Int]] = Def.settingKey[Seq[Int]](
       "The value(s) to use for EXPOSE when generating your Dockerfile. Defaults to `Seq.empty`."
     )
 
-    val dockerPortMappings: SettingKey[Seq[(Int, Int)]] = settingKey[Seq[(Int, Int)]](
+    val dockerPortMappings: SettingKey[Seq[(Int, Int)]] = Def.settingKey[Seq[(Int, Int)]](
       "The port mapping(s) to use when running your docker image via `dockerRun`, as " +
         "(hostPort, containerPort). Defaults to mapping all of the values `dockerPorts.value` " +
         "to themselves (identity mapping)."
     )
 
-    val dockerMainArgs: SettingKey[Seq[String]] = settingKey[Seq[String]](
+    val dockerMainArgs: SettingKey[Seq[String]] = Def.settingKey[Seq[String]](
       "The value to use for CMD in order to pass default arguments to your application. Defaults " +
         "to `Seq.empty`."
     )
 
-    val dockerWorkdir: SettingKey[String] = settingKey[String](
+    val dockerWorkdir: SettingKey[String] = Def.settingKey[String](
       "The value to use for WORKDIR when generating your Dockerfile. Defaults to \"/stage\"."
     )
 
@@ -133,38 +131,38 @@ object DockerBuildPlugin extends AutoPlugin {
     // doing.
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    val generateDockerfile: TaskKey[Unit] = taskKey[Unit](
+    val generateDockerfile: TaskKey[Unit] = Def.taskKey[Unit](
       "Generates a Dockerfile for the main project image at the location pointed to by " +
         "`dockerfileLocation`."
     )
 
-    val dockerDependencyStage: TaskKey[File] = taskKey[File](
+    val dockerDependencyStage: TaskKey[File] = Def.taskKey[File](
       "Builds a staged directory under target/docker/dependencies containing project " +
         "dependencies. This will include a generated Dockerfile. This returns the staging " +
         "directory location."
     )
 
-    val dockerMainStage: TaskKey[File] = taskKey[File](
+    val dockerMainStage: TaskKey[File] = Def.taskKey[File](
       "Builds a staged directory under target/docker/main containing the staged project, minus " +
         "dependencies. If a Dockerfile is present in `dockerfileLocation.value`, it will be " +
         "placed in the staging directory. This returns the staging directory location."
     )
 
-    val dockerDependencyBuild: TaskKey[String] = taskKey[String](
+    val dockerDependencyBuild: TaskKey[String] = Def.taskKey[String](
       "Builds the dependency image for project, returning the image ID with unique tag. This is " +
         "not manually run as part of a normal workflow, but can be useful for debugging."
     )
 
-    val dockerBuild: TaskKey[String] = taskKey[String](
+    val dockerBuild: TaskKey[String] = Def.taskKey[String](
       "Builds a docker image for this project, returning the image ID with unique tag. This " +
         "requires that a Dockerfile exist at `dockerfileLocation.value`."
     )
 
-    val dockerRun: TaskKey[Unit] = taskKey[Unit](
+    val dockerRun: TaskKey[Unit] = Def.taskKey[Unit](
       "Builds a docker image for this project, then runs it locally in a container."
     )
 
-    val dockerStop: TaskKey[Unit] = taskKey[Unit](
+    val dockerStop: TaskKey[Unit] = Def.taskKey[Unit](
       "Stops any currently-running docker container for this project."
     )
   }
