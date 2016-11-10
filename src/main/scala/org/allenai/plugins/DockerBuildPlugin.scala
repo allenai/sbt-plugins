@@ -105,8 +105,7 @@ object DockerBuildPlugin extends AutoPlugin {
       "Mappings to add to the Docker image. Relative file paths will be interpreted as being " +
         "relative to the base directory (`baseDirectory.value`). See " +
         "http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html for detailed " +
-        "info on sbt mappings. Defaults to mapping src/main/{bin,conf} to {bin,conf} on the " +
-        "image."
+        "info on sbt mappings. Defaults to mapping src/main/resources to conf on the image."
     )
 
     val dockerPorts: SettingKey[Seq[Int]] = settingKey[Seq[Int]](
@@ -353,10 +352,10 @@ object DockerBuildPlugin extends AutoPlugin {
 # IMPORTANT: If you wish to make edits to this file, make changes BELOW the line starting with
 # "#+#". Any updates to commands above this line should happen through sbt, and pushed to the
 # Dockerfile using the `generateDockerfile` task.
-#
+
 # This image depends on the dependency image.
 #
-# The image name derives from:
+# The dependency image inherits from:
 #   dockerImageBase := "${dockerImageBase.value}"
 FROM ${dependencyImageName.value}
 
