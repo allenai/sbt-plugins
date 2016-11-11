@@ -138,7 +138,11 @@ These tasks are used to run an image after building it. `dockerRun` will first r
 
 ### dockerPush
 
-TODO: This is not yet implemented.
+This task accepts any number of string arguments.
+
+If no arguments are provided, this will push the main image tagged with the SHA-1 tag.
+
+If arguments are provided, this will push the main image tagged with all of the given tags. Missing tags will be added to the image before pushing.
 
 ## Other Commands
 

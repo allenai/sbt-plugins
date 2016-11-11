@@ -5,6 +5,8 @@ import sbt.{
   ConsoleLogger,
   Def,
   IO,
+  InputKey,
+  InputTask,
   Keys,
   Logger,
   PathFinder,
@@ -13,6 +15,7 @@ import sbt.{
   Task,
   TaskKey
 }
+import sbt.complete.DefaultParsers
 import sbt.plugins.JvmPlugin
 
 import java.io.File
@@ -164,6 +167,12 @@ object DockerBuildPlugin extends AutoPlugin {
 
     val dockerStop: TaskKey[Unit] = Def.taskKey[Unit](
       "Stops any currently-running docker container for this project."
+    )
+
+    val dockerPush: InputKey[Unit] = Def.inputKey[Unit](
+      "Pushes the project's docker image. This task accepts tags as arguments, which will be " +
+        "applied to the image locally and pushed. If no tags are provided, the SHA-1 tag will be " +
+        "pushed instead."
     )
   }
   import autoImport._
@@ -622,6 +631,48 @@ $DOCKERFILE_SIGIL
     }
   }
 
+  /** Task to push the project image. This accepts any number of tags as input, which will be added
+    * to the image and pushed.
+    */
+  lazy val dockerPushDef: Def.Initialize[InputTask[Unit]] = Def.inputTask {
+    val logger = Keys.streams.value.log
+
+    // Build the main image and retrieve the current tag.
+    val currentTag = dockerBuild.value
+
+    val tags = DefaultParsers.spaceDelimited("<tag>").parsed
+
+    if (tags.nonEmpty) {
+      // Generate the full image names.
+      val tagNamePairs = tags.map(tag => (tag, mainImageName.value + ':' + tag))
+      // Add all of the user-provided tags.
+      tagNamePairs.foreach {
+        case (tag, newName) =>
+          logger.info(s"Adding tag $tag...")
+          if (Process(Seq("docker", "tag", currentTag, newName)).! != 0) {
+            sys.error(s"""Could not create tag "$tag", stopping.""")
+          }
+      }
+      // Push all of the names.
+      tagNamePairs.foreach {
+        case (tag, newName) =>
+          if (Process(Seq("docker", "push", newName)).! != 0) {
+            sys.error(s"""There was a problem pushing tag "$tag", stopping.""")
+          }
+      }
+      val tagsString = tags.mkString("[\"", "\", \"", "\"]")
+      logger.info(s"Pushed tags $tagsString.")
+    } else {
+      val currentHash = currentTag.stripPrefix(mainImageName.value + ':')
+
+      // Push the current SHA1 tag.
+      if (Process(Seq("docker", "push", currentTag)).! != 0) {
+        sys.error(s"""There was a problem pushing tag "$currentHash", stopping.""")
+      }
+      logger.info(s"""Pushed tag "$currentTag".""")
+    }
+  }
+
   /** Adds the settings to configure the `dockerBuild` command. */
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
     dockerfileLocation := {
@@ -645,6 +696,7 @@ $DOCKERFILE_SIGIL
     dockerDependencyBuild := dependencyBuildDef.value,
     dockerBuild := mainImageBuildDef.value,
     dockerRun := dockerRunDef.value,
-    dockerStop := dockerStopDef.value
+    dockerStop := dockerStopDef.value,
+    dockerPush := dockerPushDef.evaluated
   )
 }
