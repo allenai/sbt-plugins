@@ -86,6 +86,6 @@ scriptedBufferLog := false
 // Hook in our scripted tests to the test command. This makes it so scripted tests must pass
 // for a release to be possible.
 test := {
-  (test in Test).value
+  test.in(Test).value
   scripted.toTask("").value
 }

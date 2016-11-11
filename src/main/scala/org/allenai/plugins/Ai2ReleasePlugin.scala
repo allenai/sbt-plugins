@@ -97,8 +97,8 @@ object Ai2ReleasePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = {
     SemanticVersion.settings ++ Seq(
-      BintrayKeys.bintrayRepository in ThisBuild := "maven",
-      BintrayKeys.bintrayOrganization in ThisBuild := Some("allenai"),
+      BintrayKeys.bintrayRepository.in(ThisBuild) := "maven",
+      BintrayKeys.bintrayOrganization.in(ThisBuild) := Some("allenai"),
       releaseProcess := Seq[ReleaseStep](
         checkBranchIsNotMaster,
         checkSnapshotDependencies,
