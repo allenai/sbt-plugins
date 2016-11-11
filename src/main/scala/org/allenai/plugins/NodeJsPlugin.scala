@@ -1,6 +1,6 @@
 package org.allenai.plugins
 
-import sbt.{ AutoPlugin, Command, ConfigKey, Def, Keys, Plugins, Project, ProjectRef }
+import sbt.{ AutoPlugin, Command, ConfigKey, Def, IO, Keys, Plugins, Project, ProjectRef, Task }
 // Implicit conversion for '/' operator.
 import sbt.Path.richFile
 import sbt.plugins.JvmPlugin
@@ -44,11 +44,11 @@ object NodeJsPlugin extends AutoPlugin {
 
     object NodeKeys {
       val build = Def.taskKey[Seq[File]](
-        "Execution of build script(s) with `npm run` in the Node application directory"
+        "Executes the build script(s) with `npm run` in the Node application directory"
       )
 
       val install = Def.taskKey[Unit](
-        "Execution `npm install` in the Node application directory to install dependencies"
+        "Executes `npm install` in the Node application directory to install dependencies"
       )
 
       // Note that this isn't called 'watch' because there's another SBT key with this name and a
@@ -74,20 +74,37 @@ object NodeJsPlugin extends AutoPlugin {
 
       val nodeProjectTarget = Def.settingKey[File]("Target directory for Node application build")
 
-      val mkNodeTarget = Def.taskKey[Unit]("Creates the target directory that Node builds into")
-
       val npmLogLevel = Def.settingKey[NpmLogLevel]("Log level for npm commands.")
     }
   }
 
   import autoImport._
-  import NodeKeys._
+  import autoImport.NodeKeys._
 
   case object NpmMissingException extends RuntimeException("`npm` was not found on your PATH")
 
-  val npmInstallTask = install.in(Npm) := {
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Common settings / tasks / utilities used across tasks.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** Task def that builds and returns the node target directory. */
+  lazy val makeNodeTargetDef: Def.Initialize[Task[File]] = Def.task {
+    val targetDir = nodeProjectTarget.in(Npm).value
+    if (!targetDir.exists) {
+      targetDir.mkdir()
+    }
+    targetDir
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Definitions for plugin tasks.
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** Task to install any node dependencies that are missing. */
+  lazy val installDef: Def.Initialize[Task[Unit]] = Def.task {
     execInstall(
       nodeProjectDir.in(Npm).value,
+      Keys.target.value,
       environment.in(Npm).value,
       npmLogLevel.in(Npm).value
     )
@@ -117,28 +134,35 @@ object NodeJsPlugin extends AutoPlugin {
   }
 
   val npmBuildTask = build.in(Npm) := {
+    // Ensure that the target dir is created.
+    val targetDir = makeNodeTargetDef.value
+
     execBuild(
       nodeProjectDir.in(Npm).value,
+      Keys.target.value,
       buildScripts.in(Npm).value,
       environment.in(Npm).value,
       npmLogLevel.in(Npm).value
     )
-    nodeProjectTarget.in(Npm).value.listFiles.toSeq
+    targetDir.listFiles.toSeq
   }
 
   val npmWatchTask = nwatch.in(Npm) := {
     val logger = Keys.streams.value.log
 
+    // Require that the target directory be created.
+    makeNodeTargetDef.value
+
     val projectRef = Keys.thisProjectRef.value
-    val dir = nodeProjectDir.in(Npm).value
-    val env = environment.in(Npm).value
-    val logLev = npmLogLevel.in(Npm).value
+    val projectDirectory = nodeProjectDir.in(Npm).value
+    val npmEnvironment = environment.in(Npm).value
+    val logLevel = npmLogLevel.in(Npm).value
 
     // Check for a running process, and start one if it doesn't exist.
     val newProcessOption = watches.synchronized {
       if (!watches.contains(projectRef)) {
-        execInstall(dir, env, logLev)
-        val process = fork("run watch", dir, env)
+        execInstall(projectDirectory, Keys.target.value, npmEnvironment, logLevel)
+        val process = fork("run watch", projectDirectory, npmEnvironment)
         watches(projectRef) = process
         Some(process)
       } else {
@@ -159,38 +183,26 @@ object NodeJsPlugin extends AutoPlugin {
     }
   }
 
-  val npmMkNodeTarget = mkNodeTarget.in(Npm) := {
-    val targetDir = nodeProjectTarget.in(Npm).value
-    if (!targetDir.exists) {
-      targetDir.mkdir()
-    }
-  }
-
   override def requires: Plugins = JvmPlugin
 
-  /** Settings for a single node project located at `root`
-    * @param root  the directory containing the node project.
-    */
   // TODO(markschaake): should check the `root` directory and read the `package.json` file to
   // 1) ensure it is a valid node project, and
   // 2) read in some attributes about the project.
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
-    nodeProjectDir.in(Npm) := Keys.baseDirectory.value / "webclient",
+    nodeProjectDir.in(Npm) := Keys.baseDirectory.value / "webapp",
     nodeProjectTarget.in(Npm) := Keys.baseDirectory.value / "public",
     buildScripts.in(Npm) := Seq("build"),
     nodeEnv.in(Npm) := "dev",
     npmLogLevel.in(Npm) := NpmLogLevel.Warn,
-    npmEnvironmentSetting,
+    environment.in(Npm) := {
+      getEnvironment(nodeEnv.in(Npm).value, nodeProjectTarget.in(Npm).value)
+    },
     npmTestTask,
     npmCleanTask,
     npmBuildTask,
-    npmInstallTask,
+    install.in(Npm) := installDef.value,
     npmWatchTask,
     npmUnwatchTask,
-    npmMkNodeTarget,
-    // Ensure the target directory exists prior to building.
-    build.in(Npm) := build.in(Npm).dependsOn(mkNodeTarget.in(Npm)).value,
-    nwatch.in(Npm) := nwatch.in(Npm).dependsOn(mkNodeTarget.in(Npm)).value,
     Keys.commands += npm
   )
 
@@ -222,29 +234,56 @@ object NodeJsPlugin extends AutoPlugin {
     )
   }
 
-  /** Execute the prune and install commands with the given root + env.
+  /** Execute the prune and install commands with the given root + env, if project dependencies have
+    * changed since the last time this was run.
     * This is used within the plugin, but exposed for other tasks to use as well.
-    * Note: this method is synchronized to prevent weird npm concurrecny issues that we've
+    * Note: The npm execution synchronized to prevent weird npm concurrency issues that we've
     * experienced in CI when there are multiple subprojects executing `npm install` in parallel.
     */
-  def execInstall(root: File, env: Map[String, String], npmLogLevel: NpmLogLevel): Unit =
-    this.synchronized {
-      // In case node_modules have been cached from a prior build, prune out
-      // any modules that we no longer use. This is important as it can cause
-      // dependency conflicts during npm-install (we've seen this on Shippable, for example).
-      exec("prune", root, env, npmLogLevel)
-      exec("install", root, env, npmLogLevel)
+  def execInstall(
+    nodeProjectDirectory: File,
+    sbtTargetDirectory: File,
+    env: Map[String, String],
+    npmLogLevel: NpmLogLevel
+  ): Unit = {
+    // Check to see if any dependencies have changed.
+    val packageJson = nodeProjectDirectory / "package.json"
+    val currentDependenciesHash = Utilities.hashFiles(Seq(packageJson), nodeProjectDirectory)
+    val hashFile = sbtTargetDirectory / "node" / "packages.sha1"
+    val previousDependenciesHash = if (hashFile.exists) {
+      IO.read(hashFile)
+    } else {
+      ""
     }
+
+    // Run `npm install` if any dependencies have changed.
+    if (currentDependenciesHash != previousDependenciesHash) {
+      this.synchronized {
+        // In case node_modules have been cached from a prior build, prune out
+        // any modules that we no longer use. This is important as it can cause
+        // dependency conflicts during npm-install (we've seen this on Shippable, for example).
+        exec("prune", nodeProjectDirectory, env, npmLogLevel)
+        exec("install", nodeProjectDirectory, env, npmLogLevel)
+      }
+      IO.write(hashFile, currentDependenciesHash)
+    }
+  }
 
   /** Execute the build script(s) with the given root + env.
     * This is used within the plugin, but exposed for other tasks to use as well.
     */
-  def execBuild(root: File, scripts: Seq[String], env: Map[String, String], npmLogLevel: NpmLogLevel): Unit = {
+  def execBuild(
+    nodeProjectDirectory: File,
+    sbtTargetDirectory: File,
+    scripts: Seq[String],
+    env: Map[String, String],
+    npmLogLevel: NpmLogLevel
+  ): Unit = {
     // Make sure we install dependencies prior to building.
     // This is necssary for building on a clean repository (e.g. CI server)
-    execInstall(root, env, npmLogLevel)
+    execInstall(nodeProjectDirectory, sbtTargetDirectory, env, npmLogLevel)
     scripts foreach { script =>
-      exec(s"run $script", root, env, npmLogLevel)
+      exec(s"run $script", nodeProjectDirectory, env, npmLogLevel)
     }
   }
 
