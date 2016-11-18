@@ -21,8 +21,6 @@ object WebappPlugin extends AutoPlugin {
   override def requires: Plugins = WebServicePlugin && NodeJsPlugin && DeployPlugin
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
-    // Expect the node project in a "webapp" subdirectory.
-    NodeKeys.nodeProjectDir.in(Npm) := baseDirectory.in(thisProject).value / "webapp",
     // Run "npm watch" when we run a re-start.
     Revolver.reStart := Revolver.reStart.dependsOn(NodeKeys.nwatch.in(Npm)).evaluated,
     // Kill background watches on re-stop.
