@@ -93,3 +93,9 @@ $ exists docker/target/docker/main/lib/docker.docker-0.1-SNAPSHOT.jar
 
 # Test that we can re-run staging without error.
 > docker/dockerMainStage
+
+# Test that changes to the Dockerfile are detected.
+> docker/verifyDockerfile
+# Trigger a change in the file.
+> set dockerPorts.in(docker) += 1234
+-> docker/verifyDockerfile

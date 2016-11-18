@@ -9,3 +9,5 @@ appendToDockerfile := {
   val dockerfile = dockerfileLocation.value
   IO.append(dockerfile, "# TESTING\n")
 }
+
+verifyDockerfileOnBuild := true
