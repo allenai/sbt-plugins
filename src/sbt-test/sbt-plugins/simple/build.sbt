@@ -16,7 +16,7 @@ lazy val stubbedDeployNpmBuild = taskKey[Unit]("Verify stubbing the deploy npm b
 
 lazy val webService = project.in(file("webservice")).dependsOn(core).enablePlugins(WebServicePlugin)
 
-lazy val webApp = project.in(file("webapp")).dependsOn(core).enablePlugins(WebappPlugin)
+lazy val webapp = project.in(file("webapp")).dependsOn(core).enablePlugins(WebappPlugin)
   .settings(
     NodeKeys.nodeProjectDir.in(Npm) := file("client"),
     stubbedDeployNpmBuild := {

@@ -23,19 +23,19 @@ $ exec git commit -m "initial commit"
 # WebApp plugin tests.
 -$ exists client/build/index.html
 -$ exists client/node_modules
-> webApp/npm:build
+> webapp/npm:build
 $ exists client/build/index.html
 $ exists client/node_modules
 
 # Test that `stage` will create a public directory and run-class.sh.
-> webApp/stage
+> webapp/stage
 $ exists webapp/target/universal/stage/bin/run-class.sh
 $ exists webapp/target/universal/stage/public
 > clean
 
 # Test it is possible to stub out the deploy NPM build
-> set deployNpmBuild.in(webApp) := stubbedDeployNpmBuild.in(webApp).value
-> webApp/stage
+> set deployNpmBuild.in(webapp) := stubbedDeployNpmBuild.in(webapp).value
+> webapp/stage
 $ exists webapp/stubbed.txt
 
 # Git-hook generation tests.
