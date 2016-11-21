@@ -557,7 +557,7 @@ object DeployPlugin extends AutoPlugin {
   /** Task that checks for a git repository in the project's directory. */
   lazy val gitRepoPresentTask = gitRepoPresent := {
     // Validate that we are, in fact, in a git repository.
-    if (HelperDefs.gitRepoPresentDef.value) {
+    if (!HelperDefs.gitRepoPresentDef.value) {
       throw new IllegalStateException("Not in git repository, exiting.")
     }
 
