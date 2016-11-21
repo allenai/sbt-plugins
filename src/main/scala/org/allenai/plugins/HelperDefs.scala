@@ -103,7 +103,7 @@ object HelperDefs {
     * repository, false otherwise.
     */
   lazy val gitRepoPresentDef: Def.Initialize[Task[Boolean]] = Def.task {
-    Process(Seq("git", "status")).!(Utilities.NIL_PROCESS_LOGGER) != 0
+    Process(Seq("git", "status")).!(Utilities.NIL_PROCESS_LOGGER) == 0
   }
 
   /** Task initializer to check if a git repository is present and clean. Returns an error message
