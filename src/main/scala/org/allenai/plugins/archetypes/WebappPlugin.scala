@@ -1,23 +1,20 @@
 package org.allenai.plugins.archetypes
 
-import org.allenai.plugins.NodeJsPlugin
-import org.allenai.plugins.NodeJsPlugin.autoImport._
-import org.allenai.plugins.DeployPlugin
+import org.allenai.plugins.{ DeployPlugin, NodeJsPlugin }
+import org.allenai.plugins.NodeJsPlugin.autoImport.{ NodeKeys, Npm }
 
-import com.typesafe.sbt.packager
 import com.typesafe.sbt.SbtNativePackager.Universal
 import com.typesafe.sbt.packager.MappingsHelper
 import com.typesafe.sbt.packager.universal.UniversalPlugin
 import spray.revolver.RevolverPlugin.Revolver
 
-import sbt._
-import sbt.Keys._
+import sbt.{ AutoPlugin, Keys, Plugins, Setting, Test }
 
 /** Plugin that configures a webapp for building. This makes the `re-start`, `test`, and `clean`
-  * tasks execute the appropriate node builds, configures node for deploy with the `deploy` command.
+  * tasks execute the appropriate node builds. It also configures the deploy plugin and docker
+  * plugin appropriately.
   */
 object WebappPlugin extends AutoPlugin {
-
   override def requires: Plugins = WebServicePlugin && NodeJsPlugin && DeployPlugin
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
@@ -26,13 +23,14 @@ object WebappPlugin extends AutoPlugin {
     // Kill background watches on re-stop.
     Revolver.reStop := Revolver.reStop.dependsOn(NodeKeys.unwatch.in(Npm)).value,
     // Run client-side tests when tests are run.
-    test.in(Test) := test.in(Test).dependsOn(test.in(Npm)).value,
+    Keys.test.in(Test) := Keys.test.in(Test).dependsOn(Keys.test.in(Npm)).value,
     // Clean node files on clean.
-    cleanFiles += NodeKeys.nodeProjectTarget.in(Npm).value,
+    Keys.cleanFiles += NodeKeys.nodeProjectTarget.in(Npm).value,
     // Build the node project on stage (for deploys).
     UniversalPlugin.autoImport.stage :=
       UniversalPlugin.autoImport.stage.dependsOn(DeployPlugin.autoImport.deployNpmBuild).value,
     // Copy the built node project into our staging directory, too!
-    mappings.in(Universal) ++= MappingsHelper.directory(NodeKeys.nodeProjectTarget.in(Npm).value)
+    Keys.mappings.in(Universal) ++=
+      MappingsHelper.directory(NodeKeys.nodeProjectTarget.in(Npm).value)
   )
 }
