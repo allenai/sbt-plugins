@@ -142,6 +142,11 @@ object DockerBuildPlugin extends AutoPlugin {
         "Dockerfile is not up-to-date. Defaults to false."
     )
 
+    val dockerRunFlags: SettingKey[Seq[String]] = Def.settingKey[Seq[String]](
+      "Any commandline flags to pass to docker when using the `dockerRun` task. Defaults to an " +
+        "empty Seq."
+    )
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // The following keys are for generating dockerfiles; and staging, building, running, and
     // pushing images. These should not be overridden from the defaults unless you know what you're
@@ -701,7 +706,7 @@ $DOCKERFILE_SIGIL
         case (hostPort, containerPort) => Seq("-p", s"$hostPort:$containerPort")
       }
       // Start up the container.
-      Process(baseCommand ++ portArgs :+ mainImageName.value).run()
+      Process(baseCommand ++ portArgs ++ dockerRunFlags.value :+ mainImageName.value).run()
       // Save it to the list of running containers.
       runningContainers.add(containerName)
     }
@@ -777,6 +782,7 @@ $DOCKERFILE_SIGIL
     dockerWorkdir := "/stage",
     verifyDockerfileIsStrict := true,
     verifyDockerfileOnBuild := false,
+    dockerRunFlags := Seq.empty,
     generateDockerfile := generateDockerfileDef.value,
     verifyDockerfile := verifyDockerfileDef.value,
     dockerDependencyStage := dependencyStageDef.value,
