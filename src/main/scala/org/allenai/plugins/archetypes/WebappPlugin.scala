@@ -59,7 +59,7 @@ object WebappPlugin extends AutoPlugin {
       val volumeMapping = {
         val nodeDir = nodeTargetDef.value
         val imageTarget = DockerBuildPlugin.autoImport.dockerWorkdir.value + '/' + nodeDir.getName
-        s"$nodeDir:$imageTarget"
+        s"$nodeDir:$imageTarget:ro"
       }
       Seq("-v", volumeMapping)
     }
