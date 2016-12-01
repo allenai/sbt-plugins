@@ -46,8 +46,8 @@ object WebappPlugin extends AutoPlugin {
       ).value
     },
     // Map the node target directory into the docker image.
-    DockerBuildPlugin.autoImport.dockerCopyMappings ++=
-      MappingsHelper.directory(nodeTargetDef.value),
+    DockerBuildPlugin.autoImport.dockerCopyMappings +=
+      (nodeTargetDef.value, nodeTargetDef.value.getName),
     // Make `dockerRun` execute node watch, and `dockerStop` stop the watch.
     DockerBuildPlugin.autoImport.dockerRun :=
       DockerBuildPlugin.autoImport.dockerRun.dependsOn(NodeKeys.nwatch.in(Npm)).value,
