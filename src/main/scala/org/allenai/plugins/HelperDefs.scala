@@ -1,6 +1,7 @@
 package org.allenai.plugins
 
 import sbt.{
+  inProjects,
   task,
   Artifact,
   AttributeKey,
@@ -13,6 +14,7 @@ import sbt.{
   Project,
   ProjectRef,
   Runtime,
+  ScopeFilter,
   State,
   Task
 }
@@ -23,6 +25,14 @@ import scala.sys.process.Process
 
 /** Helper tasks for building plugins. */
 object HelperDefs {
+  /** A filter for the local project dependencies. */
+  lazy val dependencyFilter: Def.Initialize[Task[ScopeFilter]] = Def.task {
+    val localDependencies = Keys.buildDependencies.value.classpathTransitiveRefs(
+      Keys.thisProjectRef.value
+    )
+    ScopeFilter(inProjects(localDependencies: _*))
+  }
+
   /** Task initializer to look up non-local runtime dependency artifacts for the current project.
     * This contains all direct and transitive dependencies pulled from remote sources (i.e. maven
     * repositories).

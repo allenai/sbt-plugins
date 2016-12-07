@@ -213,15 +213,9 @@ object DeployPlugin extends AutoPlugin {
 
   /* ==========>  Cache key generation.  <========== */
 
-  /** Returns a filter for the local project dependencies. */
-  lazy val dependencyFilter: Def.Initialize[Task[ScopeFilter]] = Def.task {
-    val localDependencies = buildDependencies.value.classpathTransitiveRefs(thisProjectRef.value)
-    ScopeFilter(inProjects(localDependencies: _*))
-  }
-
   /** Returns all of the local dependencies' most recent git commits. */
   lazy val dependentGitCommits: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
-    VersionInjectorPlugin.autoImport.gitLocalSha1.all(dependencyFilter.value)
+    VersionInjectorPlugin.autoImport.gitLocalSha1.all(HelperDefs.dependencyFilter.value)
   }
 
   /** Returns the filename used by the native packager in the staging directory. */
@@ -231,7 +225,7 @@ object DeployPlugin extends AutoPlugin {
 
   /** Returns all of the local dependencies' staging artifact filenames. */
   lazy val dependentStagingArtifactFilenames: Def.Initialize[Task[Seq[String]]] = Def.taskDyn {
-    stagingArtifactFilename.all(dependencyFilter.value)
+    stagingArtifactFilename.all(HelperDefs.dependencyFilter.value)
   }
 
   /** Task used to generate the cache key for the current project.

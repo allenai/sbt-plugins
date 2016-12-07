@@ -4,6 +4,7 @@ import sbt.{
   AutoPlugin,
   ConsoleLogger,
   Def,
+  Hash,
   IO,
   InputKey,
   InputTask,
@@ -292,6 +293,17 @@ object DockerBuildPlugin extends AutoPlugin {
     val newName = container + '-' + UUID.randomUUID.toString
     Process(Seq("docker", "rename", container, newName)).!(Utilities.NIL_PROCESS_LOGGER)
     Process(Seq("docker", "stop", newName)).!(Utilities.NIL_PROCESS_LOGGER)
+  }
+
+  /** Task initializer to return the git commit for the current project, if the git repo is present,
+    * or else a GUID. This is used for cache key generation.
+    */
+  lazy val gitCommitOrGuid: Def.Initialize[Task[String]] = Def.task {
+    HelperDefs.gitRepoCleanDef.value match {
+      // TODO(jkinkead): Move gitLocalSha1 to a common location.
+      case None => VersionInjectorPlugin.autoImport.gitLocalSha1.value
+      case Some(_) => UUID.randomUUID.toString
+    }
   }
 
   /** The src/main directory. This does not appear to be a setting key in sbt. */
@@ -627,12 +639,39 @@ $DOCKERFILE_SIGIL
         }
     }
 
-    // Copy the local project jars.
-    HelperDefs.localDependencies.value.foreach {
-      case (file, destination) =>
-        val destinationFile = new File(lib, destination)
-        IO.copyFile(file, destinationFile)
+    // Map the local dependencies to their target location.
+    val localDependencyMapping: Seq[(File, File)] = HelperDefs.localDependencies.value.map {
+      case (file, destinationName) => (file, new File(lib, destinationName))
     }
+
+    // Copy the local project jars.
+    localDependencyMapping.foreach { case (file, destination) => IO.copyFile(file, destination) }
+
+    // Generate the cache key file.
+    val cacheKeyDestination = new File(imageDirectory, "conf/cacheKey.sha1")
+    val cacheKeyContents = {
+      // Hash the contents minus the local dependency jars and the cache key itself. For local
+      // dependency jars we use the git commit because it's more stable than the jar contents.
+      val stableContentsHash = {
+        val ignoredFiles =
+          localDependencyMapping.map { case (_, destination) => destination }.toSet +
+            cacheKeyDestination
+        val allFiles = PathFinder(imageDirectory).***.filter { file =>
+          file.isFile && !ignoredFiles(file)
+        }.get
+        Utilities.hashFiles(allFiles, imageDirectory)
+      }
+
+      // Find the git commits / random IDs for the current project and local dependencies.
+      val unstableContentsCommits = {
+        Def.taskDyn(gitCommitOrGuid.all(HelperDefs.dependencyFilter.value)).value :+
+          gitCommitOrGuid.value
+      }
+
+      // Sort items before hashing to ensure a stable hash.
+      Hash.toHex(Hash((stableContentsHash +: unstableContentsCommits).sorted.mkString))
+    }
+    IO.write(cacheKeyDestination, cacheKeyContents)
 
     imageDirectory
   }
