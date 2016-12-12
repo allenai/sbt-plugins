@@ -295,14 +295,14 @@ object DockerBuildPlugin extends AutoPlugin {
     Process(Seq("docker", "stop", newName)).!(Utilities.NIL_PROCESS_LOGGER)
   }
 
-  /** Task initializer to return the git commit for the current project, if the git repo is present,
-    * or else a GUID. This is used for cache key generation.
+  /** Task initializer to return the git commit for the current project, if the git repo is present
+    * and clean. This is used for cache key generation.
     */
-  lazy val gitCommitOrGuid: Def.Initialize[Task[String]] = Def.task {
+  lazy val gitCommitIfClean: Def.Initialize[Task[Option[String]]] = Def.task {
     HelperDefs.gitRepoCleanDef.value match {
       // TODO(jkinkead): Move gitLocalSha1 to a common location.
-      case None => VersionInjectorPlugin.autoImport.gitLocalSha1.value
-      case Some(_) => UUID.randomUUID.toString
+      case None => Some(VersionInjectorPlugin.autoImport.gitLocalSha1.value)
+      case Some(_) => None
     }
   }
 
@@ -649,29 +649,34 @@ $DOCKERFILE_SIGIL
 
     // Generate the cache key file.
     val cacheKeyDestination = new File(imageDirectory, "conf/cacheKey.sha1")
-    val cacheKeyContents = {
-      // Hash the contents minus the local dependency jars and the cache key itself. For local
-      // dependency jars we use the git commit because it's more stable than the jar contents.
+    val cacheKeyContentsOption: Option[String] = {
+      // Hash the dependency image directly.
       val stableContentsHash = {
-        val ignoredFiles =
-          localDependencyMapping.map { case (_, destination) => destination }.toSet +
-            cacheKeyDestination
-        val allFiles = PathFinder(imageDirectory).***.filter { file =>
-          file.isFile && !ignoredFiles(file)
-        }.get
-        Utilities.hashFiles(allFiles, imageDirectory)
+        val dependencyDir = dependencyImageDir.value
+        Utilities.hashFiles(PathFinder(dependencyDir).***.filter(_.isFile).get, dependencyDir)
       }
 
-      // Find the git commits / random IDs for the current project and local dependencies.
-      val unstableContentsCommits = {
-        Def.taskDyn(gitCommitOrGuid.all(HelperDefs.dependencyFilter.value)).value :+
-          gitCommitOrGuid.value
+      // Find the git commits for the current project and local dependencies, since this is more
+      // stable than a hash of the contents.
+      val unstableContentsCommits: Seq[Option[String]] = {
+        (Def.taskDyn(gitCommitIfClean.all(HelperDefs.dependencyFilter.value)).value :+
+          gitCommitIfClean.value)
       }
 
-      // Sort items before hashing to ensure a stable hash.
-      Hash.toHex(Hash((stableContentsHash +: unstableContentsCommits).sorted.mkString))
+      // If any of the local projects had dirty contents, don't produce a cache key.
+      if (unstableContentsCommits.forall(_.nonEmpty)) {
+        // Sort items before hashing to ensure a stable hash.
+        val components = (stableContentsHash +: unstableContentsCommits.flatten).sorted
+        Some(Hash.toHex(Hash(components.mkString)))
+      } else {
+        None
+      }
     }
-    IO.write(cacheKeyDestination, cacheKeyContents)
+    // Generate the cache key only for pristine repos.
+    cacheKeyContentsOption match {
+      case Some(cacheKeyContents) => IO.write(cacheKeyDestination, cacheKeyContents)
+      case None => IO.delete(cacheKeyDestination)
+    }
 
     imageDirectory
   }
