@@ -256,7 +256,14 @@ object DockerBuildPlugin extends AutoPlugin {
     }
 
     val imageNameWithLabel = imageName + ':' + newHash
-    if (newHash != oldHash) {
+
+    // Invalidate the hash if the image isn't saved, for any reason.
+    val imageMissing = {
+      val inspect = Seq("docker", "inspect", "--type", "image", imageName, imageNameWithLabel)
+      Process(inspect).!(Utilities.NIL_PROCESS_LOGGER) != 0
+    }
+
+    if (newHash != oldHash || imageMissing) {
       // Build a new docker image.
       val buildCommand =
         Seq("docker", "build", "-t", imageName, "-t", imageNameWithLabel, imageDir.toString)
