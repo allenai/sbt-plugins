@@ -62,4 +62,4 @@ JAVA_CMD+=(-classpath "$CLASSPATH")
 JAVA_CMD+=("$JAVA_MAIN")
 
 echo Running "${JAVA_CMD[@]} $@" ...
-exec ${JAVA_CMD[@]} $@
+exec ${JAVA_CMD[@]} "$@"
