@@ -10,6 +10,7 @@ import sbt.{
   InputTask,
   Keys,
   Logger,
+  Path,
   PathFinder,
   Plugins,
   SettingKey,
@@ -632,11 +633,23 @@ $DOCKERFILE_SIGIL
         }
         val destination = new File(imageDirectory, relativeDestination)
         if (source.exists) {
+          // The IO object's methods do not preserve executable bits, so we have to manually set
+          // these ourself.
           if (source.isDirectory) {
             IO.createDirectory(destination)
-            IO.copyDirectory(source, destination)
+            val toCopy = PathFinder(source).***.pair(Path.rebase(source, destination))
+            IO.copy(toCopy)
+            toCopy.foreach {
+              case (source, destination) =>
+                if (source.canExecute) {
+                  destination.setExecutable(true)
+                }
+            }
           } else {
             IO.copyFile(source, destination)
+            if (source.canExecute) {
+              destination.setExecutable(true)
+            }
           }
         } else {
           // The Dockerfile command COPY will error if the source doesn't exist, and Dockerfile
