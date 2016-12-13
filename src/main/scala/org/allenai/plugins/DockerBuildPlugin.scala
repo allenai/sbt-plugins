@@ -640,16 +640,11 @@ $DOCKERFILE_SIGIL
             val toCopy = PathFinder(source).***.pair(Path.rebase(source, destination))
             IO.copy(toCopy)
             toCopy.foreach {
-              case (source, destination) =>
-                if (source.canExecute) {
-                  destination.setExecutable(true)
-                }
+              case (source, destination) => destination.setExecutable(source.canExecute)
             }
           } else {
             IO.copyFile(source, destination)
-            if (source.canExecute) {
-              destination.setExecutable(true)
-            }
+            destination.setExecutable(source.canExecute)
           }
         } else {
           // The Dockerfile command COPY will error if the source doesn't exist, and Dockerfile
