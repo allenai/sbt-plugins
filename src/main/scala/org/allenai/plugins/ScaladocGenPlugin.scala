@@ -1,7 +1,6 @@
 package org.allenai.plugins
 
 import com.typesafe.sbt.{ SbtGhPages, SbtGit, SbtSite }
-import com.typesafe.sbt.git.DefaultReadableGit
 import sbt._
 import sbt.Keys._
 import sbtunidoc.{ Plugin => UnidocPlugin }
@@ -171,41 +170,17 @@ object ScaladocGenPlugin extends AutoPlugin {
     }
   }
 
-  // The final setting is to handle awkwardness with the Git plugin.
-
-  /** This overrides the gitReader setting (what SbtGit uses to run `git`) with a fixed reader.
-    * SbtGit doesn't handle projects rooted in a directory without a `.git` folder correctly - it
-    * actually makes loading a project crash ''even if the project isn't using the plugin''.
-    *
-    * This task navigates up folders until it finds one that holds a `.git` directory, and
-    * initializes the git reader to it.
-    *
-    * The name reflects the error you will see: A null `gitCurrentBranch` setting.
-    */
-  lazy val fixNullCurrentBranch = SbtGit.GitKeys.gitReader.in(ThisBuild) := {
-    var currentRoot = baseDirectory.in(ThisBuild).value
-    while (currentRoot.exists && !(currentRoot / ".git").exists) {
-      currentRoot = currentRoot / ".."
-    }
-    if (!currentRoot.exists) {
-      throw new Exception("project does not exist in a git repository, can't fix gitReader")
-    }
-    new DefaultReadableGit(currentRoot)
-  }
-
   object autoImport {
     /** Convenience alias for required SbtGit setting. */
     lazy val scaladocGenGitRemoteRepo = SbtGit.GitKeys.gitRemoteRepo
     lazy val scaladocGenJavadocUrl = ScaladocGenPlugin.scaladocGenJavadocUrl
     lazy val scaladocGenExtraJavadocMap = ScaladocGenPlugin.scaladocGenExtraJavadocMap
     lazy val scaladocGenExtraScaladocMap = ScaladocGenPlugin.scaladocGenExtraScaladocMap
-    lazy val fixNullCurrentBranch = ScaladocGenPlugin.fixNullCurrentBranch
   }
 
   override def projectSettings: Seq[Def.Setting[_]] = {
     // Dependency settings.
     UnidocPlugin.unidocSettings ++
-      SbtSite.site.settings ++
       SbtGhPages.ghpages.settings ++
       Seq(
         // Local settings.
@@ -217,10 +192,11 @@ object ScaladocGenPlugin extends AutoPlugin {
         scalaApiMappingsSetting,
         // This will pull in links from pom.xml files that sbt has generated, when the project sets
         // the apiURL key.
-        autoAPIMappings := true,
+        autoAPIMappings := true
         // This adds the output of Unidoc to the SbtSite plugin's mappings - meaning, this will end
         // up in the `latest/api` directory of the site synced to github pages.
-        SbtSite.site.addMappingsToSiteDir(mappings.in(ScalaUnidoc, packageDoc), "latest/api")
+        // TODO(jkinkead): Fix this to work with the latest `SbtSite` plugin version.
+        // SbtSite.site.addMappingsToSiteDir(mappings.in(ScalaUnidoc, packageDoc), "latest/api")
       )
   }
 }
