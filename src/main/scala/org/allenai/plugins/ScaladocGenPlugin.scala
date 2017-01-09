@@ -170,8 +170,6 @@ object ScaladocGenPlugin extends AutoPlugin {
     }
   }
 
-  // The final setting is to handle awkwardness with the Git plugin.
-
   object autoImport {
     /** Convenience alias for required SbtGit setting. */
     lazy val scaladocGenGitRemoteRepo = SbtGit.GitKeys.gitRemoteRepo
@@ -183,7 +181,6 @@ object ScaladocGenPlugin extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] = {
     // Dependency settings.
     UnidocPlugin.unidocSettings ++
-      SbtSite.site.settings ++
       SbtGhPages.ghpages.settings ++
       Seq(
         // Local settings.
@@ -195,10 +192,11 @@ object ScaladocGenPlugin extends AutoPlugin {
         scalaApiMappingsSetting,
         // This will pull in links from pom.xml files that sbt has generated, when the project sets
         // the apiURL key.
-        autoAPIMappings := true,
+        autoAPIMappings := true
         // This adds the output of Unidoc to the SbtSite plugin's mappings - meaning, this will end
         // up in the `latest/api` directory of the site synced to github pages.
-        SbtSite.site.addMappingsToSiteDir(mappings.in(ScalaUnidoc, packageDoc), "latest/api")
+        // TODO(jkinkead): Fix this to work with the latest `SbtSite` plugin version.
+        // SbtSite.site.addMappingsToSiteDir(mappings.in(ScalaUnidoc, packageDoc), "latest/api")
       )
   }
 }
