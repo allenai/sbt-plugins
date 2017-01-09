@@ -1,6 +1,7 @@
 package org.allenai.plugins
 
-import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.{ SbtGit, SbtScalariform }
+import com.typesafe.sbt.git.{ DefaultReadableGit, GitReadonlyInterface, ReadableGit }
 import sbt.{
   // Implicit conversion to allow `%` on String.
   toGroupID,
@@ -71,6 +72,43 @@ object CoreSettingsPlugin extends AutoPlugin {
   }
 
   import autoImport._
+
+  /** Implementation for a project not in a Git repository at all. This is used to patch around bad
+    * behavior in the typesafe git plugin, which will throw exceptions if the class is loaded outside
+    * a git repository.
+    */
+  object NonGitRepository extends GitReadonlyInterface {
+    // This is the problematic setting; it comes out as `null` in the default implementation. Note
+    // that we can't just override the default implementations, since they are `final`.
+    override val branch: String = "(none)"
+    // Override the other required fields.
+    override val headCommitSha: Option[String] = None
+    override val currentTags: Seq[String] = Seq.empty
+  }
+
+  /** Implementation of a ReadableGit using our non-git repository. */
+  object NonGitReadableGit extends ReadableGit {
+    override def withGit[T](op: GitReadonlyInterface => T): T = op(NonGitRepository)
+  }
+
+  /** This overrides the gitReader setting (what SbtGit uses to run `git`) with a fixed reader.
+    * SbtGit doesn't handle projects rooted in a directory without a `.git` folder correctly - it
+    * actually makes loading a project crash ''even if the project isn't using the plugin''.
+    *
+    * This task navigates up folders until it finds one that holds a `.git` directory, and
+    * initializes the git reader to it if one is found; else, this uses an empty git reader.
+    */
+  lazy val fixGitCurrentBranch = SbtGit.GitKeys.gitReader.in(ThisBuild) := {
+    var currentRoot = Keys.baseDirectory.in(ThisBuild).value
+    while (currentRoot.exists && !(currentRoot / ".git").exists) {
+      currentRoot = currentRoot / ".."
+    }
+    if (!currentRoot.exists) {
+      NonGitReadableGit
+    } else {
+      new DefaultReadableGit(currentRoot)
+    }
+  }
 
   private val generateRunClassTask = autoImport.generateRunClass := {
     val logger = Keys.streams.value.log
@@ -215,6 +253,7 @@ object CoreSettingsPlugin extends AutoPlugin {
       Project.inConfig(Test)(baseScalariformSettings) ++
       Project.inConfig(Configurations.IntegrationTest)(baseScalariformSettings) ++
       Seq(
+        fixGitCurrentBranch,
         generateRunClassTask,
         Keys.fork := true, // Forking for run, test is required sometimes, so fork always.
         // Use a sensible default for the logback appname.
