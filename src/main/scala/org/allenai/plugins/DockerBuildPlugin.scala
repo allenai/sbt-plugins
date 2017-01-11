@@ -750,7 +750,6 @@ $DOCKERFILE_SIGIL
     dockerBuild.value
 
     val logger = Keys.streams.value.log
-    logger.info(s"Running image ${mainImageNameSuffix.value}...")
 
     val containerName = dockerImageName.value
     runningContainers.synchronized {
