@@ -765,7 +765,9 @@ $DOCKERFILE_SIGIL
         case (hostPort, containerPort) => Seq("-p", s"$hostPort:$containerPort")
       }
       // Start up the container.
-      Process(baseCommand ++ portArgs ++ dockerRunFlags.value :+ mainImageName.value).run()
+      val fullCommand = baseCommand ++ portArgs ++ dockerRunFlags.value :+ mainImageName.value
+      logger.info("Running command: " + fullCommand.mkString(" "))
+      Process(fullCommand).run()
       // Save it to the list of running containers.
       runningContainers.add(containerName)
     }
