@@ -20,7 +20,7 @@ After the plugin is installed, release using the following checklist:
 **You cannot use a branch of your fork for releases.**  If you do, your tag
 will not make it to the main repository.
 2.  Set the upstream repository (`git push --set-upstream $upstream_name $branch_name`).
-3.  Kick of the release with `sbt release`.
+3.  Kick off the release with `sbt release`.
 4.  Create a pull request and make sure Semaphore builds it OK.
 5.  When the pull request is merged, Semaphore will kick off a build and ultimately publish the artifact.
 6.  You can verify that it was published by [looking on BinTray.com](https://bintray.com).
