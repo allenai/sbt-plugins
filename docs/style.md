@@ -127,6 +127,6 @@ Now `compile` and `formatCheckStrict` will run before you make a commit, for tes
 misformatted files, or files that don't compile, you will need to correct them before comitting.
 
 ### Code Style Settings for IntelliJ
-This [jar file](https://github.com/allenai/sbt-plugins/blob/master/sbt-style/settings/AI2CodeStyleSettingsForIntelliJ.jar) contains 
+This [jar file](https://github.com/allenai/sbt-plugins/blob/master/settings/AI2CodeStyleSettingsForIntelliJ.jar) contains 
 settings for IntelliJ that conform as closely as possible to the formatting conventions of this 
 plugin.  To use them, choose File->Import Settings and select the jar file.
