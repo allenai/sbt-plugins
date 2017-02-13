@@ -274,7 +274,7 @@ object DockerBuildPlugin extends AutoPlugin {
         sys.error("Error running " + buildCommand.mkString(" "))
       }
 
-      if (oldHash != "") {
+      if (oldHash != "" && oldHash != newHash) {
         logger.info("Removing stale image...")
         // Remove the old image label. Note that we ignore any errors - we don't care if the image
         // doesn't exist or if the remove fails.
