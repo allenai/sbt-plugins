@@ -588,6 +588,17 @@ $DOCKERFILE_SIGIL
     dockerDependencyStage.value
 
     val logger = Keys.streams.value.log
+
+    // Ensure that the base image is up to date. This also works around an issue wherein the
+    // `docker build` command will fail to authenticate to a repository even when credentials are
+    // valid. The `docker pull` command doesn't exhibit this issue.
+    // TODO: We should invalidate the dependency hash if this image has changed.
+    logger.info(s"Updating base image ${dockerImageBase.value}...")
+    val exitCode = Process(Seq("docker", "pull", dockerImageBase.value)).!
+    if (exitCode != 0) {
+      sys.error("Failed to update base image.")
+    }
+
     logger.info(s"Building dependency image for ${mainImageNameSuffix.value}...")
 
     buildImageIfUpdated(
