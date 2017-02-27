@@ -587,6 +587,8 @@ $DOCKERFILE_SIGIL
     // This task requires that the docker dependency stage have been run.
     dockerDependencyStage.value
 
+    val logger = Keys.streams.value.log
+
     // Ensure that the base image is up to date. This also works around an issue wherein the
     // `docker build` command will fail to authenticate to a repository even when credentials are
     // valid. The `docker pull` command doesn't exhibit this issue.
@@ -597,7 +599,6 @@ $DOCKERFILE_SIGIL
       sys.error("Failed to update base image.")
     }
 
-    val logger = Keys.streams.value.log
     logger.info(s"Building dependency image for ${mainImageNameSuffix.value}...")
 
     buildImageIfUpdated(
