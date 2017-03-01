@@ -399,6 +399,25 @@ object DockerBuildPlugin extends AutoPlugin {
     val dockerPortsText = dockerPorts.value.mkString(", ")
     val exposeText = dockerPorts.value.map("EXPOSE " + _).mkString("\n")
 
+    // Create any environment variables specified in sbt.
+    // This throws an error if the environment variable name contains a space, since this is not
+    // handled graciously by Docker.
+    val envVarsText = Keys.envVars.value.map {
+      case (key, value) =>
+        if (key.contains(" ")) {
+          sys.error(s"""Environment variable name can't be exported to Docker: \"$key\"""")
+        }
+        val quotedValue = value.replaceAllLiterally("\\", "\\\\").replaceAllLiterally("\"", "\\\"")
+        s""""$key" -> "$quotedValue""""
+    }.mkString(", ")
+    val envVarsCommandsText = Keys.envVars.value.map {
+      case (key, value) =>
+        val escapedValue = value.replaceAllLiterally("\\", "\\\\").replaceAllLiterally(
+          "$", "\\$"
+        ).replaceAllLiterally("\"", "\\\"")
+        s"ENV $key $escapedValue"
+    }.mkString("\n")
+
     // Check for a main class, and warn if it's missing.
     val (javaMainText, mainClassText) = Keys.mainClass.?.value.getOrElse(None) match {
       case Some(mainClass) =>
@@ -443,6 +462,13 @@ ENV CONFIG_ENV $${CONFIG_ENV:-dev}
 # sbt setting:
 #   javaOptions := Seq($javaOptionsText)
 ENV JVM_ARGS $${JVM_ARGS:-$jvmArgsText}
+
+# Other environment variables to set when running your command. All of these can be overridden at
+# runtime with the -e flag:
+#   docker run -e VAR_NAME=newValue ${mainImageName.value}
+# sbt setting:
+#   envVars := Map($envVarsText)
+$envVarsCommandsText
 
 # The main class to execute when using the ENTRYPOINT command. You can override this at runtime with
 # the -e flag:
