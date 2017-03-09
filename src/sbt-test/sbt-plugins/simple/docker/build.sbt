@@ -10,4 +10,6 @@ appendToDockerfile := {
   IO.append(dockerfile, "# TESTING\n")
 }
 
+dockerDependencyExtra := Seq("LINE_ONE", "LINE_TWO")
+
 verifyDockerfileOnBuild := true

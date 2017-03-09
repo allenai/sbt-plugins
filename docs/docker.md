@@ -50,6 +50,7 @@ The dependency image has a very simple Dockerfile:
 FROM ${dockerImageBase.value}
 WORKDIR ${dockerWorkdir.value}
 STOPSIGNAL SIGINT
+${dockerDependencyExtra.value.mkString("\n")}
 COPY bin bin
 COPY lib lib
 ```
@@ -181,6 +182,13 @@ Value type: `String`
 Default: `allenai-docker-private-docker.bintray.io/oracle-java:8`
 
 The image to use as the base image for the dependency image (what is on the dependency image's FROM line).
+
+### dockerDependencyExtra
+Value type: `Seq[String]`  
+Default: `Seq.empty[String]`
+
+Any extra lines to add to the dependency image. This is good for larger items that don't change
+often, like large data file dependencies.
 
 ### dockerImageRegistryHost
 Value type: `String`  
