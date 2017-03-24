@@ -99,6 +99,9 @@ $ exists docker/target/docker/main/sourcey/src.txt
 # Test that the project libs are present.
 $ exists docker/target/docker/main/lib/core.core-0.1-SNAPSHOT.jar
 $ exists docker/target/docker/main/lib/docker.docker-0.1-SNAPSHOT.jar
+# Tests that the extra mappings were added.
+$ exec grep LINE_ONE docker/target/docker/dependencies/Dockerfile
+$ exec grep LINE_TWO docker/target/docker/dependencies/Dockerfile
 
 # Test that we can re-run staging without error.
 > docker/dockerMainStage

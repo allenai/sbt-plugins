@@ -104,6 +104,12 @@ object DockerBuildPlugin extends AutoPlugin {
       "The base image to use when creating your image. Defaults to " + DEFAULT_BASE_IMAGE + "."
     )
 
+    val dockerDependencyExtra: SettingKey[Seq[String]] = Def.settingKey[Seq[String]](
+      "Extra lines to add to the dependency Dockerfile. These will be interpreted directly into " +
+        "the dependency Dockerfile, immediately before the start script and library jars COPY " +
+        "commands. Defaults to Seq.empty[String]."
+    )
+
     val dockerCopyMappings: SettingKey[Seq[(File, String)]] = Def.settingKey[Seq[(File, String)]](
       "Mappings to add to the Docker image. Relative file paths will be interpreted as being " +
         "relative to the base directory (`baseDirectory.value`). See " +
@@ -568,6 +574,7 @@ $DOCKERFILE_SIGIL
       |FROM ${dockerImageBase.value}
       |WORKDIR ${dockerWorkdir.value}
       |STOPSIGNAL SIGINT
+      |${dockerDependencyExtra.value.mkString("\n")}
       |COPY bin bin
       |COPY lib lib
       |""".stripMargin
@@ -870,6 +877,7 @@ $DOCKERFILE_SIGIL
     dockerImageNamePrefix := Keys.organization.value.stripPrefix("org.allenai."),
     dockerImageName := Keys.name.value,
     dockerImageBase := DEFAULT_BASE_IMAGE,
+    dockerDependencyExtra := Seq.empty,
     dockerPorts := Seq.empty,
     dockerPortMappings := {
       val exposedPorts = dockerPorts.value
