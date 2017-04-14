@@ -279,3 +279,10 @@ Value type: `Boolean`
 Default: `false`
 
 If true, the Dockerfile will be verfied as up-to-date in the `dockerRun` task before the `docker build` command is executed.
+
+### skipEcrLogin
+Value type: `Boolean`
+Default: `false`
+
+If true, the plugin will not attempt an ECR login when an image looks like it's hosted on Amazon
+ECR.
