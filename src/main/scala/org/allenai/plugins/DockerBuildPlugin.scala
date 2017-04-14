@@ -47,6 +47,9 @@ object DockerBuildPlugin extends AutoPlugin {
     */
   val DOCKERFILE_SIGIL = "#+" * 50
 
+  /** Extractor pattern matching the registry portion of a docker image name. */
+  val IMAGE_REGISTRY = "^([^/]+)/".r.unanchored
+
   /** Set of names of currently-running docker containers. Access is synchronized on
     * `runningContainers`.
     */
@@ -155,6 +158,11 @@ object DockerBuildPlugin extends AutoPlugin {
         "empty Seq."
     )
 
+    val skipEcrLogin: SettingKey[Boolean] = Def.settingKey[Boolean](
+      "If set, don't ever log in to Amazon ECR, even if images look like they require it. " +
+        "Defaults to false."
+    )
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // The following keys are for generating dockerfiles; and staging, building, running, and
     // pushing images. These should not be overridden from the defaults unless you know what you're
@@ -239,6 +247,21 @@ object DockerBuildPlugin extends AutoPlugin {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Common settings / tasks / utilities used across tasks.
   //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /** Logs in to Amazon ECR, using `aws ecr get-login`, if the given image is an ECR-hosted image.
+    */
+  def loginIfEcrImage(imageName: String, logger: Logger): Unit = {
+    imageName match {
+      case IMAGE_REGISTRY(registry) if registry.endsWith(".amazonaws.com") =>
+        logger.info("Logging in to ECR...")
+        val command = Seq("bash", "-c", "eval $(aws ecr get-login)")
+        val result = Process(command).!(Utilities.NIL_PROCESS_LOGGER)
+        if (result != 0) {
+          logger.warn("Failure logging in to ECR.")
+        }
+      case _ => // No-op.
+    }
+  }
 
   /** Builds a docker image in the given directory. Before building, hash the contents, and check to
     * see if the hash is different from what's in the given hash file. If the contents are
@@ -625,6 +648,9 @@ $DOCKERFILE_SIGIL
     // Ensure that the base image is up to date. This also works around an issue wherein the
     // `docker build` command will fail to authenticate to a repository even when credentials are
     // valid. The `docker pull` command doesn't exhibit this issue.
+    if (!skipEcrLogin.value) {
+      loginIfEcrImage(dockerImageBase.value, logger)
+    }
     // TODO: We should invalidate the dependency hash if this image has changed.
     logger.info(s"Updating base image ${dockerImageBase.value}...")
     val exitCode = Process(Seq("docker", "pull", dockerImageBase.value)).!
@@ -836,6 +862,10 @@ $DOCKERFILE_SIGIL
 
     val tags = DefaultParsers.spaceDelimited("<tag>").parsed
 
+    if (!skipEcrLogin.value) {
+      loginIfEcrImage(mainImageName.value, logger)
+    }
+
     if (tags.nonEmpty) {
       // Generate the full image names.
       val tagNamePairs = tags.map(tag => (tag, mainImageName.value + ':' + tag))
@@ -887,6 +917,7 @@ $DOCKERFILE_SIGIL
     dockerWorkdir := "/stage",
     verifyDockerfileIsStrict := true,
     verifyDockerfileOnBuild := false,
+    skipEcrLogin := false,
     dockerRunFlags := Seq.empty,
     generateDockerfile := generateDockerfileDef.value,
     verifyDockerfile := verifyDockerfileDef.value,
