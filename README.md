@@ -3,6 +3,8 @@ AI2 SBT Plugins
 
 [![Build Status](https://semaphoreci.com/api/v1/projects/8954a1aa-855b-4ada-807e-f81e30ff88dd/653444/badge.svg)](https://semaphoreci.com/allenai/sbt-plugins)
 
+**This repository is no longer supported, and should not be used for new projects.  Internally at AI2, teams (Euclid, S2, and Aristo) are moving away from SBT Plugins.  Please assign any PRs to Michael Schmitz.**
+
 The AI2 SBT plugins are intended to minimize build boilerplate accross projects. It is recommended to only enable "Archetype" plugins, which currently include:
 
 - `CliPlugin` - for command line applications using the [scopt](https://github.com/scopt/scopt) library.
