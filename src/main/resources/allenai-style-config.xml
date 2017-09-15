@@ -22,7 +22,7 @@
   -->
 
   <!-- Example regular expression checker. This is the most flexible checker available. -->
-  <check level="warning" class="org.scalastyle.file.RegexChecker" enabled="false">
+  <check level="error" class="org.scalastyle.file.RegexChecker" enabled="false">
     <customMessage>No println statements</customMessage>
     <parameters>
       <parameter name="regex">println</parameter>
@@ -75,7 +75,7 @@
 
     We use a custom ID to enable easy disabling.
     -->
-  <check level="warning" class="org.scalastyle.file.FileLineLengthChecker" enabled="true"
+  <check level="error" class="org.scalastyle.file.FileLineLengthChecker" enabled="true"
       customId="line.length">
     <customMessage>Line is more than 100 characters long</customMessage>
     <parameters>
@@ -84,19 +84,19 @@
     </parameters>
   </check>
   <!-- Bad style checks. -->
-  <check level="warning" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
+  <check level="error" class="org.scalastyle.scalariform.ClassNamesChecker" enabled="true">
     <customMessage>Unusual class name; consider renaming</customMessage>
     <parameters>
       <parameter name="regex">^[A-Z][A-Za-z]*</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.PackageObjectNamesChecker" enabled="true">
+  <check level="error" class="org.scalastyle.scalariform.PackageObjectNamesChecker" enabled="true">
     <customMessage>Unusual package name; consider renaming</customMessage>
     <parameters>
       <parameter name="regex">^[a-z][A-Za-z]*$</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.UppercaseLChecker" enabled="true">
+  <check level="error" class="org.scalastyle.scalariform.UppercaseLChecker" enabled="true">
     <customMessage>Prefer using `L` to postfix long literals instead of `l`</customMessage>
   </check>
 
@@ -108,78 +108,78 @@
     <customMessage>Whitespace at end-of-line</customMessage>
   </check>
 
-  <check level="warning" class="org.scalastyle.file.NewLineAtEofChecker" enabled="false">
+  <check level="error" class="org.scalastyle.file.NewLineAtEofChecker" enabled="false">
     <customMessage>Missing newline at end-of-file</customMessage>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.ObjectNamesChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.ObjectNamesChecker" enabled="false">
     <customMessage>Unusual object name; consider renaming</customMessage>
     <parameters>
       <parameter name="regex">^[A-Z][A-Za-z]*</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" enabled="false">
     <customMessage>Missing return type for public method</customMessage>
   </check>
 
   <!-- Disabled checks, kept here for documentation. -->
 
   <!-- TODO(jkinkead): Evaluate this checker - it seems useful. -->
-  <check level="warning" class="org.scalastyle.scalariform.CyclomaticComplexityChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.CyclomaticComplexityChecker" enabled="false">
     <parameters>
       <parameter name="maximum">10</parameter>
     </parameters>
   </check>
 
-  <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="false">
     <customMessage>Magic integer literal in expression; should be read from a named constant</customMessage>
     <parameters>
       <parameter name="ignore">-1,0,1,2,3</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.file.FileLengthChecker" enabled="false">
+  <check level="error" class="org.scalastyle.file.FileLengthChecker" enabled="false">
     <parameters>
       <parameter name="maxFileLength">800></parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false">
+  <check level="error" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false">
     <parameters>
       <parameter name="header">// Copyright (C) 2011-2012 the original author or authors.</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.ParameterNumberChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.ParameterNumberChecker" enabled="false">
     <parameters>
       <parameter name="maxParameters">8</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.ReturnChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.NullChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.NoCloneChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.NoFinalizeChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.StructuralTypeChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.NumberOfTypesChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.ReturnChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.NullChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.NoCloneChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.NoFinalizeChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.StructuralTypeChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.NumberOfTypesChecker" enabled="false">
     <parameters>
       <parameter name="maxTypes">30</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.file.NoNewLineAtEofChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.SimplifyBooleanExpressionChecker" enabled="false"></check>
-  <check level="warning" class="org.scalastyle.scalariform.NumberOfMethodsInTypeChecker" enabled="false">
+  <check level="error" class="org.scalastyle.file.NoNewLineAtEofChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.SimplifyBooleanExpressionChecker" enabled="false"></check>
+  <check level="error" class="org.scalastyle.scalariform.NumberOfMethodsInTypeChecker" enabled="false">
     <parameters>
       <parameter name="maxMethods">30</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.MethodNamesChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.MethodNamesChecker" enabled="false">
     <parameters>
       <parameter name="regex">^[a-z][A-Za-z0-9]*$</parameter>
       <parameter name="ignoreOverride">true</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.MethodLengthChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.MethodLengthChecker" enabled="false">
     <parameters>
       <parameter name="maxLength">50</parameter>
     </parameters>
   </check>
-  <check level="warning" class="org.scalastyle.scalariform.IllegalImportsChecker" enabled="false">
+  <check level="error" class="org.scalastyle.scalariform.IllegalImportsChecker" enabled="false">
     <parameters>
       <parameter name="illegalImports">sun._,java.awt._</parameter>
     </parameters>
