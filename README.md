@@ -95,7 +95,13 @@ Bintray does not like snapshot versions, so all of our published versions are re
 ### Bintray Credentials
 
 To publish new versions you will need a `~/.bintray/.credentials` file with the following contents. Be sure to `chmod 600` it!
-You can also use a personal Bintray login that has access to the `allenai` organization.
+You can also use a personal Bintray login that has access to the `allenai` organization. To setup bintray credentials, either
+
+```
+$ sbt bintrayChangeCredentials
+```
+
+or:
 
 ```
 realm = Bintray API Realm
