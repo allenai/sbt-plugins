@@ -1,1 +1,1 @@
-version in ThisBuild := "1.1.1_euclid"
+version in ThisBuild := "1.1.1-euclid"
