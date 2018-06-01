@@ -32,7 +32,7 @@ object DockerBuildPlugin extends AutoPlugin {
   /** The default Docker registry used for making image names. Must be overridden to push images.
     * Used as the default value for the dockerImageRegistryHost setting.
     */
-  val DEFAULT_REGISTRY = "allenai-sbt-plugins-default-registry.allenai.org"
+  val DEFAULT_REGISTRY = "allenai-sbt-plugins-default-FAKE-registry.allenai.org"
 
   /** The default value for the dockerImageBase setting. */
   val DEFAULT_BASE_IMAGE = DEFAULT_REGISTRY + "/oracle-java:8"
