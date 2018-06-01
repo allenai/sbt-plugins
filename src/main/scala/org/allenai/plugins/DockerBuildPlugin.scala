@@ -903,7 +903,7 @@ $DOCKERFILE_SIGIL
       new File(sourceMain.value, "docker" + File.separatorChar + "Dockerfile")
     },
     dockerCopyMappings := defaultCopyMappings.value,
-    dockerImageRegistryHost := AI2_PRIVATE_REGISTRY,
+    dockerImageRegistryHost := DEFAULT_REGISTRY,
     dockerImageNamePrefix := Keys.organization.value.stripPrefix("org.allenai."),
     dockerImageName := Keys.name.value,
     dockerImageBase := DEFAULT_BASE_IMAGE,
