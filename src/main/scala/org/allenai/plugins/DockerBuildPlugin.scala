@@ -29,13 +29,13 @@ import scala.sys.process.Process
 
 /** Plugin for building docker images. */
 object DockerBuildPlugin extends AutoPlugin {
-  /** AI2's private Docker registry. Used as the default value for the dockerImageRegistryHost
-    * setting.
+  /** The default Docker registry used for making image names. Must be overridden to push images.
+    * Used as the default value for the dockerImageRegistryHost setting.
     */
-  val AI2_PRIVATE_REGISTRY = "allenai-docker-private-docker.bintray.io"
+  val DEFAULT_REGISTRY = "allenai-sbt-plugins-default-registry.allenai.org"
 
   /** The default value for the dockerImageBase setting. */
-  val DEFAULT_BASE_IMAGE = AI2_PRIVATE_REGISTRY + "/oracle-java:8"
+  val DEFAULT_BASE_IMAGE = DEFAULT_REGISTRY + "/oracle-java:8"
 
   /** The name of the startup script, located in this class's resources. This will also be the name
     * of the script in the `bin` directory in the generated image.
@@ -91,7 +91,7 @@ object DockerBuildPlugin extends AutoPlugin {
     // See the documentation for details on which tags will be used by `dockerBuild` and
     // `dockerPush`.
     val dockerImageRegistryHost: SettingKey[String] = Def.settingKey[String](
-      "The base name of the image you're creating. Defaults to " + AI2_PRIVATE_REGISTRY + "."
+      "The base name of the image you're creating. Defaults to " + DEFAULT_REGISTRY + "."
     )
     val dockerImageNamePrefix: SettingKey[String] = Def.settingKey[String](
       "The image name prefix (\"repository\", in Docker terms) of the image you're creating. " +

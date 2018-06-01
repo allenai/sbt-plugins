@@ -54,7 +54,7 @@ ${dockerDependencyExtra.value.mkString("\n")}
 COPY bin bin
 COPY lib lib
 ```
-The base image defaults to `allenai-docker-private-docker.bintray.io/oracle-java:8`, and the workdir defaults to `/stage`. `bin` is copied in order to capture [the start script](#the-start-script), while `lib` contains all of the dependency jars. Finally, this configures the default stop signal for your docker container (the default SIGTERM is ignored by the JVM).
+The base image defaults to `allenai-sbt-plugins-default-registry.allenai.org/oracle-java:8`, and the workdir defaults to `/stage`. `bin` is copied in order to capture [the start script](#the-start-script), while `lib` contains all of the dependency jars. Finally, this configures the default stop signal for your docker container (the default SIGTERM is ignored by the JVM).
 
 The main image has a more complicated Dockerfile template. The best way to get acquainted with it is to generate one and read through it, or to browse [the settings section below](#settings). The chief point of interest is that it uses a `FROM` to inherit from the dependency image.
 
@@ -179,7 +179,7 @@ for detailed info on sbt mappings.
 
 ### dockerImageBase
 Value type: `String`  
-Default: `allenai-docker-private-docker.bintray.io/oracle-java:8`
+Default: `allenai-sbt-plugins-default-registry.allenai.org/oracle-java:8`
 
 The image to use as the base image for the dependency image (what is on the dependency image's FROM line).
 
@@ -192,7 +192,7 @@ often, like large data file dependencies.
 
 ### dockerImageRegistryHost
 Value type: `String`  
-Default: `allenai-docker-private-docker.bintray.io`
+Default: `allenai-sbt-plugins-default-registry.allenai.org`
 
 The registry host to use when generating your image names.
 
