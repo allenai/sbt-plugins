@@ -1,7 +1,5 @@
 # allenai-sbt-core-settings
 
-**Required by**: all Archetype plugins
-
 **Requires**: `StylePlugin` && `VersionInjectorPlugin`
 
 **Note**: `CoreSettingsPlugin` is implicitly applied to all projects via its `trigger` setting. This means you do not need to explicitly enable this plugin.
