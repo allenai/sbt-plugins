@@ -221,7 +221,7 @@ object CoreSettingsPlugin extends AutoPlugin {
         // Use a sensible default for the logback appname.
         Keys.javaOptions += s"-Dlogback.appname=${Keys.name.value}",
         Keys.scalaVersion := CoreDependencies.defaultScalaVersion,
-        Keys.scalacOptions ++= Seq("-target:jvm-1.7", "-Xlint", "-deprecation", "-feature"),
+        Keys.scalacOptions ++= Seq("-target:jvm-1.8", "-Xlint", "-deprecation", "-feature"),
         Keys.javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
         Keys.resolvers ++= CoreRepositories.Resolvers.defaults,
         Keys.dependencyOverrides ++= CoreDependencies.loggingDependencyOverrides,
