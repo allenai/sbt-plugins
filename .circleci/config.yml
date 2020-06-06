@@ -41,4 +41,4 @@ jobs:
       # check formatting
       - run: cat /dev/null | sbt scalafmtCheckAll
       # run tests
-      - run: cat /dev/null | sbt test:test
+      - run: cat /dev/null | sbt test

@@ -31,7 +31,49 @@ $ exists .git/hooks/scalariform.jar
 # Test that docker dependency staging works.
 > docker/dockerDependencyStage
 $ exists docker/target/docker/dependencies/Dockerfile
+
 # Test that we get the startup script copied.
 $ exists docker/target/docker/dependencies/bin/run-docker.sh
 # Assert that the joda-time dependency was added.
-$ exists docker/target/docker/dependencies/lib/joda-time.joda-time-2.4.jar
+$ exists docker/target/docker/dependencies/lib/joda-time-2.4.jar
+
+# Test that dockerMainStage doesn't work without a Dockerfile.
+-> docker/dockerMainStage
+
+# Test that we can generate a Dockerfile.
+> docker/generateDockerfile
+$ exists docker/src/main/docker/Dockerfile
+
+# Test that additions to the Dockerfile are retained.
+> docker/appendToDockerfile
+> docker/generateDockerfile
+$ exists docker/src/main/docker/Dockerfile
+$ exec grep TESTING docker/src/main/docker/Dockerfile
+
+# Test that docker main project staging works.
+> docker/dockerMainStage
+
+# Test that the default mappings work.
+$ exists docker/target/docker/main/Dockerfile
+$ exists docker/target/docker/main/conf/application.conf
+
+# Test that the custom mappings work.
+$ exists docker/target/docker/main/bar/foo.txt
+$ exists docker/target/docker/main/sourcey/src.txt
+
+# Test that the project libs are present.
+$ exists docker/target/docker/main/lib/core.core-0.1.0-SNAPSHOT.jar
+$ exists docker/target/docker/main/lib/docker.docker-0.1.0-SNAPSHOT.jar
+
+# Tests that the extra mappings were added.
+$ exec grep LINE_ONE docker/target/docker/dependencies/Dockerfile
+$ exec grep LINE_TWO docker/target/docker/dependencies/Dockerfile
+
+# Test that we can re-run staging without error.
+> docker/dockerMainStage
+
+# Test that changes to the Dockerfile are detected.
+> docker/verifyDockerfile
+# Trigger a change in the file.
+> set dockerPorts.in(docker) += 1234
+-> docker/verifyDockerfile
