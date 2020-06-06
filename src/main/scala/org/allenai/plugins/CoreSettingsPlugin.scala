@@ -1,5 +1,6 @@
 package org.allenai.plugins
 
+import Compat._
 import com.typesafe.sbt.SbtScalariform
 import sbt._
 import scalariform.formatter.ScalaFormatter

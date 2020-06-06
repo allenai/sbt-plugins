@@ -19,6 +19,7 @@ addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
 lazy val root = (project in file("."))
   .enablePlugins(SbtPlugin)
   .settings(
+    crossSbtVersions := Vector("1.3.10", "0.13.16"),
     resolvers += Resolver.jcenterRepo,
     libraryDependencies ++= Seq(
       "com.typesafe" % "config" % "1.4.0",
@@ -35,7 +36,6 @@ lazy val root = (project in file("."))
       "-language:_",
       "-Xlog-reflective-calls"
     ),
-    scalaVersion := "2.12.10",
     sbtPlugin := true,
     // Publication settings.
     publishMavenStyle := false,

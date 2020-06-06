@@ -1,22 +1,7 @@
 package org.allenai.plugins
 
-import sbt.{
-  AutoPlugin,
-  ConsoleLogger,
-  Def,
-  Hash,
-  IO,
-  InputKey,
-  InputTask,
-  Keys,
-  Logger,
-  Path,
-  PathFinder,
-  Plugins,
-  SettingKey,
-  Task,
-  TaskKey
-}
+import Compat._
+import sbt._
 import sbt.complete.DefaultParsers
 import sbt.plugins.JvmPlugin
 
