@@ -31,6 +31,8 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
+      - run: cat /dev/null | git config --global user.email "brandons@allenai.org"
+      - run: cat /dev/null | git config --global user.name "Brandon"
       - run: cat /dev/null | sbt test:compile
 
       - save_cache:
