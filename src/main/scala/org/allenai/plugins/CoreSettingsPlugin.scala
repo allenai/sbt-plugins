@@ -1,29 +1,7 @@
 package org.allenai.plugins
 
 import com.typesafe.sbt.SbtScalariform
-import sbt.{
-  // toGroupID provides an implicit from String to GroupID. This allows us to use the `%` function
-  // on String.
-  toGroupID,
-  AutoPlugin,
-  Compile,
-  Configurations,
-  Def,
-  Defaults,
-  GlobFilter,
-  IO,
-  IntegrationTest,
-  Keys,
-  MessageOnlyException,
-  PathFinder,
-  PluginTrigger,
-  Plugins,
-  Project,
-  Setting,
-  Test,
-  ThisBuild
-}
-import sbt.Path.richFile
+import sbt._
 import scalariform.formatter.ScalaFormatter
 import scalariform.formatter.preferences._
 import scalariform.parser.ScalaParserException
@@ -91,10 +69,12 @@ object CoreSettingsPlugin extends AutoPlugin {
   private val formatInternal = Def.task {
     val preferences = scalariformPreferences.value
     // Find all of the scala source files, then run them through scalariform.
-    val sourceFiles = PathFinder(Keys.sourceDirectories.value).descendantsExcept(
-      Keys.includeFilter.value || GlobFilter("*.scala"),
-      Keys.excludeFilter.value
-    ).get
+    val sourceFiles = PathFinder(Keys.sourceDirectories.value)
+      .descendantsExcept(
+        Keys.includeFilter.value || GlobFilter("*.scala"),
+        Keys.excludeFilter.value
+      )
+      .get
     val scalaMajorVersion = Keys.scalaVersion.value.split("-").head
     for {
       sourceFile <- sourceFiles
@@ -159,8 +139,8 @@ object CoreSettingsPlugin extends AutoPlugin {
   // Add the IntegrationTest config to the project. The `extend(Test)` part makes it so
   // classes in src/it have a classpath dependency on classes in src/test. This makes
   // it simple to share common test helper code.
-  // See http://www.scala-sbt.org/release/docs/Testing.html#Custom+test+configuration
-  override val projectConfigurations = Seq(Configurations.IntegrationTest extend (Test))
+  // See https://www.scala-sbt.org/release/docs/Testing.html#Custom+test+configuration
+  override val projectConfigurations = Seq(Configurations.IntegrationTest.extend(Test))
 
   /** Scalariform settings we use that are different from the defaults */
   val ScalariformDefaultOverrides: Seq[(PreferenceDescriptor[_], Boolean)] = Seq(
@@ -180,19 +160,24 @@ object CoreSettingsPlugin extends AutoPlugin {
       val preCommitFile = expectedGitHooksDir / "pre-commit"
       val scalariformFile = expectedGitHooksDir / "scalariform.jar"
       def requireFilesDontExist(files: File*) = {
-        files find (_.exists) foreach { file =>
-          sys.error(s"You already have .git/hooks/${file.getName}. Remove or rename the file and run again.")
+        files.find(_.exists).foreach { file =>
+          sys.error(
+            s"You already have .git/hooks/${file.getName}. Remove or rename the file and run again."
+          )
         }
       }
       requireFilesDontExist(preCommitFile, scalariformFile)
 
       // generate the pre-commit hook with scalariform options injected:
-      val scalariformOpts = (ScalariformDefaultOverrides map {
-        case (descriptor, enable) =>
-          val enableDisable = if (enable) "+" else "-"
-          s"${enableDisable}${descriptor.key}"
-      }).mkString("(", " ", ")")
-      val lines = IO.readLinesURL(getClass.getClassLoader.getResource("autoformat/pre-commit"))
+      val scalariformOpts = ScalariformDefaultOverrides
+        .map {
+          case (descriptor, enable) =>
+            val enableDisable = if (enable) "+" else "-"
+            s"${enableDisable}${descriptor.key}"
+        }
+        .mkString("(", " ", ")")
+      val lines = IO
+        .readLinesURL(getClass.getClassLoader.getResource("autoformat/pre-commit"))
         .map(_.replace("__scalariform_opts__", scalariformOpts))
       IO.writeLines(preCommitFile, lines.toList)
       // git hooks must be executable
@@ -224,7 +209,7 @@ object CoreSettingsPlugin extends AutoPlugin {
         Keys.scalacOptions ++= Seq("-target:jvm-1.8", "-Xlint", "-deprecation", "-feature"),
         Keys.javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
         Keys.resolvers ++= CoreRepositories.Resolvers.defaults,
-        Keys.dependencyOverrides ++= CoreDependencies.loggingDependencyOverrides,
+        Keys.dependencyOverrides ++= CoreDependencies.loggingDependencyOverrides.toSeq,
         Keys.dependencyOverrides += "org.scala-lang" % "scala-library" % Keys.scalaVersion.value,
         // Override default scalariform settings.
         SbtScalariform.autoImport.scalariformPreferences := {

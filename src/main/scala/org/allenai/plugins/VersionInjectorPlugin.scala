@@ -12,34 +12,42 @@ import Keys._
 object VersionInjectorPlugin extends AutoPlugin {
 
   object autoImport {
+
     val injectVersion = TaskKey[Seq[File]](
       "injectVersion",
       "Generates the artifact.conf and git.conf version files"
     )
+
     val injectArtifact = TaskKey[File](
       "injectArtifact",
       "Generate the artifact.conf resource"
     )
+
     val injectGit = TaskKey[File](
       "injectGit",
       "Generate the git.conf resource"
     )
+
     val gitCommitDate = TaskKey[Long](
       "gitCommitDate",
       "The date in milliseconds of the current git commit"
     )
+
     val gitRemotes = TaskKey[Seq[String]](
       "gitRemotes",
       "A list of the remotes of this git repository"
     )
+
     val gitSha1 = TaskKey[String](
       "gitSha1",
       "The sha1 hash of the current git commit"
     )
+
     val gitDescribe = TaskKey[String](
       "gitDescribe",
       "The description of the current git commit"
     )
+
     val gitLocalSha1 = TaskKey[String](
       "gitLocalSha1",
       "Most recent commit in src directory of current project"
@@ -70,7 +78,8 @@ object VersionInjectorPlugin extends AutoPlugin {
     maybeIsWindows.map(_ => command + ".exe").getOrElse(command)
   }
 
-  private def gitCommand(args: Any*) = Process(executableName("git") +: args.map(_.toString))
+  private def gitCommand(args: Any*) =
+    scala.sys.process.Process(executableName("git") +: args.map(_.toString))
 
   // Git tasks
   val gitDescribeTask = gitDescribe := {
@@ -84,11 +93,10 @@ object VersionInjectorPlugin extends AutoPlugin {
   val gitCommitDateTask =
     gitCommitDate := (gitCommand("log", "-1", "--format=%ct", "HEAD").!!).trim.toLong * 1000
   val gitSha1Task = gitSha1 := (gitCommand("rev-parse", "HEAD").!!).trim
+
   val gitRemotesTask = gitRemotes := {
     val remotes = gitCommand("remote").lines.toList
-    remotes.map { remote =>
-      (gitCommand("config", "--get", s"remote.${remote}.url").!!).trim
-    }
+    remotes.map { remote => (gitCommand("config", "--get", s"remote.${remote}.url").!!).trim }
   }
 
   val injectVersionTask = injectVersion := {

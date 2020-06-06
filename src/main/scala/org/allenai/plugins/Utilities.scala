@@ -8,6 +8,7 @@ import scala.sys.process.ProcessLogger
 
 /** Helper methods and values for building plugins. */
 object Utilities {
+
   /** A ProcessLogger which ignores all input. This is equivalent to piping the output to /dev/null.
     */
   val NIL_PROCESS_LOGGER = ProcessLogger(line => ())
@@ -48,8 +49,10 @@ object Utilities {
     val contents = {
       val is = clazz.getResourceAsStream(resourceName)
       if (is == null) {
-        throw new NullPointerException("Resource \"" + resourceName + "\" not found for class " +
-          clazz)
+        throw new NullPointerException(
+          "Resource \"" + resourceName + "\" not found for class " +
+            clazz
+        )
       }
       try {
         IO.readBytes(is)

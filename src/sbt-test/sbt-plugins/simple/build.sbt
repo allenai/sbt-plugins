@@ -5,19 +5,11 @@ name := "simple"
 // Core project with shared code for testing things.
 lazy val core = project.in(file("core"))
 
-lazy val docker = project.in(file("docker")).dependsOn(core)
+lazy val docker = project
+  .in(file("docker"))
+  .dependsOn(core)
   .enablePlugins(DockerBuildPlugin)
   .settings(libraryDependencies += "joda-time" % "joda-time" % "2.4")
-
-val scalaDocSubProject1 = project.in(file("one"))
-val scalaDocSubProject2 = project.in(file("two"))
-val scalaDocAggregateProject = project.in(file("aggregate"))
-  .aggregate(scalaDocSubProject1, scalaDocSubProject2)
-  .enablePlugins(ScaladocGenPlugin).settings(
-    scaladocGenGitRemoteRepo := "git@github.com:allenai/sbt-plugins.git",
-    scaladocGenExtraScaladocMap := scaladocGenExtraScaladocMap.value +
-      ("foobar" -> url("http://foobar.com"))
-)
 
 val checkStyle = taskKey[Unit]("check style warnings")
 checkStyle := {
@@ -43,24 +35,28 @@ val checkCompileDoesNotFormat = {
   taskKey[Unit]("validate that compilation does not trigger formatting")
 }
 checkCompileDoesNotFormat := {
-  val filePath = sourceDirectory.in(core, Compile).value / "scala"/ "BadFormat.scala"
+  val filePath = sourceDirectory.in(core, Compile).value / "scala" / "BadFormat.scala"
   // Dependency on `compile`.
   compile.in(core, Compile).value
 
   val actual = fileAsString(filePath)
   val expected = fileAsString(new File("BadFormat.scala.unformatted"))
-  assert(actual == expected,
-    s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
+  assert(
+    actual == expected,
+    s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected"
+  )
 }
 
 val checkFormat = taskKey[Unit]("check that format correctly formats")
 checkFormat := {
-  val filePath = sourceDirectory.in(core, Compile).value / "scala"/ "BadFormat.scala"
+  val filePath = sourceDirectory.in(core, Compile).value / "scala" / "BadFormat.scala"
   // Dependency on `formalt`.
   format.in(core, Compile).value
 
   val actual = fileAsString(filePath)
   val expected = fileAsString(new File("BadFormat.scala.formatted-expected"))
-  assert(actual == expected,
-    s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected")
+  assert(
+    actual == expected,
+    s"format failed: (actual, expected):\nActual:\n$actual\n\nExpected:\n$expected"
+  )
 }
