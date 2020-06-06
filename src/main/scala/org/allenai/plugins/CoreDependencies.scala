@@ -7,7 +7,7 @@ import sbt.Keys._
   * consistency accross projects
   */
 trait CoreDependencies {
-  val defaultScalaVersion = "2.11.5"
+  val defaultScalaVersion = "2.12.10"
 
   object Logging {
     val slf4jVersion = "1.7.10"
