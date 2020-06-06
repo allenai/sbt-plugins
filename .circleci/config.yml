@@ -1,41 +1,44 @@
+# Scala CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/sample-config/ for more details
+#
 version: 2
 jobs:
   build:
-    working_directory: ~/sbt-plugins
     docker:
-      - image: openjdk:8
+      # specify the version you desire here
+      - image: circleci/openjdk:8-jdk
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    working_directory: ~/sbt-plugins
+
     environment:
-      SBT_VERSION: 0.13.13
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx2G
+      TERM: dumb
+
     steps:
-      - run: echo 'export ARTIFACT_BUILD=$CIRCLE_PROJECT_REPONAME-$CIRCLE_BUILD_NUM.zip' >> $BASH_ENV
-      - run: echo 'export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=2G -Xmx2G"'
-      - run:
-          name: Get sbt binary
-          command: |
-            apt update && apt install -y curl
-            curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb
-            dpkg -i sbt-$SBT_VERSION.deb
-            rm sbt-$SBT_VERSION.deb
-            apt-get update && apt-get clean && apt-get autoclean
       - checkout
+
+      # Download and cache dependencies
       - restore_cache:
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: sbt-cache
-      - run:
-          name: Clean package
-          command: cat /dev/null | sbt clean
-      - run:
-          name: Check formatting
-          command: cat /dev/null | sbt scalafmtCheckAll
-      - run:
-          name: Run Tests
-          command: cat /dev/null | sbt test
-      # - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
-      #     path: target/universal/common.zip
-      #     destination: common
+          keys:
+            - v1-dependencies-{{ checksum "build.sbt" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: cat /dev/null | sbt test:compile
+
       - save_cache:
-          key: sbt-cache
           paths:
-            - "~/.ivy2/cache"
-            - "~/.sbt"
-            - "~/.m2"
+            - ~/.m2
+          key: v1-dependencies--{{ checksum "build.sbt" }}
+
+      # check formatting
+      - run: cat /dev/null | sbt scalafmtCheckAll
+      # run tests
+      - run: cat /dev/null | sbt test:test
