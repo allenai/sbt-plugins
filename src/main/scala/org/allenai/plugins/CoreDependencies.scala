@@ -72,14 +72,14 @@ trait CoreDependencies {
     *
     * object Dependencies extends CoreDependencies {
     *   // purposefully downgrade all common modules to a previous version
-    *   override val allenAiCommonVersion = "1.1.2"
+    *   override val allenAiCommonVersion = "2.1.0"
     * }
     *
     * // in build.sbt
     * libraryDependencies += Dependencies.allenAiIndexing
     * }}}
     */
-  val allenAiCommonVersion = "1.2.1"
+  val allenAiCommonVersion = "2.1.0"
 
   def allenAiCommonModule(name: String) =
     "org.allenai.common" %% s"common-$name" % allenAiCommonVersion
@@ -101,31 +101,6 @@ trait CoreDependencies {
 
   val scopt = "com.github.scopt" %% "scopt" % "3.3.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.2.1"
-
-  /* ==========>  Akka <========== */
-
-  val defaultAkkaVersion = "2.4.1"
-
-  /** Generates an akka module dependency
-    * @param id The akka module ID. E.g. `actor` or `cluster`
-    * @param version Specific akka version. Defaults to `defaultAkkaVersion`
-    */
-  def akkaModule(id: String, version: String = defaultAkkaVersion): ModuleID =
-    "com.typesafe.akka" %% s"akka-$id" % version
-
-  val akkaActor = akkaModule("actor").exclude("com.typesafe", "config")
-  val akkaLogging = akkaModule("slf4j")
-  val akkaTestkit = akkaModule("testkit")
-
-  // Akka HTTP is still experimental, but we are starting to use it in some projects.
-  // Once Akka HTTP is no longer experimental, we should remove the spray dependencies
-  val defaultAkkaHttpVersion = "2.0.1"
-
-  def akkaHttpModule(id: String, version: String = defaultAkkaHttpVersion): ModuleID =
-    "com.typesafe.akka" %% s"akka-http-$id" % version
-  val akkaHttp = akkaHttpModule("experimental")
-  val akkaHttpTestkit = akkaHttpModule("testkit-experimental")
-  val akkaHttpSprayJsonSupport = akkaHttpModule("spray-json-experimental")
 
   /* ==========>  Spray <========== */
 
