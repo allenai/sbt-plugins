@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/allenai/sbt-plugins/tree/master.svg?style=svg)](https://circleci.com/gh/allenai/sbt-plugins/tree/master)
 
-**This repository is no longer supported, and should not be used for new projects.  Internally at AI2, teams (Euclid, S2, and Aristo) are moving away from SBT Plugins.  Please assign any PRs to Michael Schmitz.**
+**This repository is no longer supported, and should not be used for new projects. Please assign any PRs to Brandon Stilson.**
 
 All plugins also enable the `CoreSettings` plugin ([docs](docs/core-settings.md)), which contains AI2-wide common settings. In particular, this enables the `StylePlugin` ([docs](docs/style.md)) to help with code formatting & style.
 
