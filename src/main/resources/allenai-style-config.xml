@@ -1,7 +1,7 @@
 <scalastyle>
   <name>Aristo Scalastyle config.</name>
   <!--
-    See http://www.scalastyle.org/rules-0.5.0.html for a list of supported checks.
+    See https://www.scalastyle.org/rules-0.5.0.html for a list of supported checks.
 
     The bottom of this file has disabled checks; also see the RegexChecker below, which can be
     repeated for arbitrary regular-expression style checking.

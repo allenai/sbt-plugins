@@ -8,7 +8,7 @@ object CoreRepositories {
 
   /** Common licenses */
   object Licenses {
-    val apache2 = ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+    val apache2 = ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
   }
 
   /** Common resolvers */
@@ -17,9 +17,10 @@ object CoreRepositories {
     val ai2PublicReleases = Resolver.bintrayRepo("allenai", "maven")
 
     // needed for spray-json:
-    val spray = "spray" at "http://repo.spray.io/"
+    val spray = "spray".at("https://repo.spray.io/")
 
-    val typesafeReleases = "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+    val typesafeReleases = "Typesafe Releases".at("https://repo.typesafe.com/typesafe/releases/")
+
     /** Default set of resolvers that will be added via CoreSettings */
     val defaults = Seq(
       spray,

@@ -1,2 +1,5 @@
 target/
 **/.metals
+**/.vscode/
+**/.bloop/
+project/metals.sbt

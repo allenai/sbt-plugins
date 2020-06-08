@@ -6,7 +6,7 @@ sbt-style
 **Wraps**:
 
 - [scalariform](https://github.com/mdr/scalariform) for auto-formatting
-- [scalastyle](http://www.scalastyle.org/) for style checking
+- [scalastyle](https://www.scalastyle.org/) for style checking
 
 **Note**: This plugin is auto-enabled as part of `CoreSettings`
 

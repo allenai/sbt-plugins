@@ -1,23 +1,6 @@
 package org.allenai.plugins
 
-import sbt.{
-  inProjects,
-  task,
-  Artifact,
-  AttributeKey,
-  BuildDependencies,
-  Compile,
-  Def,
-  Extracted,
-  Keys,
-  ModuleID,
-  Project,
-  ProjectRef,
-  Runtime,
-  ScopeFilter,
-  State,
-  Task
-}
+import sbt._
 
 import java.io.File
 
@@ -25,6 +8,7 @@ import scala.sys.process.Process
 
 /** Helper tasks for building plugins. */
 object HelperDefs {
+
   /** A filter for the local project dependencies. */
   lazy val dependencyFilter: Def.Initialize[Task[ScopeFilter]] = Def.task {
     val localDependencies = Keys.buildDependencies.value.classpathTransitiveRefs(
@@ -77,7 +61,7 @@ object HelperDefs {
       val thisProject: ProjectRef = Keys.thisProjectRef.value
       // All projects the current project depends on.
       val dependencyProjects: Seq[ProjectRef] = {
-        val buildDependenciesValue: BuildDependencies = Keys.buildDependencies.value
+        val buildDependenciesValue = Keys.buildDependencies.value
         buildDependenciesValue.classpathTransitive.get(thisProject).getOrElse(Seq.empty)
       }
       thisProject +: dependencyProjects
@@ -95,9 +79,7 @@ object HelperDefs {
           }
           val binaryTask: Task[File] =
             extracted.get(Keys.packageBin.in(Compile).in(projectRef))
-          binaryTask.map { binary =>
-            (binary, jarName)
-          }
+          binaryTask.map { binary => (binary, jarName) }
         }
       }
       // Collapse the tasks into a single task.

@@ -7,7 +7,7 @@ import sbt.Keys._
   * consistency accross projects
   */
 trait CoreDependencies {
-  val defaultScalaVersion = "2.11.5"
+  val defaultScalaVersion = "2.12.10"
 
   object Logging {
     val slf4jVersion = "1.7.10"
@@ -26,23 +26,23 @@ trait CoreDependencies {
   def addLoggingDependencies(deps: SettingKey[Seq[ModuleID]]): Seq[Setting[Seq[ModuleID]]] = {
     import Logging._
     val cleanedDeps = deps ~= { seq =>
-      seq map { module =>
+      seq.map { module =>
         // Exclude the transitive dependencies that might mess things up for us.
         // slf4j replaces log4j.
-        (module
-          exclude ("log4j", "log4j")
-          exclude ("commons-logging", "commons-logging")
+        module
+          .exclude("log4j", "log4j")
+          .exclude("commons-logging", "commons-logging")
           // We're using logback as the slf4j implementation, and we're providing it below.
-          exclude ("org.slf4j", "slf4j-log4j12")
-          exclude ("org.slf4j", "slf4j-jdk14")
-          exclude ("org.slf4j", "slf4j-jcl")
-          exclude ("org.slf4j", "slf4j-simple")
+          .exclude("org.slf4j", "slf4j-log4j12")
+          .exclude("org.slf4j", "slf4j-jdk14")
+          .exclude("org.slf4j", "slf4j-jcl")
+          .exclude("org.slf4j", "slf4j-simple")
           // We'll explicitly provide the logback version; this avoids having to do an override.
-          exclude ("ch.qos.logback", "logback-core")
-          exclude ("ch.qos.logback", "logback-classic")
+          .exclude("ch.qos.logback", "logback-core")
+          .exclude("ch.qos.logback", "logback-classic")
           // We add bridges explicitly as well
-          exclude ("org.slf4j", "log4j-over-slf4j")
-          exclude ("org.slf4j", "jcl-over-slf4j"))
+          .exclude("org.slf4j", "log4j-over-slf4j")
+          .exclude("org.slf4j", "jcl-over-slf4j")
       }
     }
     // Now, add the logging libraries.
@@ -81,13 +81,15 @@ trait CoreDependencies {
     */
   val allenAiCommonVersion = "1.2.1"
 
-  def allenAiCommonModule(name: String) = "org.allenai.common" %% s"common-$name" % allenAiCommonVersion
+  def allenAiCommonModule(name: String) =
+    "org.allenai.common" %% s"common-$name" % allenAiCommonVersion
 
   lazy val allenAiCommon = allenAiCommonModule("core")
   lazy val allenAiGuice = allenAiCommonModule("guice")
   lazy val allenAiTestkit = allenAiCommonModule("testkit")
   lazy val allenAiWebapp = allenAiCommonModule("webapp")
   lazy val allenAiIndexing = allenAiCommonModule("indexing")
+
   lazy val allenAiCache = {
     val splitVersion = allenAiCommonVersion.split('.')
     require(
@@ -111,13 +113,14 @@ trait CoreDependencies {
   def akkaModule(id: String, version: String = defaultAkkaVersion): ModuleID =
     "com.typesafe.akka" %% s"akka-$id" % version
 
-  val akkaActor = akkaModule("actor") exclude ("com.typesafe", "config")
+  val akkaActor = akkaModule("actor").exclude("com.typesafe", "config")
   val akkaLogging = akkaModule("slf4j")
   val akkaTestkit = akkaModule("testkit")
 
   // Akka HTTP is still experimental, but we are starting to use it in some projects.
   // Once Akka HTTP is no longer experimental, we should remove the spray dependencies
   val defaultAkkaHttpVersion = "2.0.1"
+
   def akkaHttpModule(id: String, version: String = defaultAkkaHttpVersion): ModuleID =
     "com.typesafe.akka" %% s"akka-http-$id" % version
   val akkaHttp = akkaHttpModule("experimental")

@@ -1,22 +1,7 @@
 package org.allenai.plugins
 
-import sbt.{
-  AutoPlugin,
-  ConsoleLogger,
-  Def,
-  Hash,
-  IO,
-  InputKey,
-  InputTask,
-  Keys,
-  Logger,
-  Path,
-  PathFinder,
-  Plugins,
-  SettingKey,
-  Task,
-  TaskKey
-}
+import Compat._
+import sbt._
 import sbt.complete.DefaultParsers
 import sbt.plugins.JvmPlugin
 
@@ -29,6 +14,7 @@ import scala.sys.process.Process
 
 /** Plugin for building docker images. */
 object DockerBuildPlugin extends AutoPlugin {
+
   /** The default Docker registry used for making image names. Must be overridden to push images.
     * Used as the default value for the dockerImageRegistryHost setting.
     */
@@ -57,6 +43,7 @@ object DockerBuildPlugin extends AutoPlugin {
   // Set up a shutdown hook to stop any running containers when we exit.
   Runtime.getRuntime.addShutdownHook(
     new Thread(new Runnable {
+
       override def run(): Unit = {
         runningContainers.synchronized {
           runningContainers.foreach { container =>
@@ -93,11 +80,13 @@ object DockerBuildPlugin extends AutoPlugin {
     val dockerImageRegistryHost: SettingKey[String] = Def.settingKey[String](
       "The base name of the image you're creating. Defaults to " + DEFAULT_REGISTRY + "."
     )
+
     val dockerImageNamePrefix: SettingKey[String] = Def.settingKey[String](
       "The image name prefix (\"repository\", in Docker terms) of the image you're creating. " +
         "Defaults to organization.value.stripPrefix(\"org.allenai.\") . " +
         "This is typically the github repository name."
     )
+
     val dockerImageName: SettingKey[String] = Def.settingKey[String](
       "The name of the image you're creating. Defaults to the sbt project name (the `name` " +
         "setting key)."
@@ -116,7 +105,7 @@ object DockerBuildPlugin extends AutoPlugin {
     val dockerCopyMappings: SettingKey[Seq[(File, String)]] = Def.settingKey[Seq[(File, String)]](
       "Mappings to add to the Docker image. Relative file paths will be interpreted as being " +
         "relative to the base directory (`baseDirectory.value`). See " +
-        "http://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html for detailed " +
+        "https://www.scala-sbt.org/0.12.3/docs/Detailed-Topics/Mapping-Files.html for detailed " +
         "info on sbt mappings. Defaults to mapping src/main/resources to conf on the image."
     )
 
@@ -276,7 +265,7 @@ object DockerBuildPlugin extends AutoPlugin {
     logger: Logger
   ): String = {
     // Calculate the checksum of the contents of the main image.
-    val allFiles = PathFinder(imageDir).***.filter(_.isFile).get
+    val allFiles = PathFinder(imageDir).allPaths.filter(_.isFile).get
     val newHash = Utilities.hashFiles(allFiles, imageDir)
 
     val oldHash = if (hashFile.exists) {
@@ -338,7 +327,7 @@ object DockerBuildPlugin extends AutoPlugin {
   lazy val gitCommitIfClean: Def.Initialize[Task[Option[String]]] = Def.task {
     HelperDefs.gitRepoCleanDef.value match {
       // TODO(jkinkead): Move gitLocalSha1 to a common location.
-      case None => Some(VersionInjectorPlugin.autoImport.gitLocalSha1.value)
+      case None    => Some(VersionInjectorPlugin.autoImport.gitLocalSha1.value)
       case Some(_) => None
     }
   }
@@ -399,23 +388,27 @@ object DockerBuildPlugin extends AutoPlugin {
     val logger = Keys.streams.value.log
 
     // Create the copy commands.
-    val copyText = dockerCopyMappings.value.map {
-      case (_, destination) => s"COPY $destination $destination"
-    }.mkString("\n")
+    val copyText = dockerCopyMappings.value
+      .map {
+        case (_, destination) => s"COPY $destination $destination"
+      }
+      .mkString("\n")
     // Create the sbt setting to recreate the copy mappings.
     val dockerCopyMappingsText = {
       // Generate the tuples.
-      val tupleValues = dockerCopyMappings.value.map {
-        case (file, destination) =>
-          val basePath = Keys.baseDirectory.value.toPath
-          // Relativize the file to the project root.
-          val relativeFile = if (file.isAbsolute) {
-            basePath.relativize(file.toPath).toFile
-          } else {
-            file
-          }
-          s"""(file("$relativeFile"), "$destination")"""
-      }.mkString("#     ", ",\n#     ", "\n")
+      val tupleValues = dockerCopyMappings.value
+        .map {
+          case (file, destination) =>
+            val basePath = Keys.baseDirectory.value.toPath
+            // Relativize the file to the project root.
+            val relativeFile = if (file.isAbsolute) {
+              basePath.relativize(file.toPath).toFile
+            } else {
+              file
+            }
+            s"""(file("$relativeFile"), "$destination")"""
+        }
+        .mkString("#     ", ",\n#     ", "\n")
       // Turn into an sbt setting.
       "#   dockerCopyMappings := Seq(\n" + tupleValues + "#   )"
     }
@@ -431,29 +424,40 @@ object DockerBuildPlugin extends AutoPlugin {
     // Create any environment variables specified in sbt.
     // This throws an error if the environment variable name contains a space, since this is not
     // handled graciously by Docker.
-    val envVarsText = Keys.envVars.value.map {
-      case (key, value) =>
-        if (key.contains(" ")) {
-          sys.error(s"""Environment variable name can't be exported to Docker: \"$key\"""")
-        }
-        val quotedValue = value.replaceAllLiterally("\\", "\\\\").replaceAllLiterally("\"", "\\\"")
-        s""""$key" -> "$quotedValue""""
-    }.mkString(", ")
-    val envVarsCommandsText = Keys.envVars.value.map {
-      case (key, value) =>
-        val escapedValue = value.replaceAllLiterally("\\", "\\\\").replaceAllLiterally(
-          "$", "\\$"
-        ).replaceAllLiterally("\"", "\\\"")
-        s"ENV $key $escapedValue"
-    }.mkString("\n")
+    val envVarsText = Keys.envVars.value
+      .map {
+        case (key, value) =>
+          if (key.contains(" ")) {
+            sys.error(s"""Environment variable name can't be exported to Docker: \"$key\"""")
+          }
+          val quotedValue =
+            value.replaceAllLiterally("\\", "\\\\").replaceAllLiterally("\"", "\\\"")
+          s""""$key" -> "$quotedValue""""
+      }
+      .mkString(", ")
+    val envVarsCommandsText = Keys.envVars.value
+      .map {
+        case (key, value) =>
+          val escapedValue = value
+            .replaceAllLiterally("\\", "\\\\")
+            .replaceAllLiterally(
+              "$",
+              "\\$"
+            )
+            .replaceAllLiterally("\"", "\\\"")
+          s"ENV $key $escapedValue"
+      }
+      .mkString("\n")
 
     // Check for a main class, and warn if it's missing.
     val (javaMainText, mainClassText) = Keys.mainClass.?.value.getOrElse(None) match {
       case Some(mainClass) =>
         (s"ENV JAVA_MAIN $${JAVA_MAIN:-$mainClass}", s"""#   mainClass := Some("$mainClass")""")
       case None =>
-        logger.warn("No `mainClass` set! Your image will not run without manually setting " +
-          "the JAVA_MAIN environment variable.")
+        logger.warn(
+          "No `mainClass` set! Your image will not run without manually setting " +
+            "the JAVA_MAIN environment variable."
+        )
         ("# (No mainClass set)", "#  mainClass := None")
     }
 
@@ -594,13 +598,13 @@ $DOCKERFILE_SIGIL
 
     // Create the Dockerfile for the dependency image.
     val dockerfileContents = s"""
-      |FROM ${dockerImageBase.value}
-      |WORKDIR ${dockerWorkdir.value}
-      |STOPSIGNAL SIGINT
-      |${dockerDependencyExtra.value.mkString("\n")}
-      |COPY bin bin
-      |COPY lib lib
-      |""".stripMargin
+                                |FROM ${dockerImageBase.value}
+                                |WORKDIR ${dockerWorkdir.value}
+                                |STOPSIGNAL SIGINT
+                                |${dockerDependencyExtra.value.mkString("\n")}
+                                |COPY bin bin
+                                |COPY lib lib
+                                |""".stripMargin
     val dependencyDockerfile = new File(dependencyImageDir.value, "Dockerfile")
     IO.write(dependencyDockerfile, dockerfileContents)
 
@@ -674,8 +678,10 @@ $DOCKERFILE_SIGIL
 
     val dockerfile = dockerfileLocation.value
     if (!dockerfile.exists) {
-      sys.error(s"No Dockerfile found at $dockerfile .\n" +
-        "Maybe you should generate one with the `generateDockerfile` task?")
+      sys.error(
+        s"No Dockerfile found at $dockerfile .\n" +
+          "Maybe you should generate one with the `generateDockerfile` task?"
+      )
     }
 
     logger.info(s"Staging main image ${mainImageNameSuffix.value}...")
@@ -707,7 +713,7 @@ $DOCKERFILE_SIGIL
           // these ourself.
           if (source.isDirectory) {
             IO.createDirectory(destination)
-            val toCopy = PathFinder(source).***.pair(Path.rebase(source, destination))
+            val toCopy = PathFinder(source).allPaths.pair(Path.rebase(source, destination))
             IO.copy(toCopy)
             toCopy.foreach {
               case (source, destination) => destination.setExecutable(source.canExecute)
@@ -738,7 +744,7 @@ $DOCKERFILE_SIGIL
       // Hash the dependency image directly.
       val stableContentsHash = {
         val dependencyDir = dependencyImageDir.value
-        Utilities.hashFiles(PathFinder(dependencyDir).***.filter(_.isFile).get, dependencyDir)
+        Utilities.hashFiles(PathFinder(dependencyDir).allPaths.filter(_.isFile).get, dependencyDir)
       }
 
       // Find the git commits for the current project and local dependencies, since this is more
@@ -760,7 +766,7 @@ $DOCKERFILE_SIGIL
     // Generate the cache key only for pristine repos.
     cacheKeyContentsOption match {
       case Some(cacheKeyContents) => IO.write(cacheKeyDestination, cacheKeyContents)
-      case None => IO.delete(cacheKeyDestination)
+      case None                   => IO.delete(cacheKeyDestination)
     }
 
     imageDirectory
@@ -930,4 +936,3 @@ $DOCKERFILE_SIGIL
     dockerPush := dockerPushDef.evaluated
   )
 }
-
