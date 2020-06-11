@@ -9,7 +9,6 @@ object Release {
 
   def releaseSettings = Seq(
     crossSbtVersions := Vector("1.3.10", "0.13.16"),
-    publishMavenStyle := false,
     bintrayRepository := "sbt-plugins",
     bintrayPackage := name.value,
     bintrayOrganization := Some("allenai"),
@@ -44,7 +43,7 @@ object Release {
 
   def publishEnabled = Seq(
     publishArtifact := true, // Enable publish
-    publishMavenStyle := true,
+    publishMavenStyle := false,
     // http://www.scala-sbt.org/0.12.2/docs/Detailed-Topics/Artifacts.html
     publishArtifact in Test := false,
     // Bintray
