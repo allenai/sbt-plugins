@@ -90,7 +90,7 @@ Where `[API Key]` is the API key for the ai2-dev account (or your account if usi
 2. Cut the release:
 
 ```shell
-sbt ^release
+sbt release
 ```
 
 The plugin will set the appropriate defaults so just hit `<ENTER>` through the prompts. Also, some errors will be logged when the plugin creates a tag and pushes it to the upstream repository. This is not really an error but git outputting some text to stderr.
