@@ -145,12 +145,29 @@ object CoreSettingsPlugin extends AutoPlugin {
 
   /** Scalariform settings we use that are different from the defaults */
   val ScalariformDefaultOverrides: Seq[(PreferenceDescriptor[_], Boolean)] = Seq(
+    (AlignArguments, true),
+    (CompactStringConcatenation, false),
+    (IndentPackageBlocks, true),
+    (FormatXml, true),
+    (PreserveSpaceBeforeArguments, false),
+    (RewriteArrowSymbols, false),
+    (AlignSingleLineCaseStatements, true),
+    // (AlignSingleLineCaseStatements.MaxArrowIndent, 40),
+    (SpaceBeforeColon, false),
+    (SpaceInsideBrackets, false),
+    (SpaceInsideParentheses, false),
+    // (IndentSpaces, 2),
+    (IndentLocalDefs, false),
+    (SpacesWithinPatternBinders, true),
+    (SpacesAroundMultiImports, true),
     (DoubleIndentConstructorArguments, true),
     (MultilineScaladocCommentsStartOnFirstLine, true),
     (PlaceScaladocAsterisksBeneathSecondAsterisk, true),
     (SpacesAroundMultiImports, true),
     (AlignSingleLineCaseStatements, true),
-    (DanglingCloseParenthesis, true)
+    (DanglingCloseParenthesis, true),
+    // This would be nice but would require reformatting all of scholar.
+    (AlignSingleLineCaseStatements, false)
   )
 
   // These settings will be automatically applied to the build exactly once and will not be applied
