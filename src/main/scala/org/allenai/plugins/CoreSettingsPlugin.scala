@@ -145,10 +145,12 @@ object CoreSettingsPlugin extends AutoPlugin {
 
   /** Scalariform settings we use that are different from the defaults */
   val ScalariformDefaultOverrides: Seq[(PreferenceDescriptor[_], Boolean)] = Seq(
-    (DoubleIndentClassDeclaration, true),
+    (DoubleIndentConstructorArguments, true),
     (MultilineScaladocCommentsStartOnFirstLine, true),
     (PlaceScaladocAsterisksBeneathSecondAsterisk, true),
-    (SpacesAroundMultiImports, true)
+    (SpacesAroundMultiImports, true),
+    (AlignSingleLineCaseStatements, true),
+    (DanglingCloseParenthesis, true)
   )
 
   // These settings will be automatically applied to the build exactly once and will not be applied
@@ -197,7 +199,7 @@ object CoreSettingsPlugin extends AutoPlugin {
   // These settings will be automatically applied to projects
   override def projectSettings: Seq[Setting[_]] = {
     Defaults.itSettings ++
-      SbtScalariform.defaultScalariformSettingsWithIt ++
+      SbtScalariform.autoImport.scalariformItSettings ++
       Project.inConfig(Compile)(baseScalariformSettings) ++
       Project.inConfig(Test)(baseScalariformSettings) ++
       Project.inConfig(Configurations.IntegrationTest)(baseScalariformSettings) ++
