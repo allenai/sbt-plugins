@@ -19,7 +19,7 @@ addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
 lazy val root = (project in file("."))
   .enablePlugins(SbtPlugin)
   .settings(
-    Release.settings,
+    Release.releaseSettings,
     name := "allenai-sbt-plugins",
     sbtPlugin := true,
     resolvers += Resolver.jcenterRepo,
