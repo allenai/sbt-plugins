@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/allenai/sbt-plugins/tree/master.svg?style=svg)](https://circleci.com/gh/allenai/sbt-plugins/tree/master)
 
-**This repository is no longer supported, and should not be used for new projects. Please assign any PRs to Brandon Stilson.**
+**This repository is no longer supported, and should not be used for new projects. S2 still uses some pieces, but if you're making a new project, do not use this plugin. Please assign any PRs to Brandon Stilson.**
 
 All plugins also enable the `CoreSettings` plugin ([docs](docs/core-settings.md)), which contains AI2-wide common settings. In particular, this enables the `StylePlugin` ([docs](docs/style.md)) to help with code formatting & style.
 
@@ -86,17 +86,11 @@ Where `[API Key]` is the API key for the ai2-dev account (or your account if usi
 
 ### Releasing
 
-1. Checkout the `master` branch of the repository
-2. Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins
-  
-```shell
-git branch --set-upstream-to=upstream/master
-```
+1. Checkout the `master` branch of the repository (Make sure the upstream-tracking branch is `master` @ allenai/sbt-plugins).
+2. Cut the release:
 
-3. Cut the release:
-  
 ```shell
-sbt release
+sbt ^release
 ```
 
 The plugin will set the appropriate defaults so just hit `<ENTER>` through the prompts. Also, some errors will be logged when the plugin creates a tag and pushes it to the upstream repository. This is not really an error but git outputting some text to stderr.
