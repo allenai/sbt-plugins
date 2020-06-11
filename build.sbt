@@ -19,14 +19,14 @@ addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
 lazy val root = (project in file("."))
   .enablePlugins(SbtPlugin)
   .settings(
-    crossSbtVersions := Vector("1.3.10", "0.13.16"),
+    Release.settings,
+    name := "allenai-sbt-plugins",
+    sbtPlugin := true,
     resolvers += Resolver.jcenterRepo,
     libraryDependencies ++= Seq(
       "com.typesafe" % "config" % "1.4.0",
       "org.scalatest" %% "scalatest" % "3.1.2" % "test"
     ),
-    organization := "org.allenai.plugins",
-    name := "allenai-sbt-plugins",
     scalacOptions := Seq(
       "-encoding",
       "utf8",
@@ -36,12 +36,6 @@ lazy val root = (project in file("."))
       "-language:_",
       "-Xlog-reflective-calls"
     ),
-    sbtPlugin := true,
-    // Publication settings.
-    publishMavenStyle := false,
-    bintrayRepository := "sbt-plugins",
-    bintrayOrganization := Some("allenai"),
-    licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
     // Allows us to test our plugins via the sbt-scripted plugin:
     // scriptedSettings,
     scriptedLaunchOpts := {
