@@ -1,6 +1,6 @@
 # allenai-sbt-core-settings
 
-**Requires**: `StylePlugin` && `VersionInjectorPlugin`
+**Requires**: `VersionInjectorPlugin`
 
 **Note**: `CoreSettingsPlugin` is implicitly applied to all projects via its `trigger` setting. This means you do not need to explicitly enable this plugin.
 
@@ -9,7 +9,7 @@ The `CoreSettingsPlugin` provides core settings to projects including:
 - Setting `conflictManager := ConflictManager.strict`
 - Adds slf4j dependencies and resolves common slf4j conflicts
 - Provides `CoreSettings.Dependencies` object with many common (and versioned) dependencies
-- Enables the `StylePlugin` and `VersionInjectorPlugin`
+- Enables `VersionInjectorPlugin`
 
 See `sbt-core-settings-tester/build.sbt` and `sbt-core-settings-tester/project/plugins.sbt` for usage.
 

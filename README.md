@@ -4,7 +4,7 @@
 
 **This repository is no longer supported, and should not be used for new projects. S2 still uses some pieces, but if you're making a new project, do not use this plugin. Please assign any PRs to Brandon Stilson.**
 
-All plugins also enable the `CoreSettings` plugin ([docs](docs/core-settings.md)), which contains AI2-wide common settings. In particular, this enables the `StylePlugin` ([docs](docs/style.md)) to help with code formatting & style.
+All plugins also enable the `CoreSettings` plugin ([docs](docs/core-settings.md)), which contains AI2-wide common settings.
 
 More documentation for individual plugins can be found in the [docs](docs/) directory.
 
@@ -17,14 +17,6 @@ addSbtPlugin("org.allenai.plugins" % "allenai-sbt-plugins" % VERSION)
 ```
 
 where `VERSION` is the current release version (see [our bintray repo](https://bintray.com/allenai/sbt-plugins/allenai-sbt-plugins/view) to find available versions).
-
-## Install Git pre-commit hook to autoformat sources
-
-Once you've added the plugins to a project, you can install a git pre-commit hook that will autoformat your code before allowing a commit via:
-
-```shell
-sbt generateAutoformatGitHook
-```
 
 ## Developing AI2 Plugins
 
