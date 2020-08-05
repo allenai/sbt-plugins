@@ -243,7 +243,7 @@ object DockerBuildPlugin extends AutoPlugin {
     imageName match {
       case IMAGE_REGISTRY(registry) if registry.endsWith(".amazonaws.com") =>
         logger.info("Logging in to ECR...")
-        val command = Seq("bash", "-c", "eval $(aws ecr get-login)")
+        val command = Seq("bash", "-c", "eval $(aws ecr get-login --no-include-email)")
         val result = Process(command).!(Utilities.NIL_PROCESS_LOGGER)
         if (result != 0) {
           logger.warn("Failure logging in to ECR.")
