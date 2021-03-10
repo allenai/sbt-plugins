@@ -1,10 +1,5 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
-
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
-
-addSbtPlugin("io.github.bbstilson" % "sbt-codeartifact" % "0.1.2")
-
-lazy val root = (project in file("."))
+lazy val root = project
+  .in(file("."))
   .enablePlugins(SbtPlugin)
   .settings(
     Release.releaseSettings,
