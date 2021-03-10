@@ -1,6 +1,5 @@
 package org.allenai.plugins
 
-import Compat._
 import sbt._
 import sbt.complete.DefaultParsers
 import sbt.plugins.JvmPlugin
@@ -568,13 +567,14 @@ $DOCKERFILE_SIGIL
     */
   lazy val verifyDockerfileDef: Def.Initialize[Task[Boolean]] = Def.task {
     val isUnchanged = checkDockerfile.value
+    val logger = Keys.streams.value.log
     if (!isUnchanged) {
       val message = s"Dockerfile ${dockerfileLocation.value} is not up-to-date. Run " +
         "the `generateDockerfile` task to fix."
       if (verifyDockerfileIsStrict.value) {
         sys.error(message)
       } else {
-        Keys.streams.value.log.warn(message)
+        logger.warn(message)
       }
     }
     isUnchanged
@@ -774,6 +774,8 @@ $DOCKERFILE_SIGIL
 
   /** Task to build the main docker image for the project. This returns the image ID. */
   lazy val mainImageBuildDef: Def.Initialize[Task[String]] = Def.task {
+    val logger = Keys.streams.value.log
+
     // This task requires docker to be installed.
     requireDocker.value
 
@@ -783,7 +785,7 @@ $DOCKERFILE_SIGIL
 
     // Verify the dockerfile.
     if (verifyDockerfileOnBuild.value) {
-      val isUnchanged = checkDockerfile.value
+      val isUnchanged = checkDockerfile.value: @sbtUnchecked
       // Note that due to sbt dependency semantics (the fact that all dependencies are always run),
       // we duplicate the below logic in the verifyDockerfile task def. Otherwise, we couldn't
       // control the error behavior via the verifyDockerfileOnBuild flag above.
@@ -794,7 +796,7 @@ $DOCKERFILE_SIGIL
               "`generateDockerfile` to update."
           )
         } else {
-          Keys.streams.value.log.warn(
+          logger.warn(
             s"Dockerfile ${dockerfileLocation.value} is not up-to-date. Run `generateDockerfile` " +
               "to update."
           )
@@ -802,7 +804,6 @@ $DOCKERFILE_SIGIL
       }
     }
 
-    val logger = Keys.streams.value.log
     logger.info(s"Building main image ${mainImageNameSuffix.value}...")
 
     // Copy in the dependency hash file in order to include it in our image hash. This ensures we

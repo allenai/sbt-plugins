@@ -2,7 +2,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
 
-addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.6")
+addSbtPlugin("io.github.bbstilson" % "sbt-codeartifact" % "0.1.2")
 
 lazy val root = (project in file("."))
   .enablePlugins(SbtPlugin)
@@ -10,7 +10,7 @@ lazy val root = (project in file("."))
     Release.releaseSettings,
     name := "allenai-sbt-plugins",
     sbtPlugin := true,
-    resolvers += Resolver.jcenterRepo,
+    codeArtifactUrl := "https://org-allenai-s2-896129387501.d.codeartifact.us-west-2.amazonaws.com/maven/private",
     libraryDependencies ++= Seq(
       "com.typesafe" % "config" % "1.4.0",
       "org.scalatest" %% "scalatest" % "3.1.2" % "test"
