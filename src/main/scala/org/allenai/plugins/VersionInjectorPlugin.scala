@@ -95,7 +95,7 @@ object VersionInjectorPlugin extends AutoPlugin {
   val gitSha1Task = gitSha1 := (gitCommand("rev-parse", "HEAD").!!).trim
 
   val gitRemotesTask = gitRemotes := {
-    val remotes = gitCommand("remote").lines.toList
+    val remotes = gitCommand("remote").lineStream.toList
     remotes.map { remote => (gitCommand("config", "--get", s"remote.${remote}.url").!!).trim }
   }
 
